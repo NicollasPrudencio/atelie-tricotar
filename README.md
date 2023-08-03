@@ -1,5 +1,3 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
-
 ## Atelie Tricotar Website
 
 Este é o projeto/repo para o desenvolvimento de uma landing page para o Atelie Tricotar, uma equipe de artesãs que fazem diferentes trabalhos, como roupas, presentes e outras peças. 
