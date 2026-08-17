@@ -1,0 +1,30 @@
+# Segredos e config local — nunca versionar
+.env
+.env.local
+.env.*.local
+
+# Dependências (instaladas via composer install no CI/deploy)
+/vendor
+/node_modules
+
+# WordPress core e conteúdo de terceiros (gerenciados via composer.json)
+/web/wp
+/web/app/plugins/*
+!/web/app/plugins/atelie-produto-ia
+/web/app/mu-plugins/*
+!/web/app/mu-plugins/atelie-bootstrap.php
+/web/app/themes/*
+!/web/app/themes/atelie-theme
+
+# Dados de runtime — não é código, é conteúdo gerado
+/web/app/uploads
+/web/app/upgrade
+/web/app/cache
+
+# Artefatos locais
+*.log
+.DS_Store
+Thumbs.db
+/tests/e2e/node_modules
+/tests/e2e/playwright-report
+/tests/e2e/test-results

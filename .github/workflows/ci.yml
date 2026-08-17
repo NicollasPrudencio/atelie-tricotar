@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, develop]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          tools: composer:v2
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Instalar dependencias
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Auditoria de seguranca das dependencias
+        run: composer audit
+
+      - name: Lint (WordPress Coding Standards)
+        run: composer run lint
+
+      - name: Testes unitarios
+        if: false # habilita quando tests/unit/phpunit.xml existir (Fase 1+)
+        env:
+          AI_MOCK_MODE: "true"
+        run: composer run test:unit

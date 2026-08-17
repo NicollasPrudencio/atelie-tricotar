@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<ruleset name="Atelie">
+    <description>Padrao de codigo do site do ateliê — WordPress Coding Standards</description>
+
+    <arg name="basepath" value="."/>
+    <arg name="extensions" value="php"/>
+    <arg name="parallel" value="8"/>
+    <arg value="sp"/>
+
+    <file>./web/app/mu-plugins</file>
+    <file>./web/app/plugins/atelie-produto-ia</file>
+    <file>./config</file>
+
+    <!-- web/app/themes/atelie-theme entra aqui quando o tema for criado (Fase 1 do plano) -->
+
+
+    <rule ref="WordPress"/>
+    <rule ref="PHPCompatibilityWP"/>
+    <config name="testVersion" value="8.1-"/>
+</ruleset>
