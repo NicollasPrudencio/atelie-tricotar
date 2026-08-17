@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY php.ini /usr/local/etc/php/conf.d/zz-atelie.ini
 
 # WP-CLI: usado so em dev local para instalar/gerenciar o WordPress sem depender do instalador web
 RUN curl -o /usr/local/bin/wp -sL https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \
