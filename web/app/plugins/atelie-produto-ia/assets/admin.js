@@ -1,0 +1,145 @@
+(function () {
+    "use strict";
+
+    document.addEventListener("DOMContentLoaded", function () {
+        var fotosIds = [];
+        var receitaImagemId = null;
+
+        var dropzoneTexto = document.getElementById("atelie-dropzone-texto");
+        var fotosPreview = document.getElementById("atelie-fotos-preview");
+        var btnEscolherFotos = document.getElementById("atelie-btn-escolher-fotos");
+        var btnEscolherReceitaImagem = document.getElementById("atelie-btn-escolher-receita-imagem");
+        var receitaImagemNome = document.getElementById("atelie-receita-imagem-nome");
+        var btnSugerir = document.getElementById("atelie-btn-sugerir");
+        var analisando = document.getElementById("atelie-analisando");
+        var form = document.getElementById("atelie-form-produto");
+        var inputFotosIds = document.getElementById("atelie-input-fotos-ids");
+        var btnRecomecar = document.getElementById("atelie-btn-recomecar");
+
+        function atualizarBotaoSugerir() {
+            btnSugerir.disabled = fotosIds.length === 0;
+        }
+
+        function abrirSeletorMidia(callback, multiplo) {
+            var frame = wp.media({
+                title: "Escolher imagem",
+                library: { type: "image" },
+                multiple: !!multiplo,
+            });
+            frame.on("select", function () {
+                var selecao = frame.state().get("selection").toJSON();
+                callback(selecao);
+            });
+            frame.open();
+        }
+
+        btnEscolherFotos.addEventListener("click", function () {
+            abrirSeletorMidia(function (itens) {
+                itens.forEach(function (item) {
+                    fotosIds.push(item.id);
+                    var img = document.createElement("img");
+                    img.src = item.sizes && item.sizes.thumbnail ? item.sizes.thumbnail.url : item.url;
+                    img.className = "atelie-foto-thumb";
+                    fotosPreview.appendChild(img);
+                });
+                dropzoneTexto.textContent = fotosIds.length + " foto(s) anexada(s)";
+                atualizarBotaoSugerir();
+            }, true);
+        });
+
+        btnEscolherReceitaImagem.addEventListener("click", function () {
+            abrirSeletorMidia(function (itens) {
+                if (itens.length) {
+                    receitaImagemId = itens[0].id;
+                    receitaImagemNome.textContent = "Foto da receita anexada ✓";
+                }
+            }, false);
+        });
+
+        btnSugerir.addEventListener("click", function () {
+            btnSugerir.style.display = "none";
+            analisando.style.display = "inline";
+
+            var corpo = {
+                fotos: fotosIds,
+                receita_imagem_id: receitaImagemId,
+                receita_texto: document.getElementById("atelie-receita-texto").value,
+            };
+
+            fetch(atelieProdutoIA.restUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-WP-Nonce": atelieProdutoIA.nonce,
+                },
+                body: JSON.stringify(corpo),
+            })
+                .then(function (resposta) {
+                    return resposta.json().then(function (dados) {
+                        return { ok: resposta.ok, dados: dados };
+                    });
+                })
+                .then(function (resultado) {
+                    analisando.style.display = "none";
+                    btnSugerir.style.display = "inline-block";
+
+                    if (!resultado.ok) {
+                        alert((resultado.dados && resultado.dados.erro) || "Não deu pra sugerir agora. Preencha manualmente.");
+                        mostrarFormulario();
+                        return;
+                    }
+
+                    preencherSugestao(resultado.dados.sugestao);
+                    mostrarFormulario();
+                })
+                .catch(function () {
+                    analisando.style.display = "none";
+                    btnSugerir.style.display = "inline-block";
+                    alert("Erro de conexão. Preencha manualmente.");
+                    mostrarFormulario();
+                });
+        });
+
+        function preencherSugestao(sugestao) {
+            if (!sugestao) {
+                return;
+            }
+            if (sugestao.titulo) {
+                document.getElementById("atelie-campo-titulo").value = sugestao.titulo;
+                document.getElementById("atelie-badge-titulo").style.display = "inline";
+            }
+            if (sugestao.descricao) {
+                document.getElementById("atelie-campo-descricao").value = sugestao.descricao;
+                document.getElementById("atelie-badge-descricao").style.display = "inline";
+            }
+            if (sugestao.categoria) {
+                document.getElementById("atelie-campo-categoria").value = sugestao.categoria;
+                document.getElementById("atelie-badge-categoria").style.display = "inline";
+            }
+            if (sugestao.material_tecnica) {
+                document.getElementById("atelie-campo-material").value = sugestao.material_tecnica;
+                document.getElementById("atelie-campo-material-linha").style.display = "block";
+            }
+        }
+
+        function mostrarFormulario() {
+            inputFotosIds.value = fotosIds.join(",");
+            form.style.display = "block";
+            form.scrollIntoView({ behavior: "smooth" });
+        }
+
+        btnRecomecar.addEventListener("click", function () {
+            window.location.reload();
+        });
+
+        var dispSelect = document.getElementById("atelie-campo-disponibilidade");
+        var prazoLinha = document.getElementById("atelie-campo-prazo-linha");
+        function sincronizarPrazo() {
+            prazoLinha.style.display = dispSelect.value === "sob_encomenda" ? "block" : "none";
+        }
+        dispSelect.addEventListener("change", sincronizarPrazo);
+        sincronizarPrazo();
+
+        atualizarBotaoSugerir();
+    });
+})();
