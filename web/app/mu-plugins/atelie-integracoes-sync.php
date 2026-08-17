@@ -29,6 +29,21 @@ add_action('init', function (): void {
             update_option('_mp_public_key_prod', $mp_public_key);
             update_option('_mp_access_token_prod', $mp_access_token);
         }
+
+        // Ter credencial nao é suficiente — cada metodo de pagamento do Mercado
+        // Pago precisa ser habilitado individualmente, senao o checkout mostra
+        // "nenhum metodo de pagamento disponivel" mesmo com tudo configurado.
+        foreach (['woo-mercado-pago-basic', 'woo-mercado-pago-pix', 'woo-mercado-pago-custom', 'woo-mercado-pago-ticket'] as $gatewayId) {
+            $optionName = 'woocommerce_' . $gatewayId . '_settings';
+            $settings = get_option($optionName, []);
+            if (!is_array($settings)) {
+                $settings = [];
+            }
+            if (($settings['enabled'] ?? '') !== 'yes') {
+                $settings['enabled'] = 'yes';
+                update_option($optionName, $settings);
+            }
+        }
     }
 
     // --- Melhor Envio ---
