@@ -10,6 +10,21 @@ if (!defined('ABSPATH')) {
 }
 
 /**
+ * Todo WordPress novo nasce com permalink "Plain" (?p=123), que o WooCommerce
+ * nao recomenda e quebra a API REST que o carrinho/checkout em blocos usa
+ * (descoberto testando localmente: sem isso o carrinho nao persiste). Ambiente
+ * novo (staging, producao) cairia no mesmo problema sem essa correcao — por
+ * isso fica automatico aqui, nao como passo manual de setup.
+ */
+add_action('init', function (): void {
+    if (get_option('permalink_structure') === '') {
+        global $wp_rewrite;
+        $wp_rewrite->set_permalink_structure('/%postname%/');
+        $wp_rewrite->flush_rules();
+    }
+}, 5);
+
+/**
  * Papel "Vendedora" — acesso restrito a produto/pedido, sem acesso a
  * plugins, temas, configuracoes de pagamento ou usuarios.
  * Ver plano do projeto, secao "Papeis e permissoes no painel".
