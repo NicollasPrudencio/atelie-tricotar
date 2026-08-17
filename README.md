@@ -46,8 +46,13 @@ Site em `http://localhost:8000`, phpMyAdmin em `http://localhost:8080`, e-mails 
 
 ## Hospedagem: HostGator
 
-Plano compartilhado (cPanel). Confirmado por pesquisa — validar de novo na conta real depois de
-contratar:
+**Plano M** (compartilhado, cPanel) — decisão confirmada. Escolhido em vez do Plano P porque
+precisamos de domínios/sites ilimitados na mesma conta para rodar produção + staging (o Plano P
+permite só 1 domínio, sem confirmação de que subdomínio extra não conta nessa cota). Antes de
+fechar a contratação: confirmar o preço de renovação a partir do 2º ano, e perguntar ao suporte
+da HostGator se o Plano M realmente não tem limite de subdomínio.
+
+Resto confirmado por pesquisa — validar de novo na conta real depois de contratar:
 
 - PHP até 8.2 via "Alterar versão de PHP"/MultiPHP Manager do cPanel — configurar 8.2 para o
   domínio de produção e para o subdomínio de staging.
