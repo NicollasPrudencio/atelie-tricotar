@@ -15,6 +15,7 @@
 !/web/app/mu-plugins/atelie-bootstrap.php
 !/web/app/mu-plugins/atelie-orcamento.php
 !/web/app/mu-plugins/atelie-precificacao.php
+!/web/app/mu-plugins/atelie-integracoes-sync.php
 /web/app/themes/*
 !/web/app/themes/atelie-theme
 
