@@ -11,6 +11,7 @@
         var btnEscolherReceitaImagem = document.getElementById("atelie-btn-escolher-receita-imagem");
         var receitaImagemNome = document.getElementById("atelie-receita-imagem-nome");
         var btnSugerir = document.getElementById("atelie-btn-sugerir");
+        var btnManual = document.getElementById("atelie-btn-manual");
         var analisando = document.getElementById("atelie-analisando");
         var form = document.getElementById("atelie-form-produto");
         var inputFotosIds = document.getElementById("atelie-input-fotos-ids");
@@ -18,7 +19,12 @@
 
         function atualizarBotaoSugerir() {
             btnSugerir.disabled = fotosIds.length === 0;
+            btnManual.disabled = fotosIds.length === 0;
         }
+
+        btnManual.addEventListener("click", function () {
+            mostrarFormulario();
+        });
 
         function abrirSeletorMidia(callback, multiplo) {
             var frame = wp.media({

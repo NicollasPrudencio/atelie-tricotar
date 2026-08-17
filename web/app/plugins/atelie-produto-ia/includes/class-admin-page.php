@@ -90,7 +90,10 @@ class Atelie_Admin_Page
 
                 <p>
                     <button type="button" class="button button-primary button-hero" id="atelie-btn-sugerir" disabled>
-                        ✨ Sugerir com IA
+                        ✨ Sugerir
+                    </button>
+                    <button type="button" class="button button-hero" id="atelie-btn-manual">
+                        Preencher manualmente
                     </button>
                     <span id="atelie-analisando" style="display:none;">Analisando…</span>
                 </p>
@@ -125,7 +128,7 @@ class Atelie_Admin_Page
                     </p>
 
                     <hr>
-                    <p class="atelie-secao-manual">Você preenche (a IA não sabe disso)</p>
+                    <p class="atelie-secao-manual">Sempre preenchido por você</p>
 
                     <p>
                         <label>Preço (R$)</label><br>
