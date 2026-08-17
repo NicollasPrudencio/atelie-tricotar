@@ -1,0 +1,189 @@
+name: Deploy
+
+# Pipeline em 2 estagios (ver docs/decisions/0001, secao "Pipeline CI/CD"):
+# push em develop -> deploy em staging -> (gate de testes) -> promove sozinho para main -> deploy em producao.
+# Sem aprovacao manual no fluxo padrao. Hospedagem: HostGator compartilhado, cPanel, so SFTP (sem SSH),
+# PHP ate 8.2 via seletor do cPanel — por isso o build roda aqui no runner, o servidor so recebe arquivos prontos.
+
+on:
+  push:
+    branches: [develop, main]
+
+jobs:
+  deploy-staging:
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2" # mesma versao definida no seletor de PHP do cPanel para este dominio
+          tools: composer:v2
+
+      - name: Instalar dependencias de producao
+        run: composer install --no-interaction --prefer-dist --no-dev --optimize-autoloader
+
+      - name: Gerar .env de staging a partir dos secrets
+        run: |
+          cat > .env <<EOF
+          WP_ENV=staging
+          WP_HOME=${{ secrets.WP_HOME }}
+          WP_SITEURL=${{ secrets.WP_HOME }}/wp
+          DB_NAME=${{ secrets.DB_NAME }}
+          DB_USER=${{ secrets.DB_USER }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          DB_HOST=${{ secrets.DB_HOST }}
+          AUTH_KEY=${{ secrets.AUTH_KEY }}
+          SECURE_AUTH_KEY=${{ secrets.SECURE_AUTH_KEY }}
+          LOGGED_IN_KEY=${{ secrets.LOGGED_IN_KEY }}
+          NONCE_KEY=${{ secrets.NONCE_KEY }}
+          AUTH_SALT=${{ secrets.AUTH_SALT }}
+          SECURE_AUTH_SALT=${{ secrets.SECURE_AUTH_SALT }}
+          LOGGED_IN_SALT=${{ secrets.LOGGED_IN_SALT }}
+          NONCE_SALT=${{ secrets.NONCE_SALT }}
+          AI_VISION_PROVIDER=${{ secrets.AI_VISION_PROVIDER }}
+          AI_VISION_API_KEY=${{ secrets.AI_VISION_API_KEY }}
+          AI_MOCK_MODE=false
+          AI_BATCH_MAX_ITEMS=${{ secrets.AI_BATCH_MAX_ITEMS }}
+          MERCADOPAGO_PUBLIC_KEY=${{ secrets.MERCADOPAGO_PUBLIC_KEY }}
+          MERCADOPAGO_ACCESS_TOKEN=${{ secrets.MERCADOPAGO_ACCESS_TOKEN }}
+          MERCADOPAGO_SANDBOX=true
+          MELHORENVIO_CLIENT_ID=${{ secrets.MELHORENVIO_CLIENT_ID }}
+          MELHORENVIO_CLIENT_SECRET=${{ secrets.MELHORENVIO_CLIENT_SECRET }}
+          MELHORENVIO_SANDBOX=true
+          NFE_EMISSAO_ATIVA=false
+          GOOGLE_DRIVE_CLIENT_ID=${{ secrets.GOOGLE_DRIVE_CLIENT_ID }}
+          GOOGLE_DRIVE_CLIENT_SECRET=${{ secrets.GOOGLE_DRIVE_CLIENT_SECRET }}
+          META_PIXEL_ID=${{ secrets.META_PIXEL_ID }}
+          META_CAPI_ACCESS_TOKEN=${{ secrets.META_CAPI_ACCESS_TOKEN }}
+          GA4_MEASUREMENT_ID=${{ secrets.GA4_MEASUREMENT_ID }}
+          BREVO_API_KEY=${{ secrets.BREVO_API_KEY }}
+          EOF
+
+      - name: Deploy do site (web/) via SFTP para staging
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          username: ${{ secrets.SFTP_USER }}
+          server: ${{ secrets.SFTP_HOST }}
+          port: ${{ secrets.SFTP_PORT }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          local_path: "./web/*"
+          remote_path: ${{ secrets.WEB_REMOTE_PATH }}
+          sftpArgs: "-o ConnectTimeout=10"
+
+      - name: Deploy do .env via SFTP para staging
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          username: ${{ secrets.SFTP_USER }}
+          server: ${{ secrets.SFTP_HOST }}
+          port: ${{ secrets.SFTP_PORT }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          local_path: "./.env"
+          # Precisa ficar FORA do document root (web/ -> public_html). Confirmar no cPanel se a conta
+          # de SFTP usada aqui enxerga um nivel acima do document root; se nao enxergar, mudar este
+          # secret para apontar para dentro do WEB_REMOTE_PATH e confiar no .htaccess do Bedrock
+          # (deny from all em dotfiles) como protecao.
+          remote_path: ${{ secrets.ENV_REMOTE_PATH }}
+          sftpArgs: "-o ConnectTimeout=10"
+
+      - name: Testes de fumaca contra staging (gate para promocao)
+        if: false # habilita quando tests/e2e existir (Fase 3) — ate la o gate e so o deploy ter funcionado
+        run: echo "TODO: rodar Playwright contra ${{ secrets.WP_HOME }}"
+
+  promote-to-main:
+    needs: deploy-staging
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Promover develop -> main (dispara o deploy de producao abaixo)
+        run: git push origin HEAD:main
+
+  deploy-production:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          tools: composer:v2
+
+      - name: Instalar dependencias de producao
+        run: composer install --no-interaction --prefer-dist --no-dev --optimize-autoloader
+
+      - name: Gerar .env de producao a partir dos secrets
+        run: |
+          cat > .env <<EOF
+          WP_ENV=production
+          WP_HOME=${{ secrets.WP_HOME }}
+          WP_SITEURL=${{ secrets.WP_HOME }}/wp
+          DB_NAME=${{ secrets.DB_NAME }}
+          DB_USER=${{ secrets.DB_USER }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          DB_HOST=${{ secrets.DB_HOST }}
+          AUTH_KEY=${{ secrets.AUTH_KEY }}
+          SECURE_AUTH_KEY=${{ secrets.SECURE_AUTH_KEY }}
+          LOGGED_IN_KEY=${{ secrets.LOGGED_IN_KEY }}
+          NONCE_KEY=${{ secrets.NONCE_KEY }}
+          AUTH_SALT=${{ secrets.AUTH_SALT }}
+          SECURE_AUTH_SALT=${{ secrets.SECURE_AUTH_SALT }}
+          LOGGED_IN_SALT=${{ secrets.LOGGED_IN_SALT }}
+          NONCE_SALT=${{ secrets.NONCE_SALT }}
+          AI_VISION_PROVIDER=${{ secrets.AI_VISION_PROVIDER }}
+          AI_VISION_API_KEY=${{ secrets.AI_VISION_API_KEY }}
+          AI_MOCK_MODE=false
+          AI_BATCH_MAX_ITEMS=${{ secrets.AI_BATCH_MAX_ITEMS }}
+          MERCADOPAGO_PUBLIC_KEY=${{ secrets.MERCADOPAGO_PUBLIC_KEY }}
+          MERCADOPAGO_ACCESS_TOKEN=${{ secrets.MERCADOPAGO_ACCESS_TOKEN }}
+          MERCADOPAGO_SANDBOX=${{ secrets.MERCADOPAGO_SANDBOX }}
+          MELHORENVIO_CLIENT_ID=${{ secrets.MELHORENVIO_CLIENT_ID }}
+          MELHORENVIO_CLIENT_SECRET=${{ secrets.MELHORENVIO_CLIENT_SECRET }}
+          MELHORENVIO_SANDBOX=${{ secrets.MELHORENVIO_SANDBOX }}
+          NFE_EMISSAO_ATIVA=${{ secrets.NFE_EMISSAO_ATIVA }}
+          NFE_PROVEDOR=${{ secrets.NFE_PROVEDOR }}
+          NFE_PROVEDOR_TOKEN=${{ secrets.NFE_PROVEDOR_TOKEN }}
+          GOOGLE_DRIVE_CLIENT_ID=${{ secrets.GOOGLE_DRIVE_CLIENT_ID }}
+          GOOGLE_DRIVE_CLIENT_SECRET=${{ secrets.GOOGLE_DRIVE_CLIENT_SECRET }}
+          META_PIXEL_ID=${{ secrets.META_PIXEL_ID }}
+          META_CAPI_ACCESS_TOKEN=${{ secrets.META_CAPI_ACCESS_TOKEN }}
+          GA4_MEASUREMENT_ID=${{ secrets.GA4_MEASUREMENT_ID }}
+          BREVO_API_KEY=${{ secrets.BREVO_API_KEY }}
+          EOF
+
+      - name: Deploy do site (web/) via SFTP para producao
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          username: ${{ secrets.SFTP_USER }}
+          server: ${{ secrets.SFTP_HOST }}
+          port: ${{ secrets.SFTP_PORT }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          local_path: "./web/*"
+          remote_path: ${{ secrets.WEB_REMOTE_PATH }}
+          sftpArgs: "-o ConnectTimeout=10"
+
+      - name: Deploy do .env via SFTP para producao
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          username: ${{ secrets.SFTP_USER }}
+          server: ${{ secrets.SFTP_HOST }}
+          port: ${{ secrets.SFTP_PORT }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          local_path: "./.env"
+          remote_path: ${{ secrets.ENV_REMOTE_PATH }}
+          sftpArgs: "-o ConnectTimeout=10"
+
+      - name: Notificar falha de deploy
+        if: failure()
+        run: echo "Deploy de producao falhou — ver logs deste run. (Notificacao por e-mail/Slack entra quando o canal for definido.)"
