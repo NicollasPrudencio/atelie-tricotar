@@ -32,8 +32,9 @@ antigo (removido, este é o repo oficial novo).
 ## Onde encontrar o resto
 
 - **Plano completo do projeto** (arquitetura, roadmap por fases, custos, todas as decisões
-  detalhadas): `docs/decisions/0001-stack-wordpress-woocommerce-bedrock.md` e o restante de
-  `docs/decisions/`.
+  detalhadas): `docs/decisions/0001-stack-wordpress-woocommerce-bedrock.md`.
+- **Precificação interna** (custo de matéria-prima + hora técnica, fora do plano original):
+  `docs/decisions/0002-precificacao-interna.md`.
 - **Estrutura de pastas e convenções de código**: ver `README.md`.
 
 ## Estado atual
