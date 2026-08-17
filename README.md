@@ -77,7 +77,7 @@ apontado (Cloudflare) e as contas de sandbox do Mercado Pago/Melhor Envio:
 | `AUTH_KEY`, `SECURE_AUTH_KEY`, `LOGGED_IN_KEY`, `NONCE_KEY`, `AUTH_SALT`, `SECURE_AUTH_SALT`, `LOGGED_IN_SALT`, `NONCE_SALT` | Gerar em https://roots.io/salts.html — um conjunto por ambiente, nunca reaproveitar |
 | `AI_VISION_PROVIDER`, `AI_VISION_API_KEY`, `AI_BATCH_MAX_ITEMS` | Ver plano, seção do plugin de IA |
 | `MERCADOPAGO_PUBLIC_KEY`, `MERCADOPAGO_ACCESS_TOKEN`, `MERCADOPAGO_SANDBOX` | Conta de desenvolvedor Mercado Pago |
-| `MELHORENVIO_CLIENT_ID`, `MELHORENVIO_CLIENT_SECRET`, `MELHORENVIO_SANDBOX` | Conta de desenvolvedor Melhor Envio |
+| `MELHORENVIO_TOKEN`, `MELHORENVIO_SANDBOX` | Token gerado em melhorenvio.com.br/painel/gerenciar/tokens (ou sandbox.melhorenvio.com.br) — o plugin não usa OAuth/redirect URI |
 | `NFE_EMISSAO_ATIVA`, `NFE_PROVEDOR`, `NFE_PROVEDOR_TOKEN` | Só produção — fica `false`/vazio até existir CNPJ (ver plano) |
 | `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET` | Importação em massa (Fase 3) |
 | `META_PIXEL_ID`, `META_CAPI_ACCESS_TOKEN`, `GA4_MEASUREMENT_ID` | Tracking (Fase 2) |

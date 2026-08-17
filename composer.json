@@ -12,16 +12,17 @@
     "require": {
         "php": ">=8.1 <8.3",
         "composer/installers": "^2.2",
-        "vlucas/phpdotenv": "^5.6",
+        "oscarotero/env": "^2.1",
         "roots/bedrock-autoloader": "^1.0",
         "roots/wordpress": "^6.5",
         "roots/wp-config": "^1.0",
         "roots/wp-password-bcrypt": "^1.1",
-        "wpackagist-plugin/woocommerce": "^9.0",
-        "wpackagist-plugin/wp-2fa": "*",
-        "wpackagist-plugin/woocommerce-mercadopago": "*",
+        "vlucas/phpdotenv": "^5.6",
         "wpackagist-plugin/melhor-envio-cotacao": "*",
-        "wpackagist-plugin/shortpixel-image-optimiser": "*"
+        "wpackagist-plugin/shortpixel-image-optimiser": "*",
+        "wpackagist-plugin/woocommerce": "^9.0",
+        "wpackagist-plugin/woocommerce-mercadopago": "*",
+        "wpackagist-plugin/wp-2fa": "*"
     },
     "require-dev": {
         "squizlabs/php_codesniffer": "^3.9",

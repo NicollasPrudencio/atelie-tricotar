@@ -68,6 +68,13 @@ Config::define('LOGGED_IN_SALT', env('LOGGED_IN_SALT'));
 Config::define('NONCE_SALT', env('NONCE_SALT'));
 
 /**
+ * Chave de criptografia do plugin WP 2FA. Definida aqui via env de proposito
+ * — sem isso o plugin escreve o valor direto no wp-config.php (versionado em
+ * git) na hora de ativar. Gerar um valor novo por ambiente, nunca reaproveitar.
+ */
+Config::define('WP2FA_ENCRYPT_KEY', env('WP2FA_ENCRYPT_KEY'));
+
+/**
  * Custom settings
  */
 Config::define('AUTOMATIC_UPDATER_DISABLED', true);
