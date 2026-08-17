@@ -25,6 +25,22 @@ add_action('init', function (): void {
 }, 5);
 
 /**
+ * 2FA obrigatorio pra qualquer conta com acesso ao painel — mais de uma
+ * pessoa vai ter login (ver plano, secao "Papeis e permissoes no painel").
+ * O plugin WP 2FA ja vem com metodos padrao sensatos (app TOTP, codigo por
+ * e-mail, codigos de backup, carencia de 3 dias) — so falta ligar a
+ * obrigatoriedade, o que fica automatico aqui pra nao depender de alguem
+ * lembrar de configurar em cada ambiente novo.
+ */
+add_action('init', function (): void {
+    $policy = get_option('wp_2fa_policy', []);
+    if (is_array($policy) && ($policy['enforcement-policy'] ?? '') !== 'all-users') {
+        $policy['enforcement-policy'] = 'all-users';
+        update_option('wp_2fa_policy', $policy);
+    }
+}, 5);
+
+/**
  * Papel "Vendedora" — acesso restrito a produto/pedido, sem acesso a
  * plugins, temas, configuracoes de pagamento ou usuarios.
  * Ver plano do projeto, secao "Papeis e permissoes no painel".
