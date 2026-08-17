@@ -1,10 +1,26 @@
+x-code-volumes: &code-volumes
+  volumes:
+    - ..:/var/www/html
+    # Volumes nomeados pras pastas geradas pelo composer (WordPress core, vendor,
+    # plugins de terceiros) — Docker Desktop no Windows e muito lento fazendo
+    # bind-mount de dezenas de milhares de arquivos do host pro Linux. Isso mantem
+    # esses arquivos direto no volume gerenciado do Docker (rapido) e so deixa no
+    # bind-mount (lento, mas poucos arquivos) o que a gente realmente edita:
+    # tema, plugins proprios, config. Repopular apos mudar isso: composer install.
+    - vendor_data:/var/www/html/vendor
+    - wp_core_data:/var/www/html/web/wp
+    - wp_woocommerce_data:/var/www/html/web/app/plugins/woocommerce
+    - wp_mercadopago_data:/var/www/html/web/app/plugins/woocommerce-mercadopago
+    - wp_melhorenvio_data:/var/www/html/web/app/plugins/melhor-envio-cotacao
+    - wp_shortpixel_data:/var/www/html/web/app/plugins/shortpixel-image-optimiser
+    - wp_2fa_data:/var/www/html/web/app/plugins/wp-2fa
+
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    volumes:
-      - ..:/var/www/html
+    <<: *code-volumes
     environment:
       - PHP_IDE_CONFIG=serverName=atelie.local
     depends_on:
@@ -14,8 +30,17 @@ services:
     image: nginx:1.27-alpine
     ports:
       - "8000:80"
+    # (mesma lista de volumes do app acima — nginx tambem serve arquivo estatico
+    # direto, sem passar pelo PHP, entao precisa enxergar as mesmas pastas)
     volumes:
       - ..:/var/www/html
+      - vendor_data:/var/www/html/vendor
+      - wp_core_data:/var/www/html/web/wp
+      - wp_woocommerce_data:/var/www/html/web/app/plugins/woocommerce
+      - wp_mercadopago_data:/var/www/html/web/app/plugins/woocommerce-mercadopago
+      - wp_melhorenvio_data:/var/www/html/web/app/plugins/melhor-envio-cotacao
+      - wp_shortpixel_data:/var/www/html/web/app/plugins/shortpixel-image-optimiser
+      - wp_2fa_data:/var/www/html/web/app/plugins/wp-2fa
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - app
@@ -51,3 +76,10 @@ services:
 
 volumes:
   db_data:
+  vendor_data:
+  wp_core_data:
+  wp_woocommerce_data:
+  wp_mercadopago_data:
+  wp_melhorenvio_data:
+  wp_shortpixel_data:
+  wp_2fa_data:
