@@ -9,9 +9,8 @@
 
     <file>./web/app/mu-plugins</file>
     <file>./web/app/plugins/atelie-produto-ia</file>
+    <file>./web/app/themes/atelie-theme</file>
     <file>./config</file>
-
-    <!-- web/app/themes/atelie-theme entra aqui quando o tema for criado (Fase 1 do plano) -->
 
 
     <rule ref="WordPress"/>

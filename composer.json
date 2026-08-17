@@ -18,7 +18,11 @@
         "roots/wp-config": "^1.0",
         "roots/wp-password-bcrypt": "^1.1",
         "wpackagist-plugin/woocommerce": "^9.0",
-        "wpackagist-plugin/two-factor": "^0.9"
+        "wpackagist-plugin/two-factor": "^0.9",
+        "wpackagist-plugin/woocommerce-mercadopago": "*",
+        "wpackagist-plugin/melhor-envio-cotacao": "*",
+        "wpackagist-plugin/shortpixel-image-optimiser": "*",
+        "wpackagist-plugin/wpforms-lite": "*"
     },
     "require-dev": {
         "squizlabs/php_codesniffer": "^3.9",

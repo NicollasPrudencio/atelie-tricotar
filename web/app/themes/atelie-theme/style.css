@@ -1,0 +1,22 @@
+/*
+Theme Name: Atelie Theme
+Description: Tema base do site do ateliê. Visual/branding ainda por definir — este é o
+             ponto de partida funcional (suporte a WooCommerce, layout minimo responsivo),
+             não o design final.
+Author: Atelie
+Version: 0.1.0
+Requires PHP: 8.1
+Text Domain: atelie-theme
+*/
+
+body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.site-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
