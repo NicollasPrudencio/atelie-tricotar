@@ -61,6 +61,44 @@
     color: #6c6072;
 }
 
+.atelie-lote-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+    max-width: 960px;
+}
+
+.atelie-lote-card {
+    background: #fff;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    padding: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.atelie-lote-card img {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.atelie-chip {
+    display: inline-block;
+    align-self: flex-start;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+}
+
+.atelie-chip-processando { background: #f6ecd6; color: #4a3710; }
+.atelie-chip-pronto { background: #f3e4ee; color: #5b2a4a; }
+.atelie-chip-revisado { background: #e1efe4; color: #3f6b4c; }
+.atelie-chip-erro { background: #f8e3e4; color: #a8434b; }
+
 #atelie-analisando {
     font-weight: 600;
     color: #6c6072;
