@@ -41,6 +41,18 @@ add_action('init', function (): void {
 }, 5);
 
 /**
+ * Fora de producao (dev local, staging via tunel), o site fica invisivel
+ * pra buscadores automaticamente — evita indexar um ambiente de teste sem
+ * querer, mesmo estando publicamente acessivel via tunel. Nunca aplica em
+ * producao, onde a indexacao normal precisa continuar ligada.
+ */
+add_action('init', function (): void {
+    if (WP_ENV !== 'production' && get_option('blog_public') !== '0') {
+        update_option('blog_public', '0');
+    }
+}, 5);
+
+/**
  * Papel "Vendedora" — acesso restrito a produto/pedido, sem acesso a
  * plugins, temas, configuracoes de pagamento ou usuarios.
  * Ver plano do projeto, secao "Papeis e permissoes no painel".
