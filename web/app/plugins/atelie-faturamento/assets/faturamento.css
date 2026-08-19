@@ -1,0 +1,53 @@
+.atelie-faturamento .atelie-card {
+    background: #fff;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.atelie-faturamento .atelie-status-data {
+    color: #6c6072;
+    font-size: 0.85rem;
+}
+
+.atelie-faturamento .atelie-fat-resumo {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.atelie-faturamento .atelie-fat-card {
+    margin-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.atelie-faturamento .atelie-fat-rotulo {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #6c6072;
+}
+
+.atelie-faturamento .atelie-fat-valor {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1d2327;
+}
+
+.atelie-faturamento .atelie-fat-valor-positivo {
+    color: #3f6b4c;
+}
+
+.atelie-faturamento .atelie-fat-valor-negativo {
+    color: #a8434b;
+}
+
+.atelie-faturamento .atelie-fat-card-lucro {
+    border: 2px solid #d8779e;
+    background: #f7dfe9;
+}
