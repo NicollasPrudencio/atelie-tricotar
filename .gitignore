@@ -5,12 +5,14 @@
 
 # Dependências (instaladas via composer install no CI/deploy)
 /vendor
+/.claude
 /node_modules
 
 # WordPress core e conteúdo de terceiros (gerenciados via composer.json)
 /web/wp
 /web/app/plugins/*
 !/web/app/plugins/atelie-produto-ia
+!/web/app/plugins/atelie-faturamento
 /web/app/mu-plugins/*
 !/web/app/mu-plugins/atelie-bootstrap.php
 !/web/app/mu-plugins/atelie-orcamento.php
@@ -23,6 +25,11 @@
 /web/app/uploads
 /web/app/upgrade
 /web/app/cache
+
+# Traduções pt_BR baixadas do wordpress.org (wp language core/plugin install) —
+# conteúdo de terceiro, mesma lógica do /web/wp. Precisa ser reinstalado em
+# qualquer ambiente novo (dev local, CI, staging, produção).
+/web/app/languages
 
 # Artefatos locais
 *.log

@@ -38,6 +38,11 @@ Config::define('WP_HOME', env('WP_HOME'));
 Config::define('WP_SITEURL', env('WP_SITEURL'));
 
 /**
+ * Site vende só pro Brasil, publico e admin em pt_BR sempre — não varia por ambiente.
+ */
+Config::define('WPLANG', 'pt_BR');
+
+/**
  * Custom Content Directory
  */
 Config::define('CONTENT_DIR', '/app');
