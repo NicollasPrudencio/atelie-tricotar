@@ -18,7 +18,7 @@
         var btnRecomecar = document.getElementById("atelie-btn-recomecar");
 
         function atualizarBotaoSugerir() {
-            btnSugerir.disabled = fotosIds.length === 0;
+            btnSugerir.disabled = fotosIds.length === 0 || !atelieProdutoIA.iaDisponivel;
             btnManual.disabled = fotosIds.length === 0;
         }
 
@@ -43,10 +43,20 @@
             abrirSeletorMidia(function (itens) {
                 itens.forEach(function (item) {
                     fotosIds.push(item.id);
+                    var indice = fotosIds.length - 1;
+
+                    var wrapper = document.createElement("div");
+                    wrapper.className = "atelie-foto-item";
+
                     var img = document.createElement("img");
                     img.src = item.sizes && item.sizes.thumbnail ? item.sizes.thumbnail.url : item.url;
                     img.className = "atelie-foto-thumb";
-                    fotosPreview.appendChild(img);
+                    wrapper.appendChild(img);
+                    fotosPreview.appendChild(wrapper);
+
+                    AtelieEditarImagem.anexar(wrapper, img, item.id, atelieProdutoIA, function (novoId) {
+                        fotosIds[indice] = novoId;
+                    });
                 });
                 dropzoneTexto.textContent = fotosIds.length + " foto(s) anexada(s)";
                 atualizarBotaoSugerir();
@@ -113,10 +123,14 @@
             if (sugestao.titulo) {
                 document.getElementById("atelie-campo-titulo").value = sugestao.titulo;
                 document.getElementById("atelie-badge-titulo").style.display = "inline";
+                // Guarda o valor original da sugestão — se o texto publicado for igual a
+                // isso, não precisa passar pela revisão da IA de novo (ver class-revisao-vendas.php).
+                document.getElementById("atelie-titulo-ia-original").value = sugestao.titulo;
             }
             if (sugestao.descricao) {
                 document.getElementById("atelie-campo-descricao").value = sugestao.descricao;
                 document.getElementById("atelie-badge-descricao").style.display = "inline";
+                document.getElementById("atelie-descricao-ia-original").value = sugestao.descricao;
             }
             if (sugestao.categoria) {
                 document.getElementById("atelie-campo-categoria").value = sugestao.categoria;

@@ -33,7 +33,7 @@ class Atelie_Lote_Admin_Pages
         );
 
         add_submenu_page(
-            null, // nao aparece no menu lateral, so acessivel pelo link apos criar o lote
+            '', // nao aparece no menu lateral, so acessivel pelo link apos criar o lote — '' (nao null!) e o jeito documentado de esconder
             'Revisar lote',
             'Revisar lote',
             'edit_products',
@@ -66,6 +66,11 @@ class Atelie_Lote_Admin_Pages
     public function renderizar_upload(): void
     {
         $limite = env('AI_BATCH_MAX_ITEMS') ?: 25;
+        $status = Atelie_Ai_Config::obter_status();
+        if ($status['verificado_em'] === 0) {
+            $status = Atelie_Ai_Config::testar_conexao();
+        }
+        $ia_disponivel = $status['ok'];
         ?>
         <div class="wrap atelie-novo-produto">
             <h1>Criar em massa</h1>
@@ -75,10 +80,25 @@ class Atelie_Lote_Admin_Pages
                 <div class="notice notice-error"><p>Selecione pelo menos uma foto.</p></div>
             <?php endif; ?>
 
+            <?php if (!$ia_disponivel) : ?>
+                <p class="atelie-status atelie-status-erro atelie-status-inline">
+                    ⚠️ Essa tela depende da IA de visão, que está indisponível no momento — <?php echo esc_html($status['mensagem']); ?>
+                    <?php if (current_user_can('manage_options')) : ?>
+                        <a href="<?php echo esc_url(admin_url('admin.php?page=atelie-config-ia')); ?>">Configurar agora</a>
+                    <?php else : ?>
+                        Avise o administrador do site — enquanto isso, use "Novo Produto" → "Preencher manualmente" pra cadastrar um de cada vez.
+                    <?php endif; ?>
+                </p>
+            <?php endif; ?>
+
             <div class="atelie-card">
                 <p>Cada foto selecionada vira um produto candidato, revisado separadamente depois. Limite de <?php echo esc_html($limite); ?> fotos por lote.</p>
                 <div id="atelie-lote-fotos-preview" class="atelie-fotos-preview"></div>
-                <p><button type="button" class="button button-primary" id="atelie-lote-escolher-fotos">Escolher fotos</button></p>
+                <p>
+                    <span class="atelie-tooltip" <?php echo $ia_disponivel ? '' : Atelie_Ai_Config::atributo_tooltip_indisponivel($status); ?>>
+                        <button type="button" class="button button-primary" id="atelie-lote-escolher-fotos" <?php disabled(!$ia_disponivel); ?>>Escolher fotos</button>
+                    </span>
+                </p>
 
                 <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
                     <input type="hidden" name="action" value="atelie_criar_lote">
