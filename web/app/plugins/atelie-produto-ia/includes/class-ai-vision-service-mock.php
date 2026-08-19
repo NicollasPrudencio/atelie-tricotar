@@ -27,4 +27,59 @@ class Atelie_Ai_Vision_Service_Mock implements Atelie_Ai_Vision_Service_Interfac
             'material_tecnica' => $tem_receita ? '[MOCK] Fio de algodão, crochê, ponto baixo.' : '',
         ];
     }
+
+    public function sugerirCase(array $imagens_paths, ?string $relato = null): array
+    {
+        usleep(600000);
+
+        $qtd_fotos = count($imagens_paths);
+
+        return [
+            'titulo' => sprintf('[MOCK] Trabalho sob encomenda (%d foto%s)', $qtd_fotos, $qtd_fotos === 1 ? '' : 's'),
+            'descricao' => $relato
+                ? '[MOCK] Case gerado a partir do relato da artesã: ' . mb_substr($relato, 0, 80) . '…'
+                : '[MOCK] Trabalho feito sob encomenda, com atenção aos detalhes do pedido.',
+        ];
+    }
+
+    public function editarImagem(string $imagem_path, string $prompt): array
+    {
+        usleep(600000);
+
+        if (!is_readable($imagem_path)) {
+            return ['ok' => false, 'imagem_base64' => null, 'mime_type' => null, 'mensagem' => 'Foto não encontrada.'];
+        }
+
+        // [MOCK] devolve a mesma foto sem alterar — só pra testar o fluxo (escolher, editar,
+        // trocar no formulário) sem gastar API de verdade nem precisar de faturamento ativo.
+        return [
+            'ok' => true,
+            'imagem_base64' => base64_encode((string) file_get_contents($imagem_path)),
+            'mime_type' => 'image/jpeg',
+            'mensagem' => '[MOCK] Imagem "editada" (modo simulado, imagem não foi alterada de verdade).',
+        ];
+    }
+
+    public function testarConexao(): array
+    {
+        return ['ok' => true, 'mensagem' => 'Modo simulado (AI_MOCK_MODE) — sempre disponível.'];
+    }
+
+    public function avaliarTexto(string $titulo, string $descricao, string $tipoObjeto): array
+    {
+        // [MOCK] simula reprovar qualquer texto que contenha a palavra "artesã" no corpo,
+        // só pra dar pra testar o fluxo de bloqueio localmente sem gastar API de verdade.
+        $reprovar = stripos($descricao, 'artesã') !== false || stripos($titulo, 'artesã') !== false;
+
+        if (!$reprovar) {
+            return ['ok' => true, 'problemas' => [], 'titulo_sugerido' => null, 'descricao_sugerida' => null];
+        }
+
+        return [
+            'ok' => false,
+            'problemas' => ['[MOCK] Texto menciona a artesã — o texto deve falar da peça, não de quem fez.'],
+            'titulo_sugerido' => $titulo,
+            'descricao_sugerida' => '[MOCK] Descrição corrigida, sem mencionar a artesã.',
+        ];
+    }
 }

@@ -29,12 +29,42 @@ class Atelie_Rest_Controller
                     'receita_texto' => ['required' => false],
                 ],
             ]);
+
+            register_rest_route('atelie/v1', '/sugerir-case', [
+                'methods' => 'POST',
+                'callback' => [$this, 'sugerir_case'],
+                'permission_callback' => [$this, 'usuario_pode_criar_case'],
+                'args' => [
+                    'fotos' => ['required' => true],
+                    'relato' => ['required' => false],
+                ],
+            ]);
+
+            register_rest_route('atelie/v1', '/editar-imagem', [
+                'methods' => 'POST',
+                'callback' => [$this, 'editar_imagem'],
+                'permission_callback' => [$this, 'usuario_pode_editar_imagem'],
+                'args' => [
+                    'foto_id' => ['required' => true],
+                    'prompt' => ['required' => true],
+                ],
+            ]);
         });
     }
 
     public function usuario_pode_criar_produto(): bool
     {
         return current_user_can('edit_products');
+    }
+
+    public function usuario_pode_criar_case(): bool
+    {
+        return current_user_can('edit_atelie_cases');
+    }
+
+    public function usuario_pode_editar_imagem(): bool
+    {
+        return current_user_can('edit_products') || current_user_can('edit_atelie_cases');
     }
 
     public function analisar_fotos(WP_REST_Request $request): WP_REST_Response
@@ -87,6 +117,139 @@ class Atelie_Rest_Controller
         $this->registrar_log('ok, ' . count($caminhos) . ' imagem(ns)');
 
         return new WP_REST_Response(['sugestao' => $sugestao], 200);
+    }
+
+    public function sugerir_case(WP_REST_Request $request): WP_REST_Response
+    {
+        $fotos_ids = array_map('absint', (array) $request->get_param('fotos'));
+        $fotos_ids = array_filter($fotos_ids);
+
+        if (empty($fotos_ids)) {
+            return new WP_REST_Response(['erro' => 'Anexe pelo menos uma foto.'], 400);
+        }
+
+        if (!$this->dentro_do_limite_diario()) {
+            return new WP_REST_Response(
+                ['erro' => 'Limite diário de análises por IA atingido. Tente de novo amanhã ou preencha manualmente.'],
+                429
+            );
+        }
+
+        $caminhos = [];
+        foreach ($fotos_ids as $id) {
+            $caminho = get_attached_file($id);
+            if ($caminho) {
+                $caminhos[] = $caminho;
+            }
+        }
+
+        $relato = $request->get_param('relato');
+        $relato = is_string($relato) && trim($relato) !== '' ? sanitize_textarea_field($relato) : null;
+
+        try {
+            $servico = Atelie_Ai_Vision_Service_Factory::criar();
+            $sugestao = $servico->sugerirCase($caminhos, $relato);
+        } catch (Throwable $e) {
+            $this->registrar_log('erro (case): ' . $e->getMessage());
+            return new WP_REST_Response(
+                ['erro' => 'Não foi possível gerar a sugestão agora. Pode preencher os campos manualmente.'],
+                502
+            );
+        }
+
+        $this->incrementar_contador_diario();
+        $this->registrar_log('ok (case), ' . count($caminhos) . ' imagem(ns)');
+
+        return new WP_REST_Response(['sugestao' => $sugestao], 200);
+    }
+
+    public function editar_imagem(WP_REST_Request $request): WP_REST_Response
+    {
+        $foto_id = absint($request->get_param('foto_id'));
+        $prompt = is_string($request->get_param('prompt')) ? sanitize_text_field($request->get_param('prompt')) : '';
+
+        if (!$foto_id || $prompt === '') {
+            return new WP_REST_Response(['erro' => 'Selecione a foto e descreva a edição desejada.'], 400);
+        }
+
+        if (!$this->dentro_do_limite_diario()) {
+            return new WP_REST_Response(['erro' => 'Limite diário de chamadas de IA atingido. Tente de novo amanhã.'], 429);
+        }
+
+        $caminho = get_attached_file($foto_id);
+        if (!$caminho) {
+            return new WP_REST_Response(['erro' => 'Foto não encontrada.'], 404);
+        }
+
+        try {
+            $servico = Atelie_Ai_Vision_Service_Factory::criar();
+            $resultado = $servico->editarImagem($caminho, $prompt);
+        } catch (Throwable $e) {
+            $this->registrar_log('erro (editar imagem): ' . $e->getMessage());
+            return new WP_REST_Response(['erro' => 'Não foi possível editar a imagem agora.'], 502);
+        }
+
+        if (!$resultado['ok']) {
+            $this->registrar_log('erro (editar imagem): ' . $resultado['mensagem']);
+            return new WP_REST_Response(['erro' => $resultado['mensagem']], 502);
+        }
+
+        $novo_id = $this->salvar_imagem_editada((string) $resultado['imagem_base64'], (string) $resultado['mime_type'], $foto_id);
+        if (!$novo_id) {
+            return new WP_REST_Response(['erro' => 'A IA editou a imagem, mas não deu pra salvar na biblioteca de mídia.'], 500);
+        }
+
+        $this->incrementar_contador_diario();
+        $this->registrar_log('ok (editar imagem), origem foto ' . $foto_id . ' -> nova ' . $novo_id);
+
+        return new WP_REST_Response([
+            'imagem_id' => $novo_id,
+            'url' => wp_get_attachment_image_url($novo_id, 'thumbnail'),
+        ], 200);
+    }
+
+    /**
+     * Salva o resultado da edição como um anexo NOVO na Biblioteca de Mídia —
+     * nunca sobrescreve o arquivo original, pra quem usa o painel poder
+     * comparar e escolher qual usar (ou descartar a versão editada).
+     */
+    private function salvar_imagem_editada(string $imagem_base64, string $mime_type, int $foto_original_id): ?int
+    {
+        $dados_binarios = base64_decode($imagem_base64, true);
+        if ($dados_binarios === false) {
+            return null;
+        }
+
+        $extensao = match ($mime_type) {
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            default => 'jpg',
+        };
+
+        $nome_base = get_the_title($foto_original_id) ?: 'imagem';
+        $nome_arquivo = sanitize_file_name($nome_base . '-editada-' . time() . '.' . $extensao);
+
+        $upload = wp_upload_bits($nome_arquivo, null, $dados_binarios);
+        if (!empty($upload['error'])) {
+            return null;
+        }
+
+        $anexo_id = wp_insert_attachment([
+            'post_mime_type' => $mime_type,
+            'post_title' => sanitize_file_name($nome_arquivo),
+            'post_status' => 'inherit',
+            'post_parent' => 0,
+        ], $upload['file']);
+
+        if (is_wp_error($anexo_id) || !$anexo_id) {
+            return null;
+        }
+
+        require_once ABSPATH . 'wp-admin/includes/image.php';
+        $metadados = wp_generate_attachment_metadata($anexo_id, $upload['file']);
+        wp_update_attachment_metadata($anexo_id, $metadados);
+
+        return $anexo_id;
     }
 
     private function limite_diario(): int

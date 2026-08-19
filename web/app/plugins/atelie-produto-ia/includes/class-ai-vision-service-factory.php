@@ -8,20 +8,18 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-use function Env\env;
-
 class Atelie_Ai_Vision_Service_Factory
 {
     public static function criar(): Atelie_Ai_Vision_Service_Interface
     {
-        if (filter_var(env('AI_MOCK_MODE'), FILTER_VALIDATE_BOOLEAN)) {
+        if (Atelie_Ai_Config::em_modo_mock()) {
             return new Atelie_Ai_Vision_Service_Mock();
         }
 
-        $provider = env('AI_VISION_PROVIDER') ?: 'gemini';
+        $provider = Atelie_Ai_Config::obter_provedor();
 
         return match ($provider) {
-            'gemini' => new Atelie_Ai_Vision_Service_Gemini((string) env('AI_VISION_API_KEY')),
+            'gemini' => new Atelie_Ai_Vision_Service_Gemini(Atelie_Ai_Config::obter_chave()),
             default => throw new RuntimeException("Provedor de IA de visão desconhecido: {$provider}"),
         };
     }
