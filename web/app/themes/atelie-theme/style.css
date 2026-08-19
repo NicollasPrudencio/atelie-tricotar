@@ -1,22 +1,715 @@
 /*
 Theme Name: Atelie Theme
-Description: Tema base do site do ateliê. Visual/branding ainda por definir — este é o
-             ponto de partida funcional (suporte a WooCommerce, layout minimo responsivo),
-             não o design final.
-Author: Atelie
-Version: 0.1.0
+Description: Tema do site do Ateliê Tricotar — identidade baseada no logo (pêssego, rosa,
+             marfim, tipografia serifada quente + sans arredondada), tricô/crochê/amigurumi.
+Author: Atelier Tricotar
+Version: 0.2.5
 Requires PHP: 8.1
 Text Domain: atelie-theme
 */
 
-body {
-    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-    margin: 0;
-    line-height: 1.5;
+@import url('assets/fonts/fonts.css');
+
+/* ---------------------------------------------------------------------------
+ * Tokens de marca — extraídos do logo (plaquinha marfim com borda ondulada
+ * bege, texto rosa com brilho suave sobre fundo pêssego).
+ * ------------------------------------------------------------------------ */
+:root {
+    --cor-pessego: #f6c9ae;
+    --cor-pessego-clara: #fbe3d3;
+    --cor-marfim: #fffaf3;
+    --cor-superficie: #ffffff;
+    --cor-rosa: #d8779e;
+    --cor-rosa-escuro: #b8577e;
+    --cor-rosa-suave: #f7dfe9;
+    --cor-bege: #d9c39d;
+    --cor-tinta: #4a3b35;
+    --cor-tinta-suave: #8a776e;
+    --cor-sucesso: #5c8a68;
+    --cor-erro: #b8465f;
+
+    --fonte-display: 'Fraunces', ui-serif, Georgia, serif;
+    --fonte-corpo: 'Mulish', system-ui, -apple-system, "Segoe UI", sans-serif;
+
+    --raio-card: 18px;
+    --raio-pilula: 999px;
+    --sombra-card: 0 10px 30px -14px rgba(74, 59, 53, 0.28);
+    --sombra-card-hover: 0 16px 36px -14px rgba(74, 59, 53, 0.38);
+    --borda-card: 1px solid #ecdcc9;
 }
 
+/* ---------------------------------------------------------------------------
+ * Reset leve + base
+ * ------------------------------------------------------------------------ */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    background: var(--cor-marfim);
+    color: var(--cor-tinta);
+    font-family: var(--fonte-corpo);
+    font-size: 1rem;
+    line-height: 1.65;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+a {
+    color: var(--cor-rosa-escuro);
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 3px;
+}
+
+a:hover {
+    color: var(--cor-rosa);
+}
+
+h1, h2, h3, h4 {
+    font-family: var(--fonte-display);
+    font-weight: 600;
+    color: var(--cor-tinta);
+    line-height: 1.2;
+    text-wrap: balance;
+    margin: 0 0 0.6em;
+}
+
+h1 { font-size: clamp(2rem, 1.5rem + 2vw, 3.2rem); }
+h2 { font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2.2rem); }
+h3 { font-size: 1.35rem; }
+
+p { margin: 0 0 1em; }
+
+.atelie-eyebrow {
+    display: inline-block;
+    font-family: var(--fonte-corpo);
+    font-weight: 800;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--cor-rosa-escuro);
+    margin-bottom: 0.5em;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    a, button, .atelie-btn, .atelie-case-card, .atelie-produto-card {
+        transition: color 0.15s ease, background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+}
+
+/* ---------------------------------------------------------------------------
+ * Layout
+ * ------------------------------------------------------------------------ */
 .site-container {
-    max-width: 1100px;
+    max-width: 1140px;
     margin: 0 auto;
-    padding: 0 1rem;
+    padding: 0 1.25rem;
+}
+
+.site-main {
+    padding: 2.5rem 0 4rem;
+}
+
+/* ---------------------------------------------------------------------------
+ * Cabeçalho
+ * ------------------------------------------------------------------------ */
+.site-header {
+    background: var(--cor-superficie);
+    border-bottom: var(--borda-card);
+}
+
+.site-header__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 1rem 0;
+}
+
+.site-header__brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: var(--cor-tinta);
+}
+
+.site-header__brand img {
+    max-height: 56px;
+    width: auto;
+    border-radius: 50%;
+}
+
+.site-header__brand-nome {
+    font-family: var(--fonte-display);
+    font-weight: 700;
+    font-size: 1.4rem;
+    color: var(--cor-rosa-escuro);
+}
+
+.site-header__nav ul {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.75rem;
+    margin: 0;
+    padding: 0;
+    font-weight: 600;
+}
+
+.site-header__nav a {
+    color: var(--cor-tinta);
+    text-decoration: none;
+}
+
+.site-header__nav a:hover {
+    color: var(--cor-rosa-escuro);
+}
+
+.site-header__acoes {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.site-header__carrinho {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--cor-rosa-suave);
+    color: var(--cor-rosa-escuro);
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--raio-pilula);
+    text-decoration: none;
+}
+
+.site-header__carrinho:hover {
+    background: var(--cor-rosa);
+    color: #fff;
+}
+
+.site-header__menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.6rem;
+    color: var(--cor-tinta);
+    cursor: pointer;
+}
+
+@media (max-width: 800px) {
+    .site-header__nav { display: none; }
+    .site-header__nav.is-aberto { display: block; width: 100%; order: 3; padding-top: 1rem; }
+    .site-header__nav.is-aberto ul { flex-direction: column; gap: 0.85rem; }
+    .site-header__bar { flex-wrap: wrap; }
+    .site-header__menu-toggle { display: block; }
+}
+
+/* ---------------------------------------------------------------------------
+ * Botões e formulários (compartilhado com WooCommerce e orçamento)
+ * ------------------------------------------------------------------------ */
+.atelie-btn,
+.woocommerce a.button,
+.woocommerce button.button,
+.woocommerce #respond input#submit,
+.woocommerce input.button,
+.atelie-orcamento-form button[type="submit"],
+.atelie-novo-produto .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: var(--cor-rosa);
+    color: #fff !important;
+    font-family: var(--fonte-corpo);
+    font-weight: 700;
+    font-size: 0.95rem;
+    padding: 0.75rem 1.6rem;
+    border: none;
+    border-radius: var(--raio-pilula);
+    cursor: pointer;
+    text-decoration: none;
+    box-shadow: 0 8px 18px -8px rgba(184, 87, 126, 0.55);
+}
+
+.atelie-btn:hover,
+.woocommerce a.button:hover,
+.woocommerce button.button:hover,
+.woocommerce #respond input#submit:hover,
+.woocommerce input.button:hover,
+.atelie-orcamento-form button[type="submit"]:hover,
+.atelie-novo-produto .button:hover {
+    background: var(--cor-rosa-escuro);
+    color: #fff !important;
+    transform: translateY(-1px);
+}
+
+.atelie-btn--fantasma {
+    background: transparent;
+    color: var(--cor-rosa-escuro) !important;
+    box-shadow: none;
+    border: 1.5px solid var(--cor-rosa);
+}
+
+.atelie-btn--fantasma:hover {
+    background: var(--cor-rosa-suave);
+}
+
+/*
+ * "Add to cart" do loop de produtos: o CSS do WooCommerce Blocks (wc-blocks.css)
+ * às vezes define largura/altura fixas pra um botão-ícone circular, que competia
+ * com a pílula acima e deixava o texto quebrado dentro de um círculo minúsculo.
+ * Trava geometria e quebra de linha aqui pra nunca mais depender de qual CSS
+ * carrega por último.
+ */
+.woocommerce ul.products li.product a.button,
+.woocommerce ul.products li.product a.add_to_cart_button,
+.woocommerce div.product form.cart .button {
+    width: auto !important;
+    height: auto !important;
+    aspect-ratio: auto !important;
+    white-space: nowrap !important;
+    line-height: 1.3 !important;
+    border-radius: var(--raio-pilula) !important;
+    padding: 0.65rem 1.4rem !important;
+    font-size: 0.88rem !important;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="password"],
+input[type="number"],
+input[type="search"],
+input[type="file"],
+textarea,
+select,
+.woocommerce table.shop_table td select,
+.woocommerce .quantity input.qty {
+    font-family: var(--fonte-corpo);
+    font-size: 1rem;
+    color: var(--cor-tinta);
+    background: var(--cor-superficie);
+    border: 1.5px solid #e6d7c7;
+    border-radius: 10px;
+    padding: 0.65rem 0.9rem;
+    width: 100%;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+a:focus-visible,
+button:focus-visible {
+    outline: 3px solid var(--cor-rosa);
+    outline-offset: 2px;
+}
+
+label {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--cor-tinta);
+}
+
+/* ---------------------------------------------------------------------------
+ * Cartões genéricos (usado no grid de produtos e no portfólio)
+ * ------------------------------------------------------------------------ */
+.atelie-card,
+.atelie-case-card,
+.woocommerce ul.products li.product {
+    background: var(--cor-superficie);
+    border: var(--borda-card);
+    border-radius: var(--raio-card);
+    box-shadow: var(--sombra-card);
+}
+
+.atelie-case-card:hover,
+.woocommerce ul.products li.product:hover {
+    box-shadow: var(--sombra-card-hover);
+    transform: translateY(-3px);
+}
+
+.atelie-badge {
+    display: inline-block;
+    background: var(--cor-pessego-clara);
+    color: #8a5a3c;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.25rem 0.65rem;
+    border-radius: var(--raio-pilula);
+}
+
+/* ---------------------------------------------------------------------------
+ * Hero (página inicial)
+ * ------------------------------------------------------------------------ */
+.atelie-hero {
+    background: linear-gradient(180deg, var(--cor-pessego-clara) 0%, var(--cor-marfim) 100%);
+    padding: 4rem 0 3.5rem;
+    text-align: center;
+}
+
+.atelie-hero__conteudo {
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+.atelie-hero__logo {
+    max-width: 180px;
+    margin: 0 auto 1.5rem;
+}
+
+.atelie-hero__tagline {
+    font-family: var(--fonte-display);
+    font-style: italic;
+    font-size: 1.2rem;
+    color: var(--cor-rosa-escuro);
+}
+
+.atelie-hero__acoes {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 1.75rem;
+}
+
+.atelie-secao {
+    padding: 3.5rem 0;
+}
+
+.atelie-secao__cabecalho {
+    text-align: center;
+    max-width: 640px;
+    margin: 0 auto 2.5rem;
+}
+
+.atelie-secao--pessego {
+    background: var(--cor-pessego-clara);
+}
+
+/* ---------------------------------------------------------------------------
+ * WooCommerce — catálogo, produto, carrinho, checkout
+ * ------------------------------------------------------------------------ */
+.woocommerce ul.products {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 1.75rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.woocommerce ul.products li.product {
+    padding: 1.1rem 1.1rem 1.4rem;
+    text-align: left;
+    /*
+     * O CSS "clássico" do WooCommerce (woocommerce-layout.css) ainda define
+     * float:left + width:22.05% + margin percentual nesse seletor — resquício
+     * do grid antigo baseado em float. Sem isso, cada card encolhe pra uma
+     * fração do espaço do grid (e a foto, que é 100% do card, encolhe junto).
+     * Nosso grid é feito 100% via CSS Grid no <ul>, então zera tudo isso aqui.
+     */
+    float: none !important;
+    width: auto !important;
+    margin: 0 !important;
+}
+
+.woocommerce ul.products li.product img {
+    width: 100% !important;
+    height: auto !important;
+    border-radius: 12px;
+    margin-bottom: 0.85rem;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    background: var(--cor-pessego-clara);
+}
+
+.woocommerce ul.products li.product .woocommerce-loop-product__title {
+    font-family: var(--fonte-display);
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--cor-tinta);
+}
+
+.woocommerce ul.products li.product .price {
+    color: var(--cor-rosa-escuro);
+    font-weight: 800;
+    font-size: 1.05rem;
+}
+
+.woocommerce ul.products li.product .price del {
+    color: var(--cor-tinta-suave);
+    font-weight: 400;
+    opacity: 0.75;
+}
+
+.woocommerce span.onsale {
+    background: var(--cor-rosa);
+    color: #fff;
+    font-weight: 800;
+    border-radius: var(--raio-pilula);
+    min-height: auto;
+    min-width: auto;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    top: 0.75rem;
+    left: 0.75rem;
+}
+
+.woocommerce div.product .product_title {
+    font-size: clamp(1.6rem, 1.3rem + 1vw, 2.2rem);
+}
+
+.woocommerce div.product p.price,
+.woocommerce div.product span.price {
+    color: var(--cor-rosa-escuro);
+    font-size: 1.5rem;
+    font-weight: 800;
+}
+
+.woocommerce div.product .woocommerce-product-gallery img {
+    border-radius: var(--raio-card);
+}
+
+.woocommerce div.product form.cart {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: var(--borda-card);
+}
+
+.woocommerce-message,
+.woocommerce-info,
+.woocommerce-error,
+.woocommerce-noreviews,
+p.no-comments {
+    background: var(--cor-rosa-suave);
+    border: none;
+    border-left: 4px solid var(--cor-rosa);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    color: var(--cor-tinta);
+}
+
+.woocommerce-error {
+    background: #fbe6ea;
+    border-left-color: var(--cor-erro);
+}
+
+.woocommerce table.shop_table {
+    border-radius: var(--raio-card);
+    border: var(--borda-card);
+    overflow: hidden;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.woocommerce table.shop_table th {
+    background: var(--cor-pessego-clara);
+    font-family: var(--fonte-corpo);
+    font-weight: 800;
+    color: var(--cor-tinta);
+}
+
+.woocommerce #payment div.payment_box {
+    background: var(--cor-rosa-suave);
+    border-radius: 12px;
+}
+
+.woocommerce-checkout #payment ul.payment_methods,
+.woocommerce-cart-form,
+.woocommerce-checkout-review-order {
+    border-radius: var(--raio-card);
+}
+
+.woocommerce .star-rating span::before,
+.woocommerce .star-rating::before {
+    color: var(--cor-rosa);
+}
+
+/* Disponibilidade / prazo de produção (campos customizados do produto) */
+.atelie-disponibilidade {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--cor-tinta-suave);
+    margin: 0.5rem 0 1rem;
+}
+
+/* ---------------------------------------------------------------------------
+ * Portfólio / cases
+ * ------------------------------------------------------------------------ */
+.atelie-case-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.75rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.atelie-case-card {
+    overflow: hidden;
+}
+
+.atelie-case-card a {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
+
+.atelie-case-card img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    background: var(--cor-pessego-clara);
+}
+
+.atelie-case-card h2 {
+    font-size: 1.1rem;
+    margin: 1rem 1.1rem 1.2rem;
+}
+
+.atelie-case-cta {
+    text-align: center;
+    margin-top: 2.5rem;
+}
+
+.atelie-case-galeria {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.atelie-case-galeria img {
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+    object-fit: cover;
+    aspect-ratio: 1 / 1;
+}
+
+/* ---------------------------------------------------------------------------
+ * Formulário de orçamento personalizado
+ * ------------------------------------------------------------------------ */
+.atelie-orcamento-form {
+    background: var(--cor-superficie);
+    border: var(--borda-card);
+    border-radius: var(--raio-card);
+    box-shadow: var(--sombra-card);
+    padding: 2rem;
+    max-width: 560px;
+    margin: 0 auto;
+}
+
+.atelie-orcamento-form p {
+    margin-bottom: 1.15rem;
+}
+
+.atelie-orcamento-form label {
+    display: block;
+    margin-bottom: 0.4rem;
+}
+
+.atelie-orcamento-form button[type="submit"] {
+    width: 100%;
+}
+
+.atelie-orcamento-sucesso {
+    background: #e6f2e9;
+    color: var(--cor-sucesso);
+    border-left: 4px solid var(--cor-sucesso);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    max-width: 560px;
+    margin: 0 auto 1.5rem;
+    font-weight: 700;
+}
+
+.atelie-orcamento-erro {
+    background: #fbe6ea;
+    color: var(--cor-erro);
+    border-left: 4px solid var(--cor-erro);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    max-width: 560px;
+    margin: 0 auto 1.5rem;
+    font-weight: 700;
+}
+
+/* ---------------------------------------------------------------------------
+ * Rodapé
+ * ------------------------------------------------------------------------ */
+.site-footer {
+    background: var(--cor-tinta);
+    color: #f1e6dd;
+    margin-top: 3rem;
+}
+
+.site-footer__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2rem;
+    padding: 3rem 0 2rem;
+}
+
+.site-footer__marca {
+    font-family: var(--fonte-display);
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.5rem;
+}
+
+.site-footer__coluna h3 {
+    font-family: var(--fonte-corpo);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--cor-pessego);
+    margin-bottom: 0.85rem;
+}
+
+.site-footer__coluna ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.site-footer__coluna a {
+    color: #f1e6dd;
+    text-decoration: none;
+    font-size: 0.92rem;
+}
+
+.site-footer__coluna a:hover {
+    color: var(--cor-pessego);
+}
+
+.site-footer__base {
+    border-top: 1px solid rgba(255,255,255,0.12);
+    padding: 1.25rem 0;
+    font-size: 0.82rem;
+    color: #cbb9ae;
+    text-align: center;
 }

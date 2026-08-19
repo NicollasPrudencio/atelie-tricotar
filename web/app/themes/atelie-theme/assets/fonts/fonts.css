@@ -1,0 +1,31 @@
+/*
+ * Fontes auto-hospedadas (Fraunces + Mulish, Google Fonts, licença SIL Open Font License).
+ * Baixadas e servidas localmente em vez de link para fonts.googleapis.com: evita uma
+ * requisição a terceiro a cada visita (relevante pro banner de consentimento LGPD da Fase 2
+ * — fonte não é rastreamento, mas é menos um domínio externo carregado antes do opt-in).
+ * Ambos os arquivos são fontes variáveis: um único .woff2 cobre toda a faixa de peso.
+ */
+
+@font-face {
+    font-family: 'Fraunces';
+    font-style: normal;
+    font-weight: 300 700;
+    font-display: swap;
+    src: url('fraunces-variable.woff2') format('woff2-variations'), url('fraunces-variable.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Fraunces';
+    font-style: italic;
+    font-weight: 400 600;
+    font-display: swap;
+    src: url('fraunces-italic.woff2') format('woff2-variations'), url('fraunces-italic.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Mulish';
+    font-style: normal;
+    font-weight: 300 900;
+    font-display: swap;
+    src: url('mulish-variable.woff2') format('woff2-variations'), url('mulish-variable.woff2') format('woff2');
+}
