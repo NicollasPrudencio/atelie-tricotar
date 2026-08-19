@@ -20,15 +20,27 @@ get_header();
                 <?php the_post_thumbnail('large'); ?>
             <?php endif; ?>
             <div><?php the_content(); ?></div>
+
+            <?php
+            $galeria_ids = get_post_meta(get_the_ID(), '_atelie_case_galeria', true);
+            $galeria_ids = $galeria_ids ? array_filter(array_map('absint', explode(',', (string) $galeria_ids))) : [];
+            ?>
+            <?php if (!empty($galeria_ids)) : ?>
+                <div class="atelie-case-galeria">
+                    <?php foreach ($galeria_ids as $imagem_id) : ?>
+                        <?php echo wp_get_attachment_image($imagem_id, 'medium'); ?>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         </article>
     <?php endwhile; ?>
 
-    <p>
-        <?php esc_html_e('Gostou e quer algo parecido?', 'atelie-theme'); ?>
-        <a href="<?php echo esc_url(home_url('/orcamento-personalizado/')); ?>">
+    <div class="atelie-case-cta">
+        <p><?php esc_html_e('Gostou e quer algo parecido?', 'atelie-theme'); ?></p>
+        <a class="atelie-btn" href="<?php echo esc_url(home_url('/orcamento-personalizado/')); ?>">
             <?php esc_html_e('Solicite um orçamento personalizado', 'atelie-theme'); ?>
         </a>
-    </p>
+    </div>
 </div>
 
 <?php get_footer(); ?>

@@ -13,8 +13,11 @@ get_header();
 ?>
 
 <div class="site-container">
-    <h1><?php esc_html_e('Nosso portfólio', 'atelie-theme'); ?></h1>
-    <p><?php esc_html_e('Trabalhos feitos sob medida — não é catálogo de venda direta.', 'atelie-theme'); ?></p>
+    <div class="atelie-secao__cabecalho">
+        <span class="atelie-eyebrow"><?php esc_html_e('Sob encomenda', 'atelie-theme'); ?></span>
+        <h1><?php esc_html_e('Nosso portfólio', 'atelie-theme'); ?></h1>
+        <p><?php esc_html_e('Trabalhos feitos sob medida — não é catálogo de venda direta.', 'atelie-theme'); ?></p>
+    </div>
 
     <?php if (have_posts()) : ?>
         <div class="atelie-case-grid">
