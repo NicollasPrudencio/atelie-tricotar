@@ -19,9 +19,14 @@ antigo (removido, este é o repo oficial novo).
   original e em `docs/decisions/0001-stack-wordpress-woocommerce-bedrock.md`.
 - **Hospedagem**: cPanel compartilhado barato (Hostinger/HostGator, cotação pendente), deploy
   via SFTP (sem depender de SSH). Orçamento é uma restrição de design, não um detalhe.
-- **Painel de produto**: NÃO é o admin nativo do WooCommerce — é o plugin
-  `web/app/plugins/atelie-produto-ia`, uma tela minimalista própria com autofill por IA de
-  visão a partir de fotos e/ou receita/padrão do artesanato.
+- **Painel de produto/case**: NÃO é o admin nativo do WooCommerce/WordPress — é o plugin
+  `web/app/plugins/atelie-produto-ia`, telas próprias com autofill por IA de visão a partir de
+  fotos e/ou receita/padrão do artesanato. A tela "Adicionar novo" nativa (produto e case) é
+  removida do menu e redireciona pra tela própria — nunca existem dois caminhos de criação.
+  A IA também **revisa** qualquer texto editado ou 100% manual antes de publicar (nome da
+  artesã no texto, elogio exagerado, linguagem amadora, falta de gatilho de venda) e **bloqueia
+  a publicação** se achar problema, sem opção de ignorar — decisão explícita do usuário, ver
+  `manual/manual-do-painel.md`.
 - **CI/CD**: pipeline em 2 estágios — todo push builda/testa, faz deploy automático em QA, roda
   testes de fumaça contra QA, e só promove para produção automaticamente se tudo passar. Sem
   aprovação manual no fluxo padrão (decisão explícita do usuário).
@@ -35,10 +40,36 @@ antigo (removido, este é o repo oficial novo).
   detalhadas): `docs/decisions/0001-stack-wordpress-woocommerce-bedrock.md`.
 - **Precificação interna** (custo de matéria-prima + hora técnica, fora do plano original):
   `docs/decisions/0002-precificacao-interna.md`.
+- **Manual do painel administrativo** (como usar cada tela — produto, case, criação em massa,
+  configurar IA, faturamento; documento vivo, atualizado a cada funcionalidade nova, pensado
+  pra virar site publicado num subdomínio quando o pipeline de CI/CD existir):
+  `manual/manual-do-painel.md`.
+- **Túnel fixo do Cloudflare pra dev local**: `docs/cloudflare-tunnel-fixo.md`.
 - **Estrutura de pastas e convenções de código**: ver `README.md`.
 
 ## Estado atual
 
-Fase 0 (fundação) em andamento: scaffold do repositório, Docker de dev, CI básico. Ainda sem
-deploy, sem tema, sem o plugin de IA implementado — só o scaffold. Consulte o roadmap no plano
-para a ordem das próximas fases.
+Bem além da Fase 0. Já construído e funcionando:
+- Ambiente de dev local via Docker, com túnel fixo do Cloudflare (`dev.atelietricotar.com.br`)
+  pra testar integrações que exigem callback público.
+- Domínio `atelietricotar.com.br` conectado ao Cloudflare (DNS-only); hospedagem HostGator
+  Plano M já contratada, deploy real ainda pendente.
+- Tema (`web/app/themes/atelie-theme`) com identidade visual completa (paleta pêssego/rosa/
+  marfim, tipografia Fraunces+Mulish, baseada no logo real do ateliê), loja, carrinho, checkout,
+  portfólio e formulário de orçamento personalizado funcionando via Mercado Pago (sandbox) +
+  Melhor Envio (sandbox).
+- Plugin `atelie-produto-ia` completo: criação de produto e de case com autofill por IA
+  (Gemini), criação em massa assíncrona, revisor de qualidade de venda com bloqueio de
+  publicação, rastreamento de custo de IA por chamada, tela própria "IA" (chave/status/custo).
+  Edição de imagem por IA está com o código pronto mas não testada de verdade (exige
+  faturamento ativo numa conta Google, ver `manual/manual-do-painel.md`).
+- Plugin `atelie-faturamento`: receita vs. custos (IA, taxa Mercado Pago, frete, despesas
+  manuais) e lucro líquido, por período.
+- Importação do Google Drive implementada (autorização OAuth fixa na conta do desenvolvedor,
+  não da artesã — decisão explícita; ela só compartilha a pasta). Código testado, mas a
+  autorização real (clicar "Conectar" e passar pela tela do Google) ainda precisa ser
+  concluída pelo usuário — é interação de navegador que não dá pra automatizar.
+- Pendente do roadmap de IA: assistente de busca+tradução de receita em outro idioma (Fase F).
+- Pendente geral: deploy real (CI/CD ainda não rodou contra hospedagem de verdade), Fase 2
+  completa de tracking (Meta Pixel/CAPI, GA4, banner LGPD), hardening da Fase 4 (WPScan
+  agendado, teste de restore de backup).
