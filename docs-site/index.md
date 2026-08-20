@@ -36,6 +36,7 @@ aparecer no seu menu — é normal, não é erro.
 - [Acompanhar importações — tela "Pendências"](/pendencias/)
 - [Mostrar um trabalho no portfólio (case)](/cases/)
 - [Quando a IA não está disponível](/ia-indisponivel/)
+- [Pedidos de orçamento personalizado](/orcamento-personalizado/)
 - [Perguntas frequentes](/faq/)
 - [Glossário](/glossario/)
 

@@ -92,3 +92,7 @@ Bem além da Fase 0. Já construído e funcionando:
 - Pendente geral: deploy real (CI/CD ainda não rodou contra hospedagem de verdade), Fase 2
   completa de tracking (Meta Pixel/CAPI, GA4, banner LGPD), hardening da Fase 4 (WPScan
   agendado, teste de restore de backup).
+- Pendente confirmado com o usuário em 2026-08-20: o formulário público "Solicitar orçamento
+  personalizado" (`web/app/mu-plugins/atelie-orcamento.php`) só dispara um e-mail pro admin —
+  não grava em CPT/tabela nenhuma, então não existe tela no painel pra rever pedidos antigos.
+  Lacuna real, não escolha deliberada; falta construir uma tela de acompanhamento.

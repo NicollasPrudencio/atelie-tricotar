@@ -573,3 +573,53 @@ function atelie_orcamento_admin_js(): void
     </script>
     <?php
 }
+
+/**
+ * Botao de ajuda "?" nas 3 telas nativas de CPT (Orcamentos, Materias-primas,
+ * Artesas). Diferente das telas com classe de admin-page propria, aqui nao
+ * ha um ponto de injecao dentro do <h1> nativo do WordPress — usa-se
+ * 'admin_notices', que roda em toda tela de post/list-table desses CPTs.
+ */
+add_action('admin_notices', function (): void {
+    $screen = get_current_screen();
+    if (!$screen || !class_exists('Atelie_Ajuda_Drawer')) {
+        return;
+    }
+
+    $config = [
+        'atelie_orcamento' => [
+            'titulo' => 'Orçamentos',
+            'dicas' => [
+                'O custo aqui calculado é <strong>custo</strong>, não preço de venda — a margem é ajustada manualmente depois.',
+                'O botão "Sugerir horas pelo histórico" só aparece com categoria e porte escolhidos, e fica mais preciso conforme mais peças forem marcadas como "Produzido".',
+                'Depois que a peça for feita de verdade, volte aqui, mude o status pra "Produzido" e preencha "Horas reais" — é esse número que alimenta a sugestão dos próximos orçamentos.',
+                'Na tela do produto (WooCommerce), o botão "Puxar custo de um orçamento" preenche o preço regular com esse custo calculado.',
+            ],
+        ],
+        'atelie_materia_prima' => [
+            'titulo' => 'Matérias-primas',
+            'dicas' => [
+                'Cadastre cada item comprado (lã, linha, enchimento, embalagem...) com preço e unidade — é esse preço que entra na conta de custo dos orçamentos.',
+                'Manter o preço atualizado aqui é o que garante que o custo calculado nos orçamentos continue confiável.',
+            ],
+        ],
+        'atelie_artesa' => [
+            'titulo' => 'Artesãs',
+            'dicas' => [
+                'Cadastro simples de quem produz — não é um login do sistema, só um registro pra entrar na conta.',
+                'O valor da hora cadastrado aqui é puxado automaticamente ao escolher a artesã num orçamento.',
+            ],
+        ],
+    ];
+
+    if (!isset($config[$screen->post_type])) {
+        return;
+    }
+    $c = $config[$screen->post_type];
+    ?>
+    <div class="notice atelie-ajuda-notice" style="display:flex; align-items:center; gap:4px; padding:10px 12px;">
+        <span><?php esc_html_e('Precisa de ajuda com esta tela?', 'atelie-theme'); ?></span>
+        <?php Atelie_Ajuda_Drawer::render($c['titulo'], $c['dicas'], '/admin/precificacao/'); ?>
+    </div>
+    <?php
+});
