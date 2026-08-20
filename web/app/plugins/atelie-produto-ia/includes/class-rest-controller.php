@@ -15,6 +15,7 @@ use function Env\env;
 class Atelie_Rest_Controller
 {
     private const LIMITE_DIARIO_PADRAO = 100;
+    private const LIMITE_FOTOS_POR_PRODUTO = 10;
 
     public function registrar(): void
     {
@@ -49,6 +50,24 @@ class Atelie_Rest_Controller
                     'prompt' => ['required' => true],
                 ],
             ]);
+
+            register_rest_route('atelie/v1', '/drive-listar', [
+                'methods' => 'GET',
+                'callback' => [$this, 'drive_listar'],
+                'permission_callback' => [$this, 'usuario_pode_criar_produto'],
+                'args' => [
+                    'pasta' => ['required' => false],
+                ],
+            ]);
+
+            register_rest_route('atelie/v1', '/drive-baixar-fotos', [
+                'methods' => 'POST',
+                'callback' => [$this, 'drive_baixar_fotos'],
+                'permission_callback' => [$this, 'usuario_pode_criar_produto'],
+                'args' => [
+                    'fotos' => ['required' => true],
+                ],
+            ]);
         });
     }
 
@@ -74,6 +93,13 @@ class Atelie_Rest_Controller
 
         if (empty($fotos_ids)) {
             return new WP_REST_Response(['erro' => 'Anexe pelo menos uma foto.'], 400);
+        }
+
+        if (count($fotos_ids) > self::LIMITE_FOTOS_POR_PRODUTO) {
+            return new WP_REST_Response(
+                ['erro' => 'Máximo de ' . self::LIMITE_FOTOS_POR_PRODUTO . ' fotos por produto.'],
+                400
+            );
         }
 
         if (!$this->dentro_do_limite_diario()) {
@@ -161,6 +187,66 @@ class Atelie_Rest_Controller
         $this->registrar_log('ok (case), ' . count($caminhos) . ' imagem(ns)');
 
         return new WP_REST_Response(['sugestao' => $sugestao], 200);
+    }
+
+    /**
+     * Lista pastas e fotos pro modal próprio de navegação/seleção do Drive —
+     * sem parâmetro "pasta", lista o que foi compartilhado com a conta
+     * conectada (raiz do modal); com "pasta", lista o conteúdo dela.
+     */
+    public function drive_listar(WP_REST_Request $request): WP_REST_Response
+    {
+        if (!Atelie_Drive_Config::conectado()) {
+            return new WP_REST_Response(['erro' => 'Google Drive não conectado.'], 400);
+        }
+
+        $pasta = $request->get_param('pasta');
+        $pasta_id = is_string($pasta) && trim($pasta) !== '' ? sanitize_text_field($pasta) : null;
+
+        $itens = Atelie_Google_Drive_Service::listar_conteudo($pasta_id);
+
+        return new WP_REST_Response(['itens' => $itens], 200);
+    }
+
+    /**
+     * Baixa fotos soltas escolhidas no modal do Drive e sobe pra Biblioteca de Mídia —
+     * usado quando a seleção é só de fotos (sem pasta), pra entrarem no mesmo fluxo
+     * inline de "Novo Produto" (um produto só), sem passar pela fila de lote.
+     */
+    public function drive_baixar_fotos(WP_REST_Request $request): WP_REST_Response
+    {
+        if (!Atelie_Drive_Config::conectado()) {
+            return new WP_REST_Response(['erro' => 'Google Drive não conectado.'], 400);
+        }
+
+        $fotos = (array) $request->get_param('fotos');
+        $resultado = [];
+
+        foreach ($fotos as $foto) {
+            if (!is_array($foto) || !isset($foto['id'])) {
+                continue;
+            }
+
+            $imagem = [
+                'id' => sanitize_text_field((string) $foto['id']),
+                'name' => isset($foto['name']) ? sanitize_text_field((string) $foto['name']) : 'foto',
+                'mimeType' => isset($foto['mimeType']) ? sanitize_text_field((string) $foto['mimeType']) : 'image/jpeg',
+            ];
+
+            $anexo_id = Atelie_Google_Drive_Service::baixar_e_salvar_na_biblioteca($imagem, 'drive-solta');
+            if ($anexo_id !== null) {
+                $resultado[] = [
+                    'id' => $anexo_id,
+                    'url' => wp_get_attachment_image_url($anexo_id, 'thumbnail'),
+                ];
+            }
+        }
+
+        if (empty($resultado)) {
+            return new WP_REST_Response(['erro' => 'Não deu pra baixar nenhuma das fotos selecionadas.'], 502);
+        }
+
+        return new WP_REST_Response(['fotos' => $resultado], 200);
     }
 
     public function editar_imagem(WP_REST_Request $request): WP_REST_Response

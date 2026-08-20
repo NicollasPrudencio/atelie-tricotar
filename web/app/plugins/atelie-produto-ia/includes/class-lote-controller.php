@@ -1,11 +1,13 @@
 <?php
 /**
- * Criacao em massa: cria um produto rascunho por item (upload direto = uma
- * foto por produto; import do Drive = varias fotos de uma subpasta por
- * produto) e agenda o processamento de cada um separadamente via Action
- * Scheduler — nao e um job so pra tudo, e o que permite revisar o que ja
- * terminou enquanto o resto ainda processa. Ver plano, secao "Criacao de
- * produtos em massa via IA".
+ * Criacao em massa: cria um produto rascunho por item (uma foto ou um grupo
+ * de fotos vira um produto) e agenda o processamento de cada um
+ * separadamente via Action Scheduler — nao e um job so pra tudo, e o que
+ * permite revisar o que ja terminou enquanto o resto ainda processa. Hoje o
+ * unico jeito de entrar aqui e a importacao do Google Drive (uma subpasta =
+ * um grupo) — upload solto sem organizacao foi removido (decisao explicita
+ * do usuario: causava caos sem nenhuma forma de agrupar as fotos por
+ * produto). Ver plano, secao "Criacao de produtos em massa via IA".
  */
 
 if (!defined('ABSPATH')) {
@@ -21,9 +23,16 @@ class Atelie_Lote_Controller
     private const MAX_TENTATIVAS = 3;
     private const BACKOFF_SEGUNDOS = [60, 300, 900]; // 1min, 5min, 15min
 
+    /**
+     * Margem antes de considerar um item "atrasado" — o WP-Cron desse host não é
+     * confiável (depende de visita ao site pra disparar), então quem abre a tela
+     * "Revisar lote" acaba sendo o gatilho mais confiável que existe: se passou
+     * tempo demais do horário agendado, processa na hora em vez de esperar o cron.
+     */
+    private const MARGEM_ATRASO_SEGUNDOS = 30;
+
     public function registrar(): void
     {
-        add_action('admin_post_atelie_criar_lote', [$this, 'criar_lote']);
         add_action(self::HOOK_PROCESSAR_ITEM, [$this, 'processar_item']);
     }
 
@@ -33,41 +42,10 @@ class Atelie_Lote_Controller
         return $valor !== null && $valor !== '' ? (int) $valor : 25;
     }
 
-    public function criar_lote(): void
-    {
-        if (
-            !current_user_can('edit_products')
-            || !isset($_POST['atelie_lote_nonce'])
-            || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['atelie_lote_nonce'])), 'atelie_criar_lote')
-        ) {
-            wp_die('Ação não permitida.');
-        }
-
-        $fotos_ids = isset($_POST['fotos_ids']) ? array_filter(array_map('absint', explode(',', (string) wp_unslash($_POST['fotos_ids'])))) : [];
-        $limite = $this->limite_por_lote();
-
-        if (empty($fotos_ids)) {
-            wp_safe_redirect(add_query_arg('erro', 'sem-fotos', admin_url('admin.php?page=atelie-criar-lote')));
-            exit;
-        }
-
-        if (count($fotos_ids) > $limite) {
-            wp_safe_redirect(add_query_arg(['erro' => 'limite', 'limite' => $limite], admin_url('admin.php?page=atelie-criar-lote')));
-            exit;
-        }
-
-        // Upload direto: uma foto = um produto candidato, cada foto vira seu proprio grupo de 1.
-        $grupos = array_map(static fn (int $id): array => [$id], $fotos_ids);
-        $lote_id = $this->criar_lote_de_grupos($grupos);
-
-        wp_safe_redirect(admin_url('admin.php?page=atelie-revisar-lote&lote=' . rawurlencode($lote_id)));
-        exit;
-    }
-
     /**
      * Cria um produto rascunho por grupo de fotos e agenda o processamento
-     * de cada um — usado tanto pelo upload direto (grupos de 1) quanto pela
-     * importação do Drive (um grupo = as fotos de uma subpasta).
+     * de cada um — usado pela importação do Drive (um grupo = as fotos de
+     * uma subpasta).
      *
      * @param array<int, array<int, int>> $gruposFotosIds
      */
@@ -102,6 +80,7 @@ class Atelie_Lote_Controller
             update_post_meta($produto_id, '_atelie_lote_status', 'processando');
             update_post_meta($produto_id, '_atelie_lote_tentativas', 0);
             update_post_meta($produto_id, '_atelie_lote_fotos_ids', implode(',', $fotos_do_item));
+            update_post_meta($produto_id, '_atelie_lote_agendado_em', time());
 
             as_schedule_single_action(time(), self::HOOK_PROCESSAR_ITEM, ['produto_id' => $produto_id], self::GRUPO_ACTION_SCHEDULER);
         }
@@ -160,6 +139,7 @@ class Atelie_Lote_Controller
 
         if ($tentativas < self::MAX_TENTATIVAS) {
             $espera = self::BACKOFF_SEGUNDOS[$tentativas - 1] ?? end(self::BACKOFF_SEGUNDOS);
+            update_post_meta($produto_id, '_atelie_lote_agendado_em', time() + $espera);
             as_schedule_single_action(time() + $espera, self::HOOK_PROCESSAR_ITEM, ['produto_id' => $produto_id], self::GRUPO_ACTION_SCHEDULER);
             // continua "processando" ate esgotar as tentativas — o item so vira "erro" de vez depois da ultima falha
             return;
@@ -172,6 +152,42 @@ class Atelie_Lote_Controller
     {
         update_post_meta($produto_id, '_atelie_lote_status', 'processando');
         update_post_meta($produto_id, '_atelie_lote_tentativas', 0);
+        update_post_meta($produto_id, '_atelie_lote_agendado_em', time());
         as_schedule_single_action(time(), self::HOOK_PROCESSAR_ITEM, ['produto_id' => $produto_id], self::GRUPO_ACTION_SCHEDULER);
+    }
+
+    /**
+     * Chamado sempre que a tela "Revisar lote" é aberta — quem visita essa tela
+     * claramente está esperando por aqueles produtos, então usa a própria visita
+     * como um segundo gatilho (além do cron) pra itens que já deveriam ter
+     * processado e não processaram. Idempotente: só processa de fato quem estiver
+     * mesmo atrasado, e usa uma trava curta pra não rodar duas vezes se a pessoa
+     * atualizar a página rápido demais (ou o cron disparar no mesmo instante).
+     *
+     * @param array<int, int> $produtoIds
+     */
+    public function cutucar_pendentes(array $produtoIds): void
+    {
+        foreach ($produtoIds as $produto_id) {
+            if (get_post_meta($produto_id, '_atelie_lote_status', true) !== 'processando') {
+                continue;
+            }
+
+            $agendado_em = (int) get_post_meta($produto_id, '_atelie_lote_agendado_em', true);
+            if ($agendado_em === 0 || time() - $agendado_em < self::MARGEM_ATRASO_SEGUNDOS) {
+                continue; // dentro do prazo normal, deixa o cron cuidar
+            }
+
+            $trava = 'atelie_lote_cutucar_' . $produto_id;
+            if (get_transient($trava)) {
+                continue; // outra requisicao ja esta processando esse item agora
+            }
+            set_transient($trava, 1, 60);
+
+            as_unschedule_action(self::HOOK_PROCESSAR_ITEM, ['produto_id' => $produto_id], self::GRUPO_ACTION_SCHEDULER);
+            $this->processar_item($produto_id);
+
+            delete_transient($trava);
+        }
     }
 }

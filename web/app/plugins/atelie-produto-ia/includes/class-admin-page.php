@@ -11,6 +11,7 @@ if (!defined('ABSPATH')) {
 class Atelie_Admin_Page
 {
     private const SLUG = 'atelie-novo-produto';
+    public const LIMITE_FOTOS = 10;
 
     public function registrar(): void
     {
@@ -21,14 +22,13 @@ class Atelie_Admin_Page
 
     public function adicionar_menu(): void
     {
-        add_menu_page(
+        add_submenu_page(
+            'edit.php?post_type=product',
             'Novo Produto',
             'Novo Produto',
             'edit_products',
             self::SLUG,
-            [$this, 'renderizar'],
-            'dashicons-plus-alt2',
-            56
+            [$this, 'renderizar']
         );
     }
 
@@ -44,7 +44,7 @@ class Atelie_Admin_Page
             'atelie-produto-ia-admin',
             plugins_url('assets/admin.css', dirname(__DIR__) . '/atelie-produto-ia.php'),
             [],
-            '0.1.0'
+            '0.2.0'
         );
 
         wp_enqueue_script(
@@ -59,13 +59,24 @@ class Atelie_Admin_Page
             'atelie-produto-ia-admin',
             plugins_url('assets/admin.js', dirname(__DIR__) . '/atelie-produto-ia.php'),
             ['jquery', 'atelie-produto-ia-editar-imagem'],
-            '0.1.0',
+            '0.2.1',
+            true
+        );
+
+        wp_enqueue_script(
+            'atelie-produto-ia-drive-picker',
+            plugins_url('assets/drive-picker.js', dirname(__DIR__) . '/atelie-produto-ia.php'),
+            ['atelie-produto-ia-admin'],
+            '0.2.1',
             true
         );
 
         wp_localize_script('atelie-produto-ia-admin', 'atelieProdutoIA', [
             'restUrl' => esc_url_raw(rest_url('atelie/v1/analisar-fotos')),
             'editarImagemUrl' => esc_url_raw(rest_url('atelie/v1/editar-imagem')),
+            'driveListarUrl' => esc_url_raw(rest_url('atelie/v1/drive-listar')),
+            'driveBaixarFotosUrl' => esc_url_raw(rest_url('atelie/v1/drive-baixar-fotos')),
+            'driveConectado' => Atelie_Drive_Config::conectado(),
             'nonce' => wp_create_nonce('wp_rest'),
             'iaDisponivel' => Atelie_Ai_Config::esta_disponivel(),
             'custoEdicaoImagem' => number_format(Atelie_Ai_Custo_Tracker::estimar('editar_imagem'), 4, ',', '.'),
@@ -77,8 +88,19 @@ class Atelie_Admin_Page
         if (isset($_GET['publicado'])) {
             echo '<div class="notice notice-success is-dismissible"><p>Produto publicado! Já está visível no site.</p></div>';
         }
-        if (isset($_GET['erro'])) {
+        if (isset($_GET['erro']) && $_GET['erro'] === 'limite-fotos') {
+            echo '<div class="notice notice-error is-dismissible"><p>Máximo de 10 fotos por produto — remova algumas e tente de novo.</p></div>';
+        } elseif (isset($_GET['erro'])) {
             echo '<div class="notice notice-error is-dismissible"><p>Não deu pra publicar — confira os campos obrigatórios (fotos, título e preço) e tente de novo.</p></div>';
+        }
+        if (isset($_GET['conectado'])) {
+            echo '<div class="notice notice-success is-dismissible"><p>Google Drive conectado.</p></div>';
+        }
+        if (isset($_GET['desconectado'])) {
+            echo '<div class="notice notice-success is-dismissible"><p>Google Drive desconectado.</p></div>';
+        }
+        if (isset($_GET['drive_erro'])) {
+            echo '<div class="notice notice-error"><p>' . esc_html(Atelie_Drive_Admin_Page::mensagem_erro(sanitize_key(wp_unslash($_GET['drive_erro'])))) . '</p></div>';
         }
 
         $bloqueio = null;
@@ -97,6 +119,7 @@ class Atelie_Admin_Page
         }
         $ia_disponivel = $status['ok'];
         $custo_estimado_sugestao = Atelie_Ai_Custo_Tracker::estimar('analisar');
+        $drive_conectado = Atelie_Drive_Config::conectado();
 
         // Quando a revisão bloqueou a publicação: se a IA deu uma correção, já pré-preenche
         // com ela (vira o novo "baseline confiável" — se publicar sem mexer, não revisa de
@@ -107,7 +130,13 @@ class Atelie_Admin_Page
         $descricao_ia_original_valor = $revisao['descricao_sugerida'] ?? '';
         ?>
         <div class="wrap atelie-novo-produto">
-            <h1>Novo Produto</h1>
+            <h1>Novo Produto <?php Atelie_Ajuda_Drawer::render('Novo Produto', [
+                'Anexe até <strong>10 fotos</strong> do mesmo produto — ângulos ou momentos diferentes da mesma peça.',
+                '<strong>✨ Sugerir</strong> preenche tudo com IA a partir das fotos (e da receita, se você anexar); <strong>Preencher manualmente</strong> deixa o formulário em branco.',
+                'Se você editar a sugestão da IA ou escrever tudo manualmente, o texto passa por uma revisão de qualidade antes de publicar — não dá pra pular essa checagem.',
+                'Preço, disponibilidade, peso e dimensões são sempre preenchidos por você. Deixar peso/dimensões em branco faz o frete ser calculado com um tamanho padrão genérico, não o real.',
+                'Pra cadastrar vários produtos de uma vez, use "Escolher do Google Drive" — cada pasta selecionada vira um produto.',
+            ], '/novo-produto/'); ?></h1>
 
             <div id="atelie-passo-anexar" class="atelie-card">
                 <h2>1. Anexar fotos</h2>
@@ -115,7 +144,44 @@ class Atelie_Admin_Page
                     <p id="atelie-dropzone-texto">Toque para escolher as fotos do produto</p>
                     <div id="atelie-fotos-preview" class="atelie-fotos-preview"></div>
                 </div>
-                <button type="button" class="button" id="atelie-btn-escolher-fotos">Escolher fotos</button>
+                <p class="atelie-lote-origem-fotos">
+                    <button type="button" class="button" id="atelie-btn-escolher-fotos">Escolher fotos</button>
+                    <span class="atelie-dica-limite">(até 10 fotos)</span>
+
+                    <?php if ($drive_conectado) : ?>
+                        <span class="atelie-lote-drive-import">
+                            ou, pra criar vários produtos de uma vez organizados em pastas,
+                            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" class="atelie-lote-drive-import-form">
+                                <input type="hidden" name="action" value="atelie_drive_importar">
+                                <?php wp_nonce_field('atelie_drive_importar', 'atelie_drive_importar_nonce'); ?>
+                                <input type="hidden" name="pastas_ids" id="atelie-drive-pastas-ids">
+                                <input type="hidden" name="fotos_soltas_ids" id="atelie-drive-fotos-soltas-ids">
+                                <input type="text" name="pasta" id="atelie-drive-pasta-input"
+                                       placeholder="colar link, ou escolher pasta/fotos →"
+                                       aria-label="Link da pasta do Google Drive">
+                                <button type="button" class="button" id="atelie-btn-escolher-pasta-drive">Escolher pasta ou fotos</button>
+                                <button type="submit" class="button" id="atelie-btn-importar-drive" disabled>Importar</button>
+                            </form>
+                            <?php if (current_user_can('manage_options')) : ?>
+                                (conectado como <?php echo esc_html(Atelie_Drive_Config::conta_email()); ?> —
+                                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" class="atelie-lote-drive-desconectar-form" onsubmit="return confirm('Desconectar o Google Drive? Você vai precisar autorizar de novo pra importar depois.');">
+                                    <input type="hidden" name="action" value="atelie_drive_desconectar">
+                                    <?php wp_nonce_field('atelie_drive_desconectar', 'atelie_drive_desconectar_nonce'); ?>
+                                    <button type="submit" class="button-link">desconectar</button>
+                                </form>)
+                            <?php endif; ?>
+                        </span>
+                    <?php elseif (current_user_can('manage_options')) : ?>
+                        <span class="atelie-lote-drive-import">
+                            ou, pra criar vários produtos de uma vez organizados em pastas,
+                            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                                <input type="hidden" name="action" value="atelie_drive_conectar">
+                                <?php wp_nonce_field('atelie_drive_conectar', 'atelie_drive_conectar_nonce'); ?>
+                                <button type="submit" class="button">Conectar Google Drive</button>
+                            </form>
+                        </span>
+                    <?php endif; ?>
+                </p>
 
                 <p class="atelie-receita-linha">
                     <label for="atelie-receita-texto">Tem a receita/padrão dessa peça? (opcional — cole o texto ou anexe uma foto)</label>
@@ -257,6 +323,11 @@ class Atelie_Admin_Page
 
         if ($titulo === '' || !is_numeric($preco) || empty($fotos_ids)) {
             wp_safe_redirect(add_query_arg('erro', '1', admin_url('admin.php?page=atelie-novo-produto')));
+            exit;
+        }
+
+        if (count($fotos_ids) > self::LIMITE_FOTOS) {
+            wp_safe_redirect(add_query_arg('erro', 'limite-fotos', admin_url('admin.php?page=atelie-novo-produto')));
             exit;
         }
 

@@ -1,14 +1,19 @@
 <?php
 /**
- * Telas de "Criar em massa" (upload) e "Revisar lote" (status por item).
- * Ver plano, secao "Criacao de produtos em massa via IA".
+ * Tela "Pendências" — status por item de uma criacao em massa (hoje, so
+ * originada pela importacao do Google Drive; upload solto sem organizacao
+ * foi removido, decisao explicita do usuario). Com `?lote=X` (link direto
+ * apos importar), mostra so aquele lote; sem parametro (item de menu),
+ * mostra tudo que ainda nao foi revisado, de qualquer lote — pra nada ficar
+ * esquecido so por ninguem ter o link de um lote especifico. Tambem "cutuca"
+ * itens atrasados a cada visita, ja que quem abre essa tela claramente esta
+ * esperando por eles (ver Atelie_Lote_Controller::cutucar_pendentes). Ver
+ * plano, secao "Criacao de produtos em massa via IA".
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
-
-use function Env\env;
 
 class Atelie_Lote_Admin_Pages
 {
@@ -24,18 +29,9 @@ class Atelie_Lote_Admin_Pages
     public function adicionar_menus(): void
     {
         add_submenu_page(
-            'atelie-novo-produto',
-            'Criar em massa',
-            'Criar em massa',
-            'edit_products',
-            'atelie-criar-lote',
-            [$this, 'renderizar_upload']
-        );
-
-        add_submenu_page(
-            '', // nao aparece no menu lateral, so acessivel pelo link apos criar o lote — '' (nao null!) e o jeito documentado de esconder
-            'Revisar lote',
-            'Revisar lote',
+            'edit.php?post_type=product',
+            'Pendências',
+            'Pendências',
             'edit_products',
             'atelie-revisar-lote',
             [$this, 'renderizar_revisao']
@@ -44,90 +40,51 @@ class Atelie_Lote_Admin_Pages
 
     public function carregar_assets(string $hook): void
     {
-        if (strpos($hook, 'atelie-criar-lote') === false && strpos($hook, 'atelie-revisar-lote') === false) {
+        if (strpos($hook, 'atelie-revisar-lote') === false) {
             return;
         }
-        wp_enqueue_media();
         wp_enqueue_style(
             'atelie-produto-ia-admin',
             plugins_url('assets/admin.css', dirname(__DIR__) . '/atelie-produto-ia.php'),
             [],
-            '0.1.0'
+            '0.2.0'
         );
-        wp_enqueue_script(
-            'atelie-produto-ia-lote',
-            plugins_url('assets/lote.js', dirname(__DIR__) . '/atelie-produto-ia.php'),
-            ['jquery'],
-            '0.1.0',
-            true
-        );
-    }
-
-    public function renderizar_upload(): void
-    {
-        $limite = env('AI_BATCH_MAX_ITEMS') ?: 25;
-        $status = Atelie_Ai_Config::obter_status();
-        if ($status['verificado_em'] === 0) {
-            $status = Atelie_Ai_Config::testar_conexao();
-        }
-        $ia_disponivel = $status['ok'];
-        ?>
-        <div class="wrap atelie-novo-produto">
-            <h1>Criar em massa</h1>
-            <?php if (isset($_GET['erro']) && $_GET['erro'] === 'limite') : ?>
-                <div class="notice notice-error"><p>Esse lote passou do limite de <?php echo esc_html($_GET['limite'] ?? $limite); ?> itens por vez — divida em lotes menores.</p></div>
-            <?php elseif (isset($_GET['erro'])) : ?>
-                <div class="notice notice-error"><p>Selecione pelo menos uma foto.</p></div>
-            <?php endif; ?>
-
-            <?php if (!$ia_disponivel) : ?>
-                <p class="atelie-status atelie-status-erro atelie-status-inline">
-                    ⚠️ Essa tela depende da IA de visão, que está indisponível no momento — <?php echo esc_html($status['mensagem']); ?>
-                    <?php if (current_user_can('manage_options')) : ?>
-                        <a href="<?php echo esc_url(admin_url('admin.php?page=atelie-config-ia')); ?>">Configurar agora</a>
-                    <?php else : ?>
-                        Avise o administrador do site — enquanto isso, use "Novo Produto" → "Preencher manualmente" pra cadastrar um de cada vez.
-                    <?php endif; ?>
-                </p>
-            <?php endif; ?>
-
-            <div class="atelie-card">
-                <p>Cada foto selecionada vira um produto candidato, revisado separadamente depois. Limite de <?php echo esc_html($limite); ?> fotos por lote.</p>
-                <div id="atelie-lote-fotos-preview" class="atelie-fotos-preview"></div>
-                <p>
-                    <span class="atelie-tooltip" <?php echo $ia_disponivel ? '' : Atelie_Ai_Config::atributo_tooltip_indisponivel($status); ?>>
-                        <button type="button" class="button button-primary" id="atelie-lote-escolher-fotos" <?php disabled(!$ia_disponivel); ?>>Escolher fotos</button>
-                    </span>
-                </p>
-
-                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
-                    <input type="hidden" name="action" value="atelie_criar_lote">
-                    <?php wp_nonce_field('atelie_criar_lote', 'atelie_lote_nonce'); ?>
-                    <input type="hidden" name="fotos_ids" id="atelie-lote-fotos-ids">
-                    <button type="submit" class="button button-primary button-hero" id="atelie-lote-enviar" disabled>Processar lote</button>
-                </form>
-            </div>
-        </div>
-        <?php
     }
 
     public function renderizar_revisao(): void
     {
         $lote_id = isset($_GET['lote']) ? sanitize_text_field(wp_unslash($_GET['lote'])) : '';
-        if ($lote_id === '') {
-            echo '<div class="wrap"><p>Lote não encontrado.</p></div>';
-            return;
+
+        if ($lote_id !== '') {
+            $itens = get_posts([
+                'post_type' => 'product',
+                'post_status' => ['draft', 'publish'],
+                'numberposts' => -1,
+                'meta_key' => '_atelie_lote_id',
+                'meta_value' => $lote_id,
+                'orderby' => 'ID',
+                'order' => 'ASC',
+            ]);
+            $titulo = 'Revisar lote';
+        } else {
+            // Sem lote especifico (item de menu): tudo que ainda nao foi revisado,
+            // de qualquer lote — rede de seguranca pra nada ficar esquecido.
+            $itens = get_posts([
+                'post_type' => 'product',
+                'post_status' => ['draft', 'publish'],
+                'numberposts' => -1,
+                'meta_key' => '_atelie_lote_status',
+                'meta_compare' => 'EXISTS',
+                'meta_query' => [
+                    ['key' => '_atelie_lote_status', 'value' => 'revisado', 'compare' => '!='],
+                ],
+                'orderby' => 'ID',
+                'order' => 'DESC',
+            ]);
+            $titulo = 'Pendências';
         }
 
-        $itens = get_posts([
-            'post_type' => 'product',
-            'post_status' => ['draft', 'publish'],
-            'numberposts' => -1,
-            'meta_key' => '_atelie_lote_id',
-            'meta_value' => $lote_id,
-            'orderby' => 'ID',
-            'order' => 'ASC',
-        ]);
+        (new Atelie_Lote_Controller())->cutucar_pendentes(wp_list_pluck($itens, 'ID'));
 
         $rotulos = [
             'processando' => 'Processando',
@@ -137,17 +94,27 @@ class Atelie_Lote_Admin_Pages
         ];
         ?>
         <div class="wrap atelie-novo-produto">
-            <h1>Revisar lote</h1>
+            <h1><?php echo esc_html($titulo); ?> <?php Atelie_Ajuda_Drawer::render('Pendências', [
+                'Cada quadradinho é um produto candidato importado do Google Drive, com um status: <strong>Processando</strong>, <strong>Pronto para revisão</strong>, <strong>Erro</strong> ou <strong>Revisado</strong>.',
+                'Não precisa esperar tudo terminar — pode ir revisando os que já ficaram prontos enquanto o resto processa em segundo plano.',
+                'Se algo parecer travado em "Processando", só de abrir esta tela o painel já verifica e força o processamento de itens atrasados. Clique em "Atualizar status" depois de alguns instantes.',
+                'Sem um lote específico (como agora, pelo menu), esta tela mostra tudo que está pendente de qualquer importação.',
+            ], '/pendencias/'); ?></h1>
             <p><button type="button" class="button" onclick="location.reload();">Atualizar status</button></p>
+
+            <?php if (empty($itens)) : ?>
+                <p>Nada pendente no momento — tudo revisado. 🎉</p>
+            <?php endif; ?>
 
             <div class="atelie-lote-grid">
                 <?php foreach ($itens as $item) :
+                    // Recarrega o status: cutucar_pendentes() pode ter mudado ele agora mesmo.
                     $status = get_post_meta($item->ID, '_atelie_lote_status', true) ?: 'processando';
                     $rotulo = $rotulos[$status] ?? $status;
                     ?>
                     <div class="atelie-lote-card">
                         <?php echo get_the_post_thumbnail($item->ID, 'thumbnail'); ?>
-                        <strong><?php echo esc_html($item->post_title); ?></strong>
+                        <strong><?php echo esc_html(get_the_title($item->ID)); ?></strong>
                         <span class="atelie-chip atelie-chip-<?php echo esc_attr($status); ?>"><?php echo esc_html($rotulo); ?></span>
 
                         <?php if ($status === 'pronto' || $status === 'revisado') : ?>

@@ -143,7 +143,7 @@ class Atelie_Google_Drive_Service
      */
     public static function listar_subpastas(string $pastaId): array
     {
-        return self::listar_arquivos($pastaId, "mimeType='application/vnd.google-apps.folder'");
+        return self::listar_arquivos("'{$pastaId}' in parents and mimeType='application/vnd.google-apps.folder'");
     }
 
     /**
@@ -151,24 +151,40 @@ class Atelie_Google_Drive_Service
      */
     public static function listar_imagens(string $pastaId): array
     {
-        return self::listar_arquivos($pastaId, "mimeType contains 'image/'");
+        return self::listar_arquivos("'{$pastaId}' in parents and mimeType contains 'image/'");
+    }
+
+    /**
+     * Pastas e fotos juntas, pro modal de navegação/seleção — sem $pastaId, lista o que foi
+     * COMPARTILHADO com a conta conectada (é assim que a pasta da artesã aparece pro
+     * desenvolvedor, não em "Meu Drive"). Com $pastaId, lista o conteúdo daquela pasta.
+     *
+     * @return array<int, array{id: string, name: string, mimeType: string, thumbnailLink?: string}>
+     */
+    public static function listar_conteudo(?string $pastaId): array
+    {
+        $filtroPai = $pastaId !== null
+            ? "'{$pastaId}' in parents"
+            : 'sharedWithMe=true';
+
+        $query = "{$filtroPai} and (mimeType='application/vnd.google-apps.folder' or mimeType contains 'image/')";
+
+        return self::listar_arquivos($query, 'files(id,name,mimeType,thumbnailLink)');
     }
 
     /**
      * @return array<int, array<string, string>>
      */
-    private static function listar_arquivos(string $pastaId, string $filtroMime): array
+    private static function listar_arquivos(string $query, string $campos = 'files(id,name,mimeType)'): array
     {
         $token = self::token_de_acesso_valido();
         if ($token === null) {
             return [];
         }
 
-        $query = sprintf("'%s' in parents and %s and trashed=false", $pastaId, $filtroMime);
-
         $url = 'https://www.googleapis.com/drive/v3/files?' . http_build_query([
-            'q' => $query,
-            'fields' => 'files(id,name,mimeType)',
+            'q' => $query . ' and trashed=false',
+            'fields' => $campos,
             'pageSize' => 200,
         ]);
 
@@ -203,6 +219,52 @@ class Atelie_Google_Drive_Service
         }
 
         return wp_remote_retrieve_body($response);
+    }
+
+    /**
+     * Baixa um arquivo do Drive e sobe pra Biblioteca de Mídia do WordPress — usado tanto
+     * pela criação em massa (grupos por pasta) quanto pelo caminho de fotos soltas
+     * selecionadas no modal, que viram um produto só, direto na tela "Novo Produto".
+     *
+     * @param array{id: string, name?: string, mimeType?: string} $imagem
+     */
+    public static function baixar_e_salvar_na_biblioteca(array $imagem, string $prefixoNome = 'drive'): ?int
+    {
+        $dados_binarios = self::baixar_arquivo($imagem['id']);
+        if ($dados_binarios === null) {
+            return null;
+        }
+
+        $mime_type = $imagem['mimeType'] ?? 'image/jpeg';
+        $extensao = match ($mime_type) {
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            'image/gif' => 'gif',
+            default => 'jpg',
+        };
+
+        $nome_arquivo = sanitize_file_name($prefixoNome . '-' . ($imagem['name'] ?? 'foto') . '.' . $extensao);
+
+        $upload = wp_upload_bits($nome_arquivo, null, $dados_binarios);
+        if (!empty($upload['error'])) {
+            return null;
+        }
+
+        $anexo_id = wp_insert_attachment([
+            'post_mime_type' => $mime_type,
+            'post_title' => sanitize_file_name($nome_arquivo),
+            'post_status' => 'inherit',
+        ], $upload['file']);
+
+        if (is_wp_error($anexo_id) || !$anexo_id) {
+            return null;
+        }
+
+        require_once ABSPATH . 'wp-admin/includes/image.php';
+        $metadados = wp_generate_attachment_metadata($anexo_id, $upload['file']);
+        wp_update_attachment_metadata($anexo_id, $metadados);
+
+        return $anexo_id;
     }
 
     /**

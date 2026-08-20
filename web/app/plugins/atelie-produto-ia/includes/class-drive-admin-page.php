@@ -1,9 +1,12 @@
 <?php
 /**
- * Tela "Importar do Drive" — conectar a conta (uma vez, so administrador) e
- * importar fotos de uma pasta compartilhada (Vendedora tambem usa, uma vez
- * ja conectado). Convencao: cada subpasta dentro da pasta compartilhada vira
- * um produto candidato, entregue pro mesmo pipeline de "Criar em massa"
+ * Conexao com o Google Drive (uma vez, so administrador) e importacao de
+ * fotos de uma pasta compartilhada. Sem tela propria — a IU fica embutida em
+ * "Novo Produto" (class-admin-page.php), do lado do upload direto, como o
+ * unico jeito de criar VARIOS produtos de uma vez (organizado em pastas —
+ * decisao explicita do usuario: sem upload solto de fotos sem organizacao
+ * nenhuma, isso vira caos). Convencao: cada subpasta dentro da pasta
+ * compartilhada vira um produto candidato, entregue pro pipeline de lote
  * (Atelie_Lote_Controller::criar_lote_de_grupos).
  */
 
@@ -13,98 +16,17 @@ if (!defined('ABSPATH')) {
 
 class Atelie_Drive_Admin_Page
 {
-    private const SLUG = 'atelie-importar-drive';
+    private const PAGINA_RETORNO = 'atelie-novo-produto';
 
     public function registrar(): void
     {
-        add_action('admin_menu', [$this, 'adicionar_menu']);
         add_action('admin_post_atelie_drive_oauth_callback', [$this, 'oauth_callback']);
         add_action('admin_post_atelie_drive_conectar', [$this, 'iniciar_conexao']);
         add_action('admin_post_atelie_drive_desconectar', [$this, 'desconectar']);
         add_action('admin_post_atelie_drive_importar', [$this, 'importar']);
     }
 
-    public function adicionar_menu(): void
-    {
-        add_submenu_page(
-            'atelie-novo-produto',
-            'Importar do Drive',
-            'Importar do Drive',
-            'edit_products',
-            self::SLUG,
-            [$this, 'renderizar']
-        );
-    }
-
-    public function renderizar(): void
-    {
-        if (isset($_GET['conectado'])) {
-            echo '<div class="notice notice-success is-dismissible"><p>Google Drive conectado.</p></div>';
-        }
-        if (isset($_GET['desconectado'])) {
-            echo '<div class="notice notice-success is-dismissible"><p>Google Drive desconectado.</p></div>';
-        }
-        if (isset($_GET['drive_erro'])) {
-            $codigo = sanitize_key(wp_unslash($_GET['drive_erro']));
-            echo '<div class="notice notice-error"><p>' . esc_html($this->mensagem_erro($codigo)) . '</p></div>';
-        }
-
-        $conectado = Atelie_Drive_Config::conectado();
-        ?>
-        <div class="wrap atelie-novo-produto">
-            <h1>Importar do Drive</h1>
-            <p>Cada subpasta dentro da pasta compartilhada vira um produto candidato — mesma
-               tela de revisão da criação em massa.</p>
-
-            <?php if (!$conectado) : ?>
-                <div class="atelie-card">
-                    <h2>Conectar ao Google Drive</h2>
-                    <?php if (current_user_can('manage_options')) : ?>
-                        <p>Peça pra artesã compartilhar a pasta com fotos usando o e-mail da conta
-                           Google que você vai conectar aqui — a conexão é feita uma vez só.</p>
-                        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
-                            <input type="hidden" name="action" value="atelie_drive_conectar">
-                            <?php wp_nonce_field('atelie_drive_conectar', 'atelie_drive_conectar_nonce'); ?>
-                            <button type="submit" class="button button-primary button-hero">Conectar ao Google Drive</button>
-                        </form>
-                    <?php else : ?>
-                        <p class="atelie-status atelie-status-erro">O Google Drive ainda não foi conectado. Peça pro administrador do site conectar antes de importar.</p>
-                    <?php endif; ?>
-                </div>
-            <?php else : ?>
-                <div class="atelie-card">
-                    <p class="atelie-status atelie-status-ok">✅ Conectado como <strong><?php echo esc_html(Atelie_Drive_Config::conta_email()); ?></strong></p>
-                    <?php if (current_user_can('manage_options')) : ?>
-                        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" onsubmit="return confirm('Desconectar o Google Drive? Você vai precisar autorizar de novo pra importar depois.');">
-                            <input type="hidden" name="action" value="atelie_drive_desconectar">
-                            <?php wp_nonce_field('atelie_drive_desconectar', 'atelie_drive_desconectar_nonce'); ?>
-                            <button type="submit" class="button-link" style="color:#a8434b;">Desconectar</button>
-                        </form>
-                    <?php endif; ?>
-                </div>
-
-                <div class="atelie-card">
-                    <h2>Importar pasta</h2>
-                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
-                        <input type="hidden" name="action" value="atelie_drive_importar">
-                        <?php wp_nonce_field('atelie_drive_importar', 'atelie_drive_importar_nonce'); ?>
-                        <p>
-                            <label for="atelie-drive-pasta">Link da pasta compartilhada</label><br>
-                            <input type="text" name="pasta" id="atelie-drive-pasta" required
-                                   placeholder="https://drive.google.com/drive/folders/..."
-                                   style="width:100%;max-width:480px;">
-                        </p>
-                        <p>
-                            <button type="submit" class="button button-primary button-hero">Importar</button>
-                        </p>
-                    </form>
-                </div>
-            <?php endif; ?>
-        </div>
-        <?php
-    }
-
-    private function mensagem_erro(string $codigo): string
+    public static function mensagem_erro(string $codigo): string
     {
         $limite = isset($_GET['limite']) ? absint($_GET['limite']) : 0;
 
@@ -153,31 +75,31 @@ class Atelie_Drive_Admin_Page
         delete_transient($chave_state);
 
         if ($state_esperado === false || $state_recebido === '' || !hash_equals((string) $state_esperado, $state_recebido)) {
-            wp_safe_redirect(add_query_arg('drive_erro', 'sessao_invalida', admin_url('admin.php?page=' . self::SLUG)));
+            wp_safe_redirect(add_query_arg('drive_erro', 'sessao_invalida', admin_url('admin.php?page=' . self::PAGINA_RETORNO)));
             exit;
         }
 
         if (isset($_GET['error'])) {
-            wp_safe_redirect(add_query_arg('drive_erro', 'consentimento_negado', admin_url('admin.php?page=' . self::SLUG)));
+            wp_safe_redirect(add_query_arg('drive_erro', 'consentimento_negado', admin_url('admin.php?page=' . self::PAGINA_RETORNO)));
             exit;
         }
 
         $code = isset($_GET['code']) ? sanitize_text_field(wp_unslash($_GET['code'])) : '';
         if ($code === '') {
-            wp_safe_redirect(add_query_arg('drive_erro', 'sem_codigo', admin_url('admin.php?page=' . self::SLUG)));
+            wp_safe_redirect(add_query_arg('drive_erro', 'sem_codigo', admin_url('admin.php?page=' . self::PAGINA_RETORNO)));
             exit;
         }
 
         $resultado = Atelie_Google_Drive_Service::trocar_codigo_por_token($code);
 
         if (!$resultado['ok']) {
-            wp_safe_redirect(add_query_arg('drive_erro', rawurlencode($resultado['mensagem']), admin_url('admin.php?page=' . self::SLUG)));
+            wp_safe_redirect(add_query_arg('drive_erro', rawurlencode($resultado['mensagem']), admin_url('admin.php?page=' . self::PAGINA_RETORNO)));
             exit;
         }
 
         Atelie_Drive_Config::salvar_conexao($resultado['refresh_token'], $resultado['email']);
 
-        wp_safe_redirect(add_query_arg('conectado', '1', admin_url('admin.php?page=' . self::SLUG)));
+        wp_safe_redirect(add_query_arg('conectado', '1', admin_url('admin.php?page=' . self::PAGINA_RETORNO)));
         exit;
     }
 
@@ -193,7 +115,7 @@ class Atelie_Drive_Admin_Page
 
         Atelie_Drive_Config::desconectar();
 
-        wp_safe_redirect(add_query_arg('desconectado', '1', admin_url('admin.php?page=' . self::SLUG)));
+        wp_safe_redirect(add_query_arg('desconectado', '1', admin_url('admin.php?page=' . self::PAGINA_RETORNO)));
         exit;
     }
 
@@ -208,36 +130,91 @@ class Atelie_Drive_Admin_Page
         }
 
         if (!Atelie_Drive_Config::conectado()) {
-            wp_safe_redirect(add_query_arg('drive_erro', 'nao_conectado', admin_url('admin.php?page=' . self::SLUG)));
-            exit;
-        }
-
-        $link = isset($_POST['pasta']) ? sanitize_text_field(wp_unslash($_POST['pasta'])) : '';
-        $pasta_id = Atelie_Google_Drive_Service::extrair_id_da_pasta($link);
-
-        if ($pasta_id === null) {
-            wp_safe_redirect(add_query_arg('drive_erro', 'link_invalido', admin_url('admin.php?page=' . self::SLUG)));
-            exit;
-        }
-
-        $subpastas = Atelie_Google_Drive_Service::listar_subpastas($pasta_id);
-
-        if (empty($subpastas)) {
-            wp_safe_redirect(add_query_arg('drive_erro', 'pasta_vazia', admin_url('admin.php?page=' . self::SLUG)));
+            wp_safe_redirect(add_query_arg('drive_erro', 'nao_conectado', admin_url('admin.php?page=' . self::PAGINA_RETORNO)));
             exit;
         }
 
         $lote_controller = new Atelie_Lote_Controller();
         $limite = $lote_controller->limite_por_lote();
 
+        $pastas_ids = $this->ids_da_lista($_POST['pastas_ids'] ?? '');
+        $fotos_soltas_ids = $this->ids_da_lista($_POST['fotos_soltas_ids'] ?? '');
+
+        // Selecao pelo modal do Google Picker (uma ou mais pastas e/ou fotos soltas,
+        // escolhidas a mao — decisao explicita do usuario: cada pasta selecionada vira
+        // um produto com as fotos dela (ate 10), as fotos soltas selecionadas juntas
+        // viram UM produto so (mesmas fotos, mesmo produto).
+        if (!empty($pastas_ids) || !empty($fotos_soltas_ids)) {
+            $total_produtos = count($pastas_ids) + (!empty($fotos_soltas_ids) ? 1 : 0);
+            if ($total_produtos > $limite) {
+                wp_safe_redirect(add_query_arg(['drive_erro' => 'limite', 'limite' => $limite], admin_url('admin.php?page=' . self::PAGINA_RETORNO)));
+                exit;
+            }
+
+            $grupos = [];
+
+            foreach ($pastas_ids as $pasta_id) {
+                $imagens = array_slice(Atelie_Google_Drive_Service::listar_imagens($pasta_id), 0, Atelie_Admin_Page::LIMITE_FOTOS);
+                $ids_do_grupo = [];
+                foreach ($imagens as $imagem) {
+                    $anexo_id = $this->baixar_e_salvar_imagem($imagem, 'drive-pasta');
+                    if ($anexo_id !== null) {
+                        $ids_do_grupo[] = $anexo_id;
+                    }
+                }
+                if (!empty($ids_do_grupo)) {
+                    $grupos[] = $ids_do_grupo;
+                }
+            }
+
+            if (!empty($fotos_soltas_ids)) {
+                $ids_do_grupo = [];
+                foreach (array_slice($fotos_soltas_ids, 0, Atelie_Admin_Page::LIMITE_FOTOS) as $foto_id) {
+                    $anexo_id = $this->baixar_e_salvar_imagem(['id' => $foto_id], 'drive-solta');
+                    if ($anexo_id !== null) {
+                        $ids_do_grupo[] = $anexo_id;
+                    }
+                }
+                if (!empty($ids_do_grupo)) {
+                    $grupos[] = $ids_do_grupo;
+                }
+            }
+
+            if (empty($grupos)) {
+                wp_safe_redirect(add_query_arg('drive_erro', 'sem_fotos_validas', admin_url('admin.php?page=' . self::PAGINA_RETORNO)));
+                exit;
+            }
+
+            $lote_id = $lote_controller->criar_lote_de_grupos($grupos);
+            wp_safe_redirect(admin_url('admin.php?page=atelie-revisar-lote&lote=' . rawurlencode($lote_id)));
+            exit;
+        }
+
+        // Fallback: link colado a mao (pasta unica, compartilhada com varias subpastas
+        // dentro — cada subpasta vira um produto). Comportamento original da Fase E.
+        $link = isset($_POST['pasta']) ? sanitize_text_field(wp_unslash($_POST['pasta'])) : '';
+        $pasta_id = Atelie_Google_Drive_Service::extrair_id_da_pasta($link);
+
+        if ($pasta_id === null) {
+            wp_safe_redirect(add_query_arg('drive_erro', 'link_invalido', admin_url('admin.php?page=' . self::PAGINA_RETORNO)));
+            exit;
+        }
+
+        $subpastas = Atelie_Google_Drive_Service::listar_subpastas($pasta_id);
+
+        if (empty($subpastas)) {
+            wp_safe_redirect(add_query_arg('drive_erro', 'pasta_vazia', admin_url('admin.php?page=' . self::PAGINA_RETORNO)));
+            exit;
+        }
+
         if (count($subpastas) > $limite) {
-            wp_safe_redirect(add_query_arg(['drive_erro' => 'limite', 'limite' => $limite], admin_url('admin.php?page=' . self::SLUG)));
+            wp_safe_redirect(add_query_arg(['drive_erro' => 'limite', 'limite' => $limite], admin_url('admin.php?page=' . self::PAGINA_RETORNO)));
             exit;
         }
 
         $grupos = [];
         foreach ($subpastas as $subpasta) {
-            $imagens = Atelie_Google_Drive_Service::listar_imagens($subpasta['id']);
+            $imagens = array_slice(Atelie_Google_Drive_Service::listar_imagens($subpasta['id']), 0, Atelie_Admin_Page::LIMITE_FOTOS);
             $ids_do_grupo = [];
 
             foreach ($imagens as $imagem) {
@@ -253,7 +230,7 @@ class Atelie_Drive_Admin_Page
         }
 
         if (empty($grupos)) {
-            wp_safe_redirect(add_query_arg('drive_erro', 'sem_fotos_validas', admin_url('admin.php?page=' . self::SLUG)));
+            wp_safe_redirect(add_query_arg('drive_erro', 'sem_fotos_validas', admin_url('admin.php?page=' . self::PAGINA_RETORNO)));
             exit;
         }
 
@@ -264,44 +241,25 @@ class Atelie_Drive_Admin_Page
     }
 
     /**
+     * IDs de arquivo/pasta do Drive nao sao numericos (absint nao serve) — filtra pelo
+     * mesmo formato aceito em Atelie_Google_Drive_Service::extrair_id_da_pasta().
+     *
+     * @return array<int, string>
+     */
+    private function ids_da_lista(mixed $valor): array
+    {
+        $lista = is_string($valor) ? explode(',', sanitize_text_field(wp_unslash($valor))) : [];
+
+        return array_values(array_filter(array_map('trim', $lista), static function (string $id): bool {
+            return preg_match('#^[a-zA-Z0-9_-]{10,}$#', $id) === 1;
+        }));
+    }
+
+    /**
      * @param array{id: string, name: string, mimeType?: string} $imagem
      */
     private function baixar_e_salvar_imagem(array $imagem, string $nomeSubpasta): ?int
     {
-        $dados_binarios = Atelie_Google_Drive_Service::baixar_arquivo($imagem['id']);
-        if ($dados_binarios === null) {
-            return null;
-        }
-
-        $mime_type = $imagem['mimeType'] ?? 'image/jpeg';
-        $extensao = match ($mime_type) {
-            'image/png' => 'png',
-            'image/webp' => 'webp',
-            'image/gif' => 'gif',
-            default => 'jpg',
-        };
-
-        $nome_arquivo = sanitize_file_name($nomeSubpasta . '-' . ($imagem['name'] ?? 'foto') . '.' . $extensao);
-
-        $upload = wp_upload_bits($nome_arquivo, null, $dados_binarios);
-        if (!empty($upload['error'])) {
-            return null;
-        }
-
-        $anexo_id = wp_insert_attachment([
-            'post_mime_type' => $mime_type,
-            'post_title' => sanitize_file_name($nome_arquivo),
-            'post_status' => 'inherit',
-        ], $upload['file']);
-
-        if (is_wp_error($anexo_id) || !$anexo_id) {
-            return null;
-        }
-
-        require_once ABSPATH . 'wp-admin/includes/image.php';
-        $metadados = wp_generate_attachment_metadata($anexo_id, $upload['file']);
-        wp_update_attachment_metadata($anexo_id, $metadados);
-
-        return $anexo_id;
+        return Atelie_Google_Drive_Service::baixar_e_salvar_na_biblioteca($imagem, $nomeSubpasta);
     }
 }

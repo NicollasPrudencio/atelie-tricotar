@@ -104,7 +104,12 @@ class Atelie_Case_Admin_Page
         $descricao_ia_original_valor = $revisao['descricao_sugerida'] ?? '';
         ?>
         <div class="wrap atelie-novo-produto">
-            <h1>Novo Case</h1>
+            <h1>Novo Case <?php Atelie_Ajuda_Drawer::render('Novo Case', [
+                'Um "case" é um trabalho já <strong>entregue</strong>, mostrado como vitrine no portfólio — sem preço e sem botão de comprar.',
+                'Anexe as fotos do trabalho pronto, do mesmo jeito que em "Novo Produto".',
+                'No campo "Conte como foi esse trabalho", escreva livremente sobre a encomenda — a IA transforma esse relato numa descrição de vitrine. É opcional, mas ajuda bastante.',
+                'A mesma revisão de qualidade de "Novo Produto" vale aqui: texto editado ou manual passa pela checagem antes de publicar.',
+            ], '/cases/'); ?></h1>
             <p>Vitrine de um trabalho já entregue — sem preço, sem botão de comprar.</p>
 
             <div id="atelie-passo-anexar" class="atelie-card">
