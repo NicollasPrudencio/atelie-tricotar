@@ -75,31 +75,31 @@ class Atelie_Drive_Admin_Page
         delete_transient($chave_state);
 
         if ($state_esperado === false || $state_recebido === '' || !hash_equals((string) $state_esperado, $state_recebido)) {
-            wp_safe_redirect(add_query_arg('drive_erro', 'sessao_invalida', admin_url('admin.php?page=' . self::PAGINA_RETORNO)));
+            wp_safe_redirect(add_query_arg('drive_erro', 'sessao_invalida', admin_url('edit.php?post_type=product&page=' . self::PAGINA_RETORNO)));
             exit;
         }
 
         if (isset($_GET['error'])) {
-            wp_safe_redirect(add_query_arg('drive_erro', 'consentimento_negado', admin_url('admin.php?page=' . self::PAGINA_RETORNO)));
+            wp_safe_redirect(add_query_arg('drive_erro', 'consentimento_negado', admin_url('edit.php?post_type=product&page=' . self::PAGINA_RETORNO)));
             exit;
         }
 
         $code = isset($_GET['code']) ? sanitize_text_field(wp_unslash($_GET['code'])) : '';
         if ($code === '') {
-            wp_safe_redirect(add_query_arg('drive_erro', 'sem_codigo', admin_url('admin.php?page=' . self::PAGINA_RETORNO)));
+            wp_safe_redirect(add_query_arg('drive_erro', 'sem_codigo', admin_url('edit.php?post_type=product&page=' . self::PAGINA_RETORNO)));
             exit;
         }
 
         $resultado = Atelie_Google_Drive_Service::trocar_codigo_por_token($code);
 
         if (!$resultado['ok']) {
-            wp_safe_redirect(add_query_arg('drive_erro', rawurlencode($resultado['mensagem']), admin_url('admin.php?page=' . self::PAGINA_RETORNO)));
+            wp_safe_redirect(add_query_arg('drive_erro', rawurlencode($resultado['mensagem']), admin_url('edit.php?post_type=product&page=' . self::PAGINA_RETORNO)));
             exit;
         }
 
         Atelie_Drive_Config::salvar_conexao($resultado['refresh_token'], $resultado['email']);
 
-        wp_safe_redirect(add_query_arg('conectado', '1', admin_url('admin.php?page=' . self::PAGINA_RETORNO)));
+        wp_safe_redirect(add_query_arg('conectado', '1', admin_url('edit.php?post_type=product&page=' . self::PAGINA_RETORNO)));
         exit;
     }
 
@@ -115,7 +115,7 @@ class Atelie_Drive_Admin_Page
 
         Atelie_Drive_Config::desconectar();
 
-        wp_safe_redirect(add_query_arg('desconectado', '1', admin_url('admin.php?page=' . self::PAGINA_RETORNO)));
+        wp_safe_redirect(add_query_arg('desconectado', '1', admin_url('edit.php?post_type=product&page=' . self::PAGINA_RETORNO)));
         exit;
     }
 
@@ -130,7 +130,7 @@ class Atelie_Drive_Admin_Page
         }
 
         if (!Atelie_Drive_Config::conectado()) {
-            wp_safe_redirect(add_query_arg('drive_erro', 'nao_conectado', admin_url('admin.php?page=' . self::PAGINA_RETORNO)));
+            wp_safe_redirect(add_query_arg('drive_erro', 'nao_conectado', admin_url('edit.php?post_type=product&page=' . self::PAGINA_RETORNO)));
             exit;
         }
 
@@ -147,7 +147,7 @@ class Atelie_Drive_Admin_Page
         if (!empty($pastas_ids) || !empty($fotos_soltas_ids)) {
             $total_produtos = count($pastas_ids) + (!empty($fotos_soltas_ids) ? 1 : 0);
             if ($total_produtos > $limite) {
-                wp_safe_redirect(add_query_arg(['drive_erro' => 'limite', 'limite' => $limite], admin_url('admin.php?page=' . self::PAGINA_RETORNO)));
+                wp_safe_redirect(add_query_arg(['drive_erro' => 'limite', 'limite' => $limite], admin_url('edit.php?post_type=product&page=' . self::PAGINA_RETORNO)));
                 exit;
             }
 
@@ -181,12 +181,12 @@ class Atelie_Drive_Admin_Page
             }
 
             if (empty($grupos)) {
-                wp_safe_redirect(add_query_arg('drive_erro', 'sem_fotos_validas', admin_url('admin.php?page=' . self::PAGINA_RETORNO)));
+                wp_safe_redirect(add_query_arg('drive_erro', 'sem_fotos_validas', admin_url('edit.php?post_type=product&page=' . self::PAGINA_RETORNO)));
                 exit;
             }
 
             $lote_id = $lote_controller->criar_lote_de_grupos($grupos);
-            wp_safe_redirect(admin_url('admin.php?page=atelie-revisar-lote&lote=' . rawurlencode($lote_id)));
+            wp_safe_redirect(admin_url('edit.php?post_type=product&page=atelie-revisar-lote&lote=' . rawurlencode($lote_id)));
             exit;
         }
 
@@ -196,19 +196,19 @@ class Atelie_Drive_Admin_Page
         $pasta_id = Atelie_Google_Drive_Service::extrair_id_da_pasta($link);
 
         if ($pasta_id === null) {
-            wp_safe_redirect(add_query_arg('drive_erro', 'link_invalido', admin_url('admin.php?page=' . self::PAGINA_RETORNO)));
+            wp_safe_redirect(add_query_arg('drive_erro', 'link_invalido', admin_url('edit.php?post_type=product&page=' . self::PAGINA_RETORNO)));
             exit;
         }
 
         $subpastas = Atelie_Google_Drive_Service::listar_subpastas($pasta_id);
 
         if (empty($subpastas)) {
-            wp_safe_redirect(add_query_arg('drive_erro', 'pasta_vazia', admin_url('admin.php?page=' . self::PAGINA_RETORNO)));
+            wp_safe_redirect(add_query_arg('drive_erro', 'pasta_vazia', admin_url('edit.php?post_type=product&page=' . self::PAGINA_RETORNO)));
             exit;
         }
 
         if (count($subpastas) > $limite) {
-            wp_safe_redirect(add_query_arg(['drive_erro' => 'limite', 'limite' => $limite], admin_url('admin.php?page=' . self::PAGINA_RETORNO)));
+            wp_safe_redirect(add_query_arg(['drive_erro' => 'limite', 'limite' => $limite], admin_url('edit.php?post_type=product&page=' . self::PAGINA_RETORNO)));
             exit;
         }
 
@@ -230,13 +230,13 @@ class Atelie_Drive_Admin_Page
         }
 
         if (empty($grupos)) {
-            wp_safe_redirect(add_query_arg('drive_erro', 'sem_fotos_validas', admin_url('admin.php?page=' . self::PAGINA_RETORNO)));
+            wp_safe_redirect(add_query_arg('drive_erro', 'sem_fotos_validas', admin_url('edit.php?post_type=product&page=' . self::PAGINA_RETORNO)));
             exit;
         }
 
         $lote_id = $lote_controller->criar_lote_de_grupos($grupos);
 
-        wp_safe_redirect(admin_url('admin.php?page=atelie-revisar-lote&lote=' . rawurlencode($lote_id)));
+        wp_safe_redirect(admin_url('edit.php?post_type=product&page=atelie-revisar-lote&lote=' . rawurlencode($lote_id)));
         exit;
     }
 

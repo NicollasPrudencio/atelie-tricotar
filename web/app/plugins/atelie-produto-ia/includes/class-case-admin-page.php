@@ -213,7 +213,7 @@ class Atelie_Case_Admin_Page
         $fotos_ids = isset($_POST['fotos_ids']) ? array_filter(array_map('absint', explode(',', (string) wp_unslash($_POST['fotos_ids'])))) : [];
 
         if ($titulo === '' || empty($fotos_ids)) {
-            wp_safe_redirect(add_query_arg('erro', '1', admin_url('admin.php?page=' . self::SLUG)));
+            wp_safe_redirect(add_query_arg('erro', '1', admin_url('edit.php?post_type=atelie_case&page=' . self::SLUG)));
             exit;
         }
 
@@ -234,7 +234,7 @@ class Atelie_Case_Admin_Page
                     'case',
                     $dados_formulario,
                     $revisao,
-                    admin_url('admin.php?page=' . self::SLUG)
+                    admin_url('edit.php?post_type=atelie_case&page=' . self::SLUG)
                 );
             }
         }
@@ -247,7 +247,7 @@ class Atelie_Case_Admin_Page
         ]);
 
         if (is_wp_error($case_id) || !$case_id) {
-            wp_safe_redirect(add_query_arg('erro', '1', admin_url('admin.php?page=' . self::SLUG)));
+            wp_safe_redirect(add_query_arg('erro', '1', admin_url('edit.php?post_type=atelie_case&page=' . self::SLUG)));
             exit;
         }
 
@@ -256,7 +256,7 @@ class Atelie_Case_Admin_Page
             update_post_meta($case_id, '_atelie_case_galeria', implode(',', array_slice($fotos_ids, 1)));
         }
 
-        wp_safe_redirect(add_query_arg('publicado', '1', admin_url('admin.php?page=' . self::SLUG)));
+        wp_safe_redirect(add_query_arg('publicado', '1', admin_url('edit.php?post_type=atelie_case&page=' . self::SLUG)));
         exit;
     }
 }

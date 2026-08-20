@@ -322,12 +322,12 @@ class Atelie_Admin_Page
         $fotos_ids = isset($_POST['fotos_ids']) ? array_filter(array_map('absint', explode(',', (string) wp_unslash($_POST['fotos_ids'])))) : [];
 
         if ($titulo === '' || !is_numeric($preco) || empty($fotos_ids)) {
-            wp_safe_redirect(add_query_arg('erro', '1', admin_url('admin.php?page=atelie-novo-produto')));
+            wp_safe_redirect(add_query_arg('erro', '1', admin_url('edit.php?post_type=product&page=' . self::SLUG)));
             exit;
         }
 
         if (count($fotos_ids) > self::LIMITE_FOTOS) {
-            wp_safe_redirect(add_query_arg('erro', 'limite-fotos', admin_url('admin.php?page=atelie-novo-produto')));
+            wp_safe_redirect(add_query_arg('erro', 'limite-fotos', admin_url('edit.php?post_type=product&page=' . self::SLUG)));
             exit;
         }
 
@@ -370,7 +370,7 @@ class Atelie_Admin_Page
                     'produto',
                     $dados_formulario,
                     $revisao,
-                    admin_url('admin.php?page=atelie-novo-produto')
+                    admin_url('edit.php?post_type=product&page=' . self::SLUG)
                 );
             }
         }
@@ -383,7 +383,7 @@ class Atelie_Admin_Page
         ]);
 
         if (is_wp_error($produto_id) || !$produto_id) {
-            wp_safe_redirect(add_query_arg('erro', '1', admin_url('admin.php?page=atelie-novo-produto')));
+            wp_safe_redirect(add_query_arg('erro', '1', admin_url('edit.php?post_type=product&page=' . self::SLUG)));
             exit;
         }
 
@@ -424,7 +424,7 @@ class Atelie_Admin_Page
             update_post_meta($produto_id, '_product_image_gallery', implode(',', array_slice($fotos_ids, 1)));
         }
 
-        wp_safe_redirect(add_query_arg('publicado', '1', admin_url('admin.php?page=atelie-novo-produto')));
+        wp_safe_redirect(add_query_arg('publicado', '1', admin_url('edit.php?post_type=product&page=' . self::SLUG)));
         exit;
     }
 }
