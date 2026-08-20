@@ -14,6 +14,16 @@ class Atelie_Faturamento_Admin_Page
 {
     private const SLUG = 'atelie-faturamento';
 
+    /**
+     * Teto de faturamento anual do MEI e faixa de tolerância (até 20% acima
+     * ainda permite ficar no regime esse ano, pagando DAS complementar —
+     * acima disso o desenquadramento é retroativo). Valor vigente desde 2018,
+     * confirmado em 2026 sem reajuste oficial apesar de propostas em
+     * tramitação — revisar se o Congresso aprovar mudança.
+     */
+    private const MEI_TETO_ANUAL = 81000.0;
+    private const MEI_TETO_TOLERANCIA = 97200.0;
+
     public function registrar(): void
     {
         add_action('admin_menu', [$this, 'adicionar_menu']);
@@ -32,7 +42,7 @@ class Atelie_Faturamento_Admin_Page
             'atelie-faturamento-admin',
             plugins_url('assets/faturamento.css', dirname(__DIR__) . '/atelie-faturamento.php'),
             [],
-            '0.1.0'
+            '0.1.1'
         );
     }
 
@@ -109,6 +119,13 @@ class Atelie_Faturamento_Admin_Page
         [$inicio, $fim, $periodo_atual] = $this->periodo_selecionado();
         $relatorio = new Atelie_Relatorio_Faturamento($inicio, $fim);
 
+        $agora = current_datetime();
+        $relatorio_anual = new Atelie_Relatorio_Faturamento(
+            $agora->modify('first day of january this year')->setTime(0, 0),
+            $agora
+        );
+        $receita_anual = $relatorio_anual->receita();
+
         $receita = $relatorio->receita();
         $taxa_mp = $relatorio->taxa_mercado_pago();
         $custo_frete = $relatorio->custo_frete();
@@ -151,6 +168,8 @@ class Atelie_Faturamento_Admin_Page
                 });
                 </script>
             </div>
+
+            <?php $this->renderizar_card_mei($receita_anual, (int) $agora->format('Y')); ?>
 
             <div class="atelie-fat-resumo">
                 <div class="atelie-card atelie-fat-card">
@@ -230,6 +249,55 @@ class Atelie_Faturamento_Admin_Page
                     </p>
                 </form>
             </div>
+
+            <div class="atelie-card">
+                <h2>Prazos do MEI</h2>
+                <ul class="atelie-fat-prazos">
+                    <li><strong>DAS (imposto mensal)</strong> — vence todo dia 20. Pague pelo <a href="https://www8.receita.fazenda.gov.br/simplesnacional/aplicacoes/atspo/pgmei.app/identificacao" target="_blank" rel="noopener noreferrer">app/site do PGMEI</a>.</li>
+                    <li><strong>DASN-SIMEI (declaração anual)</strong> — até 31 de maio, referente ao ano anterior. Feita pelo <a href="https://www8.receita.fazenda.gov.br/simplesnacional/aplicacoes/atbhe/declaracaoanual.app/identificacao" target="_blank" rel="noopener noreferrer">Portal do Empreendedor</a>.</li>
+                    <li><strong>Nota fiscal</strong> — emissor gratuito do MEI, ou automatizado quando o Bling for ativado (ver <code>docs/decisions/0001</code>).</li>
+                </ul>
+            </div>
+        </div>
+        <?php
+    }
+
+    /**
+     * Acompanha o teto de faturamento do MEI (ano corrente, independente do
+     * período filtrado no resto da tela) — avisa antes de estourar, não só
+     * depois. Ver Atelie_Faturamento_Admin_Page::MEI_TETO_ANUAL pra fonte do
+     * valor.
+     */
+    private function renderizar_card_mei(float $receita_anual, int $ano): void
+    {
+        $percentual = self::MEI_TETO_ANUAL > 0 ? ($receita_anual / self::MEI_TETO_ANUAL) * 100 : 0;
+        $percentual_barra = min(100, $percentual);
+
+        if ($receita_anual > self::MEI_TETO_TOLERANCIA) {
+            $status = 'critico';
+            $mensagem = 'Passou da faixa de tolerância do MEI — o desenquadramento pode ser retroativo ao início do ano, com recálculo de imposto e multa. Vale procurar um contador o quanto antes.';
+        } elseif ($receita_anual > self::MEI_TETO_ANUAL) {
+            $status = 'atencao';
+            $mensagem = 'Passou do teto anual do MEI, mas dentro da faixa de tolerância (até 20% acima) — ainda dá pra fechar o ano no MEI pagando um DAS complementar.';
+        } elseif ($percentual >= 80) {
+            $status = 'aviso';
+            $mensagem = 'Chegando perto do teto anual do MEI — vale acompanhar de perto nos próximos meses.';
+        } else {
+            $status = 'ok';
+            $mensagem = '';
+        }
+        ?>
+        <div class="atelie-card atelie-fat-card-mei atelie-fat-card-mei-<?php echo esc_attr($status); ?>">
+            <div class="atelie-fat-mei-cabecalho">
+                <span class="atelie-fat-rotulo">Faturamento do MEI em <?php echo esc_html((string) $ano); ?></span>
+                <span class="atelie-fat-mei-numeros">R$ <?php echo esc_html(number_format($receita_anual, 2, ',', '.')); ?> de R$ <?php echo esc_html(number_format(self::MEI_TETO_ANUAL, 0, ',', '.')); ?></span>
+            </div>
+            <div class="atelie-fat-mei-barra-fundo">
+                <div class="atelie-fat-mei-barra" style="width:<?php echo esc_attr((string) $percentual_barra); ?>%"></div>
+            </div>
+            <?php if ($mensagem !== '') : ?>
+                <p class="atelie-fat-mei-mensagem">⚠️ <?php echo esc_html($mensagem); ?></p>
+            <?php endif; ?>
         </div>
         <?php
     }
