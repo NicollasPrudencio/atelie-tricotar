@@ -94,9 +94,25 @@ lead por e-mail e dispara evento `Lead` no pixel/CAPI.
 
 ## Nota fiscal
 
-Ateliê ainda não tem CNPJ. Integração de NF-e (Focus NFe/NFe.io) é construída e testada em
-sandbox, mas fica desligada (`NFE_EMISSAO_ATIVA=false`) até existir CNPJ — ativar depois é só
-preencher CNPJ/regime numa tela de configuração própria, sem deploy de código.
+Ateliê ainda não tem CNPJ — caminho recomendado é abrir como **MEI** (gratuito, imposto fixo
+baixo, sem exigência de contador, teto de ~R$81 mil/ano). Emissão manual de nota pelo emissor
+gratuito do próprio MEI é suficiente em baixo volume, sem precisar de nenhuma plataforma paga.
+
+**Decisão 2026-08-20 (revisão da decisão original deste documento)**: quando a emissão
+automática de NF-e fizer sentido (a cada venda, sem intervenção manual), a escolha é o
+**Bling** (ERP com emissor de NF-e integrado + plugin oficial pro WooCommerce) em vez de
+construir uma integração própria com Focus NFe/NFe.io. Motivo: é uma área onde erro custa caro
+(nota fiscal errada é problema com o fisco, não só um bug de software) — preferível usar uma
+plataforma testada por milhares de lojas do que manter lógica fiscal customizada (rejeição da
+Sefaz, contingência, regras por NCM, etc.). Com o Bling, a automação fica 100% configurada no
+painel deles (dispara sozinha quando o pedido é marcado como pago) — não exige token nem
+lógica no nosso código, diferente do que a flag `NFE_EMISSAO_ATIVA` (ainda existente só como
+reserva) originalmente previa.
+
+Pré-requisito descoberto na prática: emitir nota (por qualquer via) exige o CPF/CNPJ do
+comprador capturado no checkout — hoje esse campo não é capturado de verdade (o checkout em
+blocos do WooCommerce não é compatível com o plugin usado pra isso), então precisa ser resolvido
+antes de qualquer emissão automática funcionar.
 
 ## Continuidade de contexto entre máquinas
 

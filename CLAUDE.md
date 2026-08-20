@@ -30,11 +30,15 @@ antigo (removido, este é o repo oficial novo).
 - **CI/CD**: pipeline em 2 estágios — todo push builda/testa, faz deploy automático em QA, roda
   testes de fumaça contra QA, e só promove para produção automaticamente se tudo passar. Sem
   aprovação manual no fluxo padrão (decisão explícita do usuário).
-- **Nota fiscal**: ateliê ainda não tem CNPJ. A integração de NF-e é pra ser construída e ficar
-  desligada (flag `NFE_EMISSAO_ATIVA=false`) até existir CNPJ — a flag reservada já existe no
-  `.env`, mas a integração em si (chamadas ao provedor, geração de nota) **ainda não foi
-  construída**. Quando for: ativar depois é só preencher dados numa tela de configuração, sem
-  deploy de código novo.
+- **Nota fiscal**: ateliê ainda não tem CNPJ (caminho recomendado: MEI, gratuito). Emissão
+  automática de NF-e (quando fizer sentido, por venda) será via **Bling** (ERP com plugin
+  oficial pro WooCommerce), não uma integração própria com Focus NFe/NFe.io como planejado
+  originalmente — decisão explícita do usuário 2026-08-20, ver `docs/decisions/0001`. Isso
+  significa **sem token nem lógica no nosso código** pra isso — configuração fica 100% no
+  painel do Bling. Pré-requisito ainda pendente: capturar CPF/CNPJ do comprador no checkout (o
+  checkout em blocos do WooCommerce não é compatível com o plugin `woocommerce-extra-checkout-
+  fields-for-brazil` instalado pro Melhor Envio — precisa de um campo customizado via API de
+  blocos do próprio WooCommerce).
 
 ## Onde encontrar o resto
 
