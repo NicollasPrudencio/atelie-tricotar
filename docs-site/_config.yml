@@ -1,7 +1,7 @@
 title: Manual do Painel — Ateliê Tricotar
 description: Guia de uso do painel administrativo do site do Ateliê Tricotar — para quem cadastra produtos e para quem administra o site.
-baseurl: "/atelie-tricotar"
-url: "https://nicollasprudencio.github.io"
+baseurl: ""
+url: "https://docs.atelietricotar.com.br"
 
 remote_theme: just-the-docs/just-the-docs
 plugins:

@@ -16,9 +16,7 @@ if (!defined('ABSPATH')) {
 }
 
 if (!defined('ATELIE_DOCS_BASE_URL')) {
-    // Domínio padrão do GitHub Pages por enquanto — troca pra
-    // https://docs.atelietricotar.com.br quando o domínio próprio existir.
-    define('ATELIE_DOCS_BASE_URL', 'https://nicollasprudencio.github.io/atelie-tricotar');
+    define('ATELIE_DOCS_BASE_URL', 'https://docs.atelietricotar.com.br');
 }
 
 class Atelie_Ajuda_Drawer
