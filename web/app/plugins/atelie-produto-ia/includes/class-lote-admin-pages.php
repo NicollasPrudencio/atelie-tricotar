@@ -55,13 +55,20 @@ class Atelie_Lote_Admin_Pages
     {
         $lote_id = isset($_GET['lote']) ? sanitize_text_field(wp_unslash($_GET['lote'])) : '';
 
+        // Item já revisado sai da lista em qualquer uma das duas visões — não tem
+        // motivo pra continuar ocupando espaço numa tela de pendência depois de
+        // resolvido, mesmo entrando direto pelo link de um lote específico.
+        $meta_query = [
+            ['key' => '_atelie_lote_status', 'value' => 'revisado', 'compare' => '!='],
+        ];
+
         if ($lote_id !== '') {
+            $meta_query[] = ['key' => '_atelie_lote_id', 'value' => $lote_id, 'compare' => '='];
             $itens = get_posts([
                 'post_type' => 'product',
                 'post_status' => ['draft', 'publish'],
                 'numberposts' => -1,
-                'meta_key' => '_atelie_lote_id',
-                'meta_value' => $lote_id,
+                'meta_query' => $meta_query,
                 'orderby' => 'ID',
                 'order' => 'ASC',
             ]);
@@ -73,11 +80,7 @@ class Atelie_Lote_Admin_Pages
                 'post_type' => 'product',
                 'post_status' => ['draft', 'publish'],
                 'numberposts' => -1,
-                'meta_key' => '_atelie_lote_status',
-                'meta_compare' => 'EXISTS',
-                'meta_query' => [
-                    ['key' => '_atelie_lote_status', 'value' => 'revisado', 'compare' => '!='],
-                ],
+                'meta_query' => $meta_query,
                 'orderby' => 'ID',
                 'order' => 'DESC',
             ]);
