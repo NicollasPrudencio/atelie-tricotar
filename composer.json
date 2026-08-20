@@ -21,6 +21,7 @@
         "wpackagist-plugin/melhor-envio-cotacao": "*",
         "wpackagist-plugin/shortpixel-image-optimiser": "*",
         "wpackagist-plugin/woocommerce": "^9.0",
+        "wpackagist-plugin/woocommerce-extra-checkout-fields-for-brazil": "*",
         "wpackagist-plugin/woocommerce-mercadopago": "*",
         "wpackagist-plugin/wp-2fa": "*"
     },

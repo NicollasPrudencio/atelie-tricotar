@@ -63,7 +63,11 @@ Bem além da Fase 0. Já construído e funcionando:
 - Tema (`web/app/themes/atelie-theme`) com identidade visual completa (paleta pêssego/rosa/
   marfim, tipografia Fraunces+Mulish, baseada no logo real do ateliê), loja, carrinho, checkout,
   portfólio e formulário de orçamento personalizado funcionando via Mercado Pago (sandbox) +
-  Melhor Envio (sandbox).
+  Melhor Envio (sandbox) — zona de entrega "Brasil" com Correios PAC/SEDEX precisou ser
+  configurada manualmente (nunca tinha sido de fato, apesar do token do Melhor Envio já
+  configurado), junto com o plugin `woocommerce-extra-checkout-fields-for-brazil` (exigido pelo
+  Melhor Envio pros campos de checkout BR). Moeda da loja também estava em USD por padrão do
+  WooCommerce — corrigida pra BRL com formatação brasileira (R$ 1.234,50).
 - Plugin `atelie-produto-ia` completo: criação de produto e de case com autofill por IA
   (Gemini), criação em massa assíncrona, revisor de qualidade de venda com bloqueio de
   publicação, rastreamento de custo de IA por chamada, tela própria "IA" (chave/status/custo).
