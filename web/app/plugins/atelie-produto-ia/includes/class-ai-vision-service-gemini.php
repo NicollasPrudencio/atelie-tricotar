@@ -47,10 +47,17 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
             ];
         }
 
+        // A latência do Gemini pra analisar imagem varia bastante (visto entre ~13s e
+        // ~45s em teste real) e o proxy do host mata a conexão em algum ponto acima
+        // disso sem deixar o PHP responder — quando isso acontece, o front recebe um
+        // 502 cru do Cloudflare em vez do erro tratado (ver classe
+        // Atelie_Rest_Controller::analisar_fotos()). Preferível errar rápido e limpo
+        // (a pessoa tenta de novo ou preenche manualmente) do que esperar até esbarrar
+        // nesse limite do proxy, que não temos como configurar nesse host.
         $body = $this->chamar([
             'contents' => [['parts' => $parts]],
             'generationConfig' => ['responseMimeType' => 'application/json'],
-        ], 'analisar');
+        ], 'analisar', 40);
 
         $texto_json = $body['candidates'][0]['content']['parts'][0]['text'] ?? null;
         $sugestao = is_string($texto_json) ? json_decode($texto_json, true) : null;

@@ -111,7 +111,7 @@ class Atelie_Rest_Controller
 
         $caminhos = [];
         foreach ($fotos_ids as $id) {
-            $caminho = get_attached_file($id);
+            $caminho = $this->caminho_para_ia($id);
             if ($caminho) {
                 $caminhos[] = $caminho;
             }
@@ -119,7 +119,7 @@ class Atelie_Rest_Controller
 
         $receita_imagem_id = absint($request->get_param('receita_imagem_id'));
         if ($receita_imagem_id) {
-            $caminho_receita = get_attached_file($receita_imagem_id);
+            $caminho_receita = $this->caminho_para_ia($receita_imagem_id);
             if ($caminho_receita) {
                 $caminhos[] = $caminho_receita;
             }
@@ -127,6 +127,14 @@ class Atelie_Rest_Controller
 
         $receita_texto = $request->get_param('receita_texto');
         $receita_texto = is_string($receita_texto) && trim($receita_texto) !== '' ? sanitize_textarea_field($receita_texto) : null;
+
+        // Análise de fotos por IA pode levar até 40s (ver timeout em
+        // Atelie_Ai_Vision_Service_Gemini::analisar()) — garante margem além disso
+        // pro PHP não matar o processo antes de conseguir responder com o erro
+        // tratado, mesmo que o default de execução do host seja mais baixo.
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(60);
+        }
 
         try {
             $servico = Atelie_Ai_Vision_Service_Factory::criar();
@@ -336,6 +344,29 @@ class Atelie_Rest_Controller
         wp_update_attachment_metadata($anexo_id, $metadados);
 
         return $anexo_id;
+    }
+
+    /**
+     * Fotos de celular costumam vir com vários MB — mandar o arquivo original pra
+     * IA deixa o upload e o processamento lentos o bastante pra estourar o timeout
+     * do proxy do host (confirmado: chamada travando ~45s e voltando 502 cru do
+     * Cloudflare em vez de erro tratado). O tamanho "large" do WordPress (até
+     * 1024px) já é mais que suficiente pra IA reconhecer o produto, então usamos
+     * ele quando existir, caindo pro original só se não tiver sido gerado.
+     */
+    private function caminho_para_ia(int $id): ?string
+    {
+        $reduzida = image_get_intermediate_size($id, 'large');
+        if (is_array($reduzida) && isset($reduzida['path'])) {
+            $upload_dir = wp_get_upload_dir();
+            $caminho = trailingslashit($upload_dir['basedir']) . $reduzida['path'];
+            if (is_readable($caminho)) {
+                return $caminho;
+            }
+        }
+
+        $original = get_attached_file($id);
+        return $original !== false ? $original : null;
     }
 
     private function limite_diario(): int
