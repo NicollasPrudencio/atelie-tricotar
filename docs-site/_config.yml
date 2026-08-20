@@ -24,6 +24,15 @@ back_to_top_text: "Voltar ao topo"
 
 lang: pt-BR
 
+# Sem isso, nenhuma pagina aplica o layout do tema (nem CSS, nem menu lateral,
+# nem busca) — cai no HTML cru, sem nenhum wrapper.
+defaults:
+  - scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: default
+
 exclude:
   - Gemfile
   - Gemfile.lock
