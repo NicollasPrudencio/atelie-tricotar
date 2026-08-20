@@ -4,6 +4,12 @@ gem "jekyll", "~> 4.3"
 gem "jekyll-remote-theme"
 gem "webrick", "~> 1.8"
 
+# Dependencias que o proprio tema just-the-docs declara e o Jekyll tenta
+# carregar em tempo de build (PluginManager#require_theme_deps) — sem elas
+# instaladas aqui, o build falha com "cannot load such file".
+gem "jekyll-seo-tag"
+gem "jekyll-include-cache"
+
 # Ruby 3.2+ removeu essas gems do conjunto padrao, mas o Jekyll 4.3 ainda depende
 # delas sem declarar — sem isso aqui, o build falha com "cannot load such file".
 gem "logger"
