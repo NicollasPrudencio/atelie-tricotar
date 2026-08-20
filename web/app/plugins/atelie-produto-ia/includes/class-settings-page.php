@@ -41,7 +41,11 @@ class Atelie_Settings_Page
         $chave_mascarada = Atelie_Ai_Config::chave_mascarada();
         ?>
         <div class="wrap atelie-novo-produto">
-            <h1>Configurar IA</h1>
+            <h1>Configurar IA <?php Atelie_Ajuda_Drawer::render('Tela IA', [
+                'O status de conexão mostra se a IA está funcionando agora. "Testar conexão agora" força uma nova checagem imediata.',
+                'A chave de API do Google Gemini é gerada gratuitamente em aistudio.google.com/app/apikey — trocar aqui é só colar e clicar em "Salvar e testar".',
+                'A aba de custos mostra quanto foi gasto no mês e permite configurar um aviso automático quando o gasto ultrapassar um valor definido.',
+            ], '/admin/ia/'); ?></h1>
 
             <?php if (isset($_GET['salvo'])) : ?>
                 <div class="notice notice-success is-dismissible"><p>Configuração salva.</p></div>

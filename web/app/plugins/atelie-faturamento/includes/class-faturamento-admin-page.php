@@ -118,7 +118,12 @@ class Atelie_Faturamento_Admin_Page
         $lista_despesas = Atelie_Despesas_Manuais::listar_periodo($inicio, $fim);
         ?>
         <div class="wrap atelie-faturamento">
-            <h1>Faturamento</h1>
+            <h1>Faturamento <?php Atelie_Ajuda_Drawer::render('Faturamento', [
+                '<strong>Receita</strong> é a soma dos pedidos pagos no período; <strong>Lucro líquido</strong> é a receita menos todos os custos abaixo.',
+                'Custos considerados: taxa Mercado Pago, frete pago (sem margem, é o valor repassado à transportadora), custo de IA e despesas manuais.',
+                'Pedidos sem dado de taxa Mercado Pago ainda disponível são contados à parte, não entram como R$ 0 — a tela avisa quantos ficaram de fora.',
+                'Lance despesas do dia a dia do ateliê (hospedagem, domínio etc.) no formulário desta mesma tela.',
+            ], '/admin/faturamento/'); ?></h1>
 
             <div class="atelie-card">
                 <form method="get">

@@ -26,13 +26,15 @@ antigo (removido, este é o repo oficial novo).
   A IA também **revisa** qualquer texto editado ou 100% manual antes de publicar (nome da
   artesã no texto, elogio exagerado, linguagem amadora, falta de gatilho de venda) e **bloqueia
   a publicação** se achar problema, sem opção de ignorar — decisão explícita do usuário, ver
-  `manual/manual-do-painel.md`.
+  manual do painel (link na seção "Onde encontrar o resto").
 - **CI/CD**: pipeline em 2 estágios — todo push builda/testa, faz deploy automático em QA, roda
   testes de fumaça contra QA, e só promove para produção automaticamente se tudo passar. Sem
   aprovação manual no fluxo padrão (decisão explícita do usuário).
-- **Nota fiscal**: ateliê ainda não tem CNPJ. Integração de NF-e é construída mas fica
-  desligada (flag `NFE_EMISSAO_ATIVA=false`) até existir CNPJ — ativar depois é só preencher
-  dados numa tela de configuração, sem deploy de código novo.
+- **Nota fiscal**: ateliê ainda não tem CNPJ. A integração de NF-e é pra ser construída e ficar
+  desligada (flag `NFE_EMISSAO_ATIVA=false`) até existir CNPJ — a flag reservada já existe no
+  `.env`, mas a integração em si (chamadas ao provedor, geração de nota) **ainda não foi
+  construída**. Quando for: ativar depois é só preencher dados numa tela de configuração, sem
+  deploy de código novo.
 
 ## Onde encontrar o resto
 
@@ -41,9 +43,13 @@ antigo (removido, este é o repo oficial novo).
 - **Precificação interna** (custo de matéria-prima + hora técnica, fora do plano original):
   `docs/decisions/0002-precificacao-interna.md`.
 - **Manual do painel administrativo** (como usar cada tela — produto, case, criação em massa,
-  configurar IA, faturamento; documento vivo, atualizado a cada funcionalidade nova, pensado
-  pra virar site publicado num subdomínio quando o pipeline de CI/CD existir):
-  `manual/manual-do-painel.md`.
+  Pendências, configurar IA, faturamento; documento vivo, atualizado a cada funcionalidade
+  nova): site publicado via GitHub Pages a partir de `docs-site/` (Jekyll +
+  `just-the-docs`), em `https://nicollasprudencio.github.io/atelie-tricotar/` (domínio próprio
+  `docs.atelietricotar.com.br` fica pra depois — só falta apontar um CNAME). Cada tela do
+  painel tem um botão "?" (canto do `<h1>`) que abre um resumo rápido e linka pra página certa
+  dessa doc — componente compartilhado em
+  `web/app/mu-plugins/atelie-ajuda-drawer.php` (`Atelie_Ajuda_Drawer::render()`).
 - **Túnel fixo do Cloudflare pra dev local**: `docs/cloudflare-tunnel-fixo.md`.
 - **Estrutura de pastas e convenções de código**: ver `README.md`.
 
@@ -62,13 +68,18 @@ Bem além da Fase 0. Já construído e funcionando:
   (Gemini), criação em massa assíncrona, revisor de qualidade de venda com bloqueio de
   publicação, rastreamento de custo de IA por chamada, tela própria "IA" (chave/status/custo).
   Edição de imagem por IA está com o código pronto mas não testada de verdade (exige
-  faturamento ativo numa conta Google, ver `manual/manual-do-painel.md`).
+  faturamento ativo numa conta Google).
 - Plugin `atelie-faturamento`: receita vs. custos (IA, taxa Mercado Pago, frete, despesas
   manuais) e lucro líquido, por período.
 - Importação do Google Drive implementada (autorização OAuth fixa na conta do desenvolvedor,
-  não da artesã — decisão explícita; ela só compartilha a pasta). Código testado, mas a
-  autorização real (clicar "Conectar" e passar pela tela do Google) ainda precisa ser
-  concluída pelo usuário — é interação de navegador que não dá pra automatizar.
+  não da artesã — decisão explícita; ela só compartilha a pasta), com modal próprio de seleção
+  (pastas e/ou fotos soltas, não o Picker oficial do Google — não dava pra customizar o
+  suficiente pra usuário leigo). Testado ponta a ponta no ambiente dev.
+- Tela "Pendências" (cross-lote, força reprocessamento de itens atrasados só de ser visitada —
+  "cutucar_pendentes()") + cron real do cPanel no ambiente dev (`DISABLE_WP_CRON=true` no `.env`
+  do servidor, WP-Cron pseudo-cron não é confiável nesse host).
+- Site de documentação (`docs-site/`, GitHub Pages) + botão de ajuda contextual no painel (ver
+  seção "Onde encontrar o resto").
 - Pendente do roadmap de IA: assistente de busca+tradução de receita em outro idioma (Fase F).
 - Pendente geral: deploy real (CI/CD ainda não rodou contra hospedagem de verdade), Fase 2
   completa de tracking (Meta Pixel/CAPI, GA4, banner LGPD), hardening da Fase 4 (WPScan
