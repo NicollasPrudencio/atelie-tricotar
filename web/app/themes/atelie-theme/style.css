@@ -3,7 +3,7 @@ Theme Name: Atelie Theme
 Description: Tema do site do Ateliê Tricotar — identidade baseada no logo (pêssego, rosa,
              marfim, tipografia serifada quente + sans arredondada), tricô/crochê/amigurumi.
 Author: Atelier Tricotar
-Version: 0.2.5
+Version: 0.2.6
 Requires PHP: 8.1
 Text Domain: atelie-theme
 */
@@ -549,6 +549,127 @@ p.no-comments {
     font-weight: 700;
     color: var(--cor-tinta-suave);
     margin: 0.5rem 0 1rem;
+}
+
+/* ---------------------------------------------------------------------------
+ * Checkout em blocos (WooCommerce Blocks — página Checkout usa o bloco
+ * wp:woocommerce/checkout, não o shortcode clássico [woocommerce_checkout];
+ * as classes .woocommerce-checkout* acima não alcançam essa marcação nova,
+ * então cai no visual padrão cinza do WooCommerce Blocks sem isto aqui.
+ * ------------------------------------------------------------------------ */
+.wc-block-checkout {
+    font-family: var(--fonte-corpo);
+    color: var(--cor-tinta);
+}
+
+/* Título de cada etapa (Informações de contato, Endereço, Opções de entrega, Opções de pagamento) */
+.wc-block-components-checkout-step__title,
+.wc-block-components-title {
+    font-family: var(--fonte-display);
+    color: var(--cor-tinta);
+    font-weight: 700;
+}
+
+.wc-block-components-checkout-step {
+    margin-bottom: 1.75rem;
+    padding-bottom: 1.75rem;
+    border-bottom: var(--borda-card);
+}
+
+.wc-block-components-checkout-step:last-child {
+    border-bottom: none;
+}
+
+.wc-block-components-checkout-step__description {
+    color: var(--cor-tinta-suave);
+}
+
+/* Cada opção de frete/pagamento vira um cartão clicável, igual ao resto do site */
+.wc-block-components-radio-control__option {
+    border: 1.5px solid #e6d7c7;
+    border-radius: var(--raio-card);
+    padding: 1rem 1.1rem;
+    margin-bottom: 0.75rem;
+    background: var(--cor-superficie);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.wc-block-components-radio-control__option--checked,
+.wc-block-components-radio-control__option:has(input:checked) {
+    border-color: var(--cor-rosa);
+    box-shadow: 0 0 0 1px var(--cor-rosa);
+    background: var(--cor-rosa-suave);
+}
+
+.wc-block-components-radio-control__input:checked {
+    background-color: var(--cor-rosa) !important;
+    border-color: var(--cor-rosa) !important;
+}
+
+.wc-block-components-radio-control__label-group .label {
+    color: var(--cor-tinta);
+    font-weight: 700;
+}
+
+.wc-block-components-radio-control__secondary-label,
+.wc-block-components-formatted-money-amount {
+    color: var(--cor-rosa-escuro);
+    font-weight: 800;
+}
+
+/* Resumo do pedido (barra lateral) — mesmo tratamento de "cartão" do resto do tema */
+.wc-block-components-sidebar .wc-block-components-panel,
+.wc-block-components-order-summary,
+.wc-block-checkout__sidebar > * {
+    background: var(--cor-superficie);
+    border: var(--borda-card);
+    border-radius: var(--raio-card);
+    box-shadow: var(--sombra-card);
+}
+
+.wc-block-components-order-summary {
+    padding: 1.25rem 1.4rem;
+}
+
+.wc-block-components-totals-item__label,
+.wc-block-components-totals-item__value {
+    font-family: var(--fonte-corpo);
+    color: var(--cor-tinta);
+}
+
+.wc-block-components-totals-footer-item .wc-block-components-totals-item__label,
+.wc-block-components-totals-footer-item .wc-block-components-totals-item__value {
+    font-family: var(--fonte-display);
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--cor-rosa-escuro);
+}
+
+/* Botão "Finalizar compra" e demais botões dos blocos — mesma pílula rosa do resto do site */
+.wc-block-components-checkout-place-order-button,
+.wc-block-components-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: var(--cor-rosa);
+    color: #fff !important;
+    font-family: var(--fonte-corpo);
+    font-weight: 700;
+    border: none;
+    border-radius: var(--raio-pilula) !important;
+    box-shadow: 0 8px 18px -8px rgba(184, 87, 126, 0.55);
+}
+
+.wc-block-components-checkout-place-order-button:hover,
+.wc-block-components-button:hover {
+    background: var(--cor-rosa-escuro) !important;
+}
+
+.wc-block-components-button.wc-block-components-button--tertiary {
+    background: transparent;
+    color: var(--cor-rosa-escuro) !important;
+    box-shadow: none;
 }
 
 /* ---------------------------------------------------------------------------

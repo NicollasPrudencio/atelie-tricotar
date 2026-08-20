@@ -137,6 +137,23 @@ add_action('woocommerce_process_product_meta', function (int $post_id): void {
 });
 
 /**
+ * O campo "Título" de cada método do Melhor Envio (config da zona de entrega)
+ * não é respeitado pelo plugin — a classe base não recarrega a opção salva ao
+ * montar a cotação, então o rótulo sempre volta pro padrão com a marca deles
+ * ("Correios Pac (Melhor Envio)"), mesmo mudando o campo pelo admin. Cliente
+ * não precisa saber qual parceiro de envio o ateliê usa por trás, só a
+ * modalidade — removemos esse sufixo aqui em vez de depender do plugin.
+ */
+add_filter('woocommerce_package_rates', function (array $tarifas): array {
+    foreach ($tarifas as $tarifa) {
+        if (strpos($tarifa->get_method_id(), 'melhorenvio_') === 0) {
+            $tarifa->label = trim(str_replace(' (Melhor Envio)', '', $tarifa->label));
+        }
+    }
+    return $tarifas;
+}, 20);
+
+/**
  * Portfolio/cases — vitrine de trabalhos sob encomenda, sem preco/compra,
  * separada do catalogo. Ver plano, secao "Portfolio/cases e encomenda
  * personalizada". Galeria de multiplas fotos por case fica para quando a
