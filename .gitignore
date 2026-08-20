@@ -19,6 +19,7 @@
 !/web/app/mu-plugins/atelie-precificacao.php
 !/web/app/mu-plugins/atelie-integracoes-sync.php
 !/web/app/mu-plugins/atelie-ajuda-drawer.php
+!/web/app/mu-plugins/atelie-checkout-campos-br.php
 !/web/app/mu-plugins/assets
 /web/app/themes/*
 !/web/app/themes/atelie-theme
