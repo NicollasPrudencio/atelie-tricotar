@@ -89,11 +89,28 @@ Bem além da Fase 0. Já construído e funcionando:
   "cutucar_pendentes()") + cron real do cPanel no ambiente dev (`DISABLE_WP_CRON=true` no `.env`
   do servidor, WP-Cron pseudo-cron não é confiável nesse host).
 - Site de documentação (`docs-site/`, GitHub Pages) + botão de ajuda contextual no painel (ver
-  seção "Onde encontrar o resto").
+  seção "Onde encontrar o resto"), com cobertura completa das telas do painel, incluindo
+  Precificação interna.
+- Acesso SSH real ao servidor de dev liberado via chamado de suporte (ver
+  `docs/acesso-ssh-dev.md`) — usado pra corrigir, no mesmo dia (2026-08-21), dois bugs que
+  faziam o pipeline de CI/CD nunca ter rodado de verdade contra hospedagem real: `composer.lock`
+  desatualizado + `composer audit` travando por pacote abandonado sem vulnerabilidade real, e um
+  bug de sintaxe YAML no `deploy.yml` que derrubava o workflow inteiro silenciosamente. Lint
+  (WPCS) também nunca tinha rodado de verdade — rodado pela primeira vez, ~9.590 problemas
+  encontrados e corrigidos/justificados. Tudo isolado em PRs (#1 CI/lint, #2 WPScan agendado),
+  **sem merge pra `main`** — decisão explícita do usuário: pipeline de deploy pra produção fica
+  por último, só quando o ambiente de dev estiver pronto pra lançar de verdade.
+- Fase 2 de tracking: plugins instalados e ativos no dev (Pixel Manager for WooCommerce, versão
+  gratuita — Meta Pixel só navegador + GA4, sem Meta CAPI por decisão explícita de custo; e
+  Complianz pro banner de consentimento LGPD). Falta o usuário criar as contas reais (Pixel do
+  Meta, propriedade GA4) e revisar o texto do banner de consentimento.
+- Hardening (Fase 4): scan de segurança agendado (WPScan, semanal) criado como workflow —
+  falta o usuário configurar o secret `WPSCAN_API_TOKEN` (conta gratuita em wpscan.com) pra
+  funcionar de verdade. Teste de restore de backup feito e confirmado 2026-08-21 (backup
+  completo via cPanel, extraído em pasta isolada, arquivos batendo 100% com o site ao vivo e
+  dump do MySQL com as 62 tabelas reais) — mecanismo de backup do host confirmado confiável.
 - Pendente do roadmap de IA: assistente de busca+tradução de receita em outro idioma (Fase F).
-- Pendente geral: deploy real (CI/CD ainda não rodou contra hospedagem de verdade), Fase 2
-  completa de tracking (Meta Pixel/CAPI, GA4, banner LGPD), hardening da Fase 4 (WPScan
-  agendado, teste de restore de backup).
+- Pendente geral: deploy real pra produção (decisão explícita: fica por último).
 - Pendente confirmado com o usuário em 2026-08-20: o formulário público "Solicitar orçamento
   personalizado" (`web/app/mu-plugins/atelie-orcamento.php`) só dispara um e-mail pro admin —
   não grava em CPT/tabela nenhuma, então não existe tela no painel pra rever pedidos antigos.
