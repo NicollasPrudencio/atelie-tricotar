@@ -397,6 +397,64 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 			. "\n\nTítulo: {$titulo}\nDescrição: {$descricao}";
 	}
 
+	public function gerarAnuncio( string $titulo, string $descricao, string $tipo_objeto ): array {
+		$vazio = array(
+			'meta'   => array(
+				'texto_principal' => '',
+				'titulo'          => '',
+			),
+			'tiktok' => array( 'legenda' => '' ),
+		);
+
+		if ( empty( $this->api_key ) ) {
+			return $vazio;
+		}
+
+		$prompt = $this->montar_prompt_anuncio( $titulo, $descricao, $tipo_objeto );
+
+		try {
+			$body = $this->chamar(
+				array(
+					'contents'         => array( array( 'parts' => array( array( 'text' => $prompt ) ) ) ),
+					'generationConfig' => array( 'responseMimeType' => 'application/json' ),
+				),
+				'gerar_anuncio'
+			);
+		} catch ( Throwable $e ) {
+			return $vazio;
+		}
+
+		$texto_json = $body['candidates'][0]['content']['parts'][0]['text'] ?? null;
+		$resultado  = is_string( $texto_json ) ? json_decode( $texto_json, true ) : null;
+
+		if ( ! is_array( $resultado ) ) {
+			return $vazio;
+		}
+
+		return array(
+			'meta'   => array(
+				'texto_principal' => (string) ( $resultado['meta']['texto_principal'] ?? '' ),
+				'titulo'          => (string) ( $resultado['meta']['titulo'] ?? '' ),
+			),
+			'tiktok' => array(
+				'legenda' => (string) ( $resultado['tiktok']['legenda'] ?? '' ),
+			),
+		);
+	}
+
+	private function montar_prompt_anuncio( string $titulo, string $descricao, string $tipo_objeto ): string {
+		$objeto = $tipo_objeto === 'case' ? 'um trabalho do portfólio (vitrine, sem preço — o anúncio deve gerar interesse e contato, não "comprar agora")' : 'um produto à venda';
+
+		return 'Você é redator de anúncios pagos (Meta Ads e TikTok Ads) de um ateliê de tricô, crochê e amigurumis artesanais. '
+			. 'O público é majoritariamente mulheres. O objetivo do anúncio NÃO é descrever a peça — é gerar CLIQUE (visita ao site) e, '
+			. "a partir disso, venda. Use o título e a descrição já publicados de {$objeto} como referência do que é a peça, mas escreva o anúncio do zero, pensando em performance de anúncio pago (gatilho, urgência sutil ou curiosidade, tom caloroso e artesanal — nunca robótico ou exagerado a ponto de parecer falso). "
+			. 'Gere DOIS anúncios diferentes, adequados a cada plataforma: '
+			. '(1) Meta (Instagram/Facebook Ads): "texto_principal" (o texto principal do anúncio, até uns 150 caracteres, direto ao ponto) e "titulo" (manchete curta, até 40 caracteres). '
+			. '(2) TikTok Ads: "legenda" (tom mais casual e direto que o Meta, como quem fala pra uma amiga, até uns 150 caracteres, pode incluir 1-2 hashtags relevantes ao final). '
+			. 'Responda SOMENTE um objeto JSON no formato: {"meta": {"texto_principal": "...", "titulo": "..."}, "tiktok": {"legenda": "..."}}.'
+			. "\n\nTítulo do item: {$titulo}\nDescrição do item: {$descricao}";
+	}
+
 	private function mime_type( string $path ): string {
 		$ext = strtolower( (string) pathinfo( $path, PATHINFO_EXTENSION ) );
 		return match ( $ext ) {

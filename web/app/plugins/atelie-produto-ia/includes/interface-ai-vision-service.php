@@ -62,4 +62,18 @@ interface Atelie_Ai_Vision_Service_Interface {
 	 * @return array{ok: bool, imagem_base64: ?string, mime_type: ?string, mensagem: string}
 	 */
 	public function editarImagem( string $imagem_path, string $prompt ): array;
+
+	/**
+	 * Gera o texto de anuncio (Meta e TikTok) a partir do titulo/descricao ja
+	 * publicados de um produto ou case — sempre pensando em gerar visita e
+	 * venda, nunca so "descrever" o item. So texto: a imagem usada no anuncio
+	 * e uma foto ja existente do item (escolhida por quem publica), e video
+	 * pro TikTok, se houver, e enviado manualmente — a IA nao gera midia aqui.
+	 *
+	 * @return array{
+	 *     meta: array{texto_principal: string, titulo: string},
+	 *     tiktok: array{legenda: string}
+	 * }
+	 */
+	public function gerarAnuncio( string $titulo, string $descricao, string $tipo_objeto ): array;
 }
