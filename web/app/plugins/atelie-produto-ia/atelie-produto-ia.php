@@ -9,8 +9,8 @@
  * Drive implementados.
  */
 
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
 require_once __DIR__ . '/includes/class-ai-custo-tracker.php';
@@ -30,23 +30,26 @@ require_once __DIR__ . '/includes/class-drive-config.php';
 require_once __DIR__ . '/includes/class-google-drive-service.php';
 require_once __DIR__ . '/includes/class-drive-admin-page.php';
 
-register_activation_hook(__FILE__, ['Atelie_Ai_Custo_Tracker', 'garantir_tabela']);
+register_activation_hook( __FILE__, array( 'Atelie_Ai_Custo_Tracker', 'garantir_tabela' ) );
 
 /**
  * Cobre tambem quem ja tinha o plugin ativo antes dessa tabela existir —
  * register_activation_hook so dispara em ativacoes novas.
  */
-add_action('plugins_loaded', ['Atelie_Ai_Custo_Tracker', 'garantir_tabela']);
+add_action( 'plugins_loaded', array( 'Atelie_Ai_Custo_Tracker', 'garantir_tabela' ) );
 
-add_action('plugins_loaded', function (): void {
-    (new Atelie_Rest_Controller())->registrar();
-    (new Atelie_Admin_Page())->registrar();
-    (new Atelie_Case_Admin_Page())->registrar();
-    (new Atelie_Lote_Controller())->registrar();
-    (new Atelie_Lote_Admin_Pages())->registrar();
-    (new Atelie_Settings_Page())->registrar();
-    (new Atelie_Drive_Admin_Page())->registrar();
-});
+add_action(
+	'plugins_loaded',
+	function (): void {
+		( new Atelie_Rest_Controller() )->registrar();
+		( new Atelie_Admin_Page() )->registrar();
+		( new Atelie_Case_Admin_Page() )->registrar();
+		( new Atelie_Lote_Controller() )->registrar();
+		( new Atelie_Lote_Admin_Pages() )->registrar();
+		( new Atelie_Settings_Page() )->registrar();
+		( new Atelie_Drive_Admin_Page() )->registrar();
+	}
+);
 
 /**
  * Verificação diária automática da conexão com a IA — sem isso, se a chave
@@ -55,15 +58,21 @@ add_action('plugins_loaded', function (): void {
  * tomar erro. Com a checagem diária, o botão "Sugerir com IA" já aparece
  * desabilitado com o aviso antes de alguém perder tempo tentando.
  */
-add_action('init', function (): void {
-    if (!wp_next_scheduled('atelie_ai_verificar_conexao_diaria')) {
-        wp_schedule_event(time(), 'daily', 'atelie_ai_verificar_conexao_diaria');
-    }
-});
+add_action(
+	'init',
+	function (): void {
+		if ( ! wp_next_scheduled( 'atelie_ai_verificar_conexao_diaria' ) ) {
+			wp_schedule_event( time(), 'daily', 'atelie_ai_verificar_conexao_diaria' );
+		}
+	}
+);
 
-add_action('atelie_ai_verificar_conexao_diaria', function (): void {
-    Atelie_Ai_Config::testar_conexao();
-});
+add_action(
+	'atelie_ai_verificar_conexao_diaria',
+	function (): void {
+		Atelie_Ai_Config::testar_conexao();
+	}
+);
 
 /**
  * O painel simplificado é o único caminho pra criar produto/case — não faz
@@ -72,25 +81,35 @@ add_action('atelie_ai_verificar_conexao_diaria', function (): void {
  * manualmente" que já existe dentro do painel). Some com o item de menu e
  * redireciona quem chegar direto na URL nativa (link salvo, digitado, etc).
  */
-add_action('admin_menu', function (): void {
-    remove_submenu_page('edit.php?post_type=product', 'post-new.php?post_type=product');
-    remove_submenu_page('edit.php?post_type=atelie_case', 'post-new.php?post_type=atelie_case');
-}, 999);
+add_action(
+	'admin_menu',
+	function (): void {
+		remove_submenu_page( 'edit.php?post_type=product', 'post-new.php?post_type=product' );
+		remove_submenu_page( 'edit.php?post_type=atelie_case', 'post-new.php?post_type=atelie_case' );
+	},
+	999
+);
 
-add_action('load-post-new.php', function (): void {
-    $post_type = isset($_GET['post_type']) ? sanitize_key(wp_unslash($_GET['post_type'])) : 'post';
+add_action(
+	'load-post-new.php',
+	function (): void {
+		$post_type = isset( $_GET['post_type'] ) ? sanitize_key( wp_unslash( $_GET['post_type'] ) ) : 'post';
 
-    if ($post_type === 'product') {
-        wp_safe_redirect(admin_url('admin.php?page=atelie-novo-produto'));
-        exit;
-    }
+		if ( $post_type === 'product' ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=atelie-novo-produto' ) );
+			exit;
+		}
 
-    if ($post_type === 'atelie_case') {
-        wp_safe_redirect(admin_url('admin.php?page=atelie-novo-case'));
-        exit;
-    }
-});
+		if ( $post_type === 'atelie_case' ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=atelie-novo-case' ) );
+			exit;
+		}
+	}
+);
 
-register_deactivation_hook(__FILE__, function (): void {
-    wp_clear_scheduled_hook('atelie_ai_verificar_conexao_diaria');
-});
+register_deactivation_hook(
+	__FILE__,
+	function (): void {
+		wp_clear_scheduled_hook( 'atelie_ai_verificar_conexao_diaria' );
+	}
+);

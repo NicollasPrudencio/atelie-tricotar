@@ -90,7 +90,8 @@ jobs:
 
       - name: Testes de fumaca contra staging (gate para promocao)
         if: false # habilita quando tests/e2e existir (Fase 3) — ate la o gate e so o deploy ter funcionado
-        run: echo "TODO: rodar Playwright contra ${{ secrets.WP_HOME }}"
+        run: |
+          echo "TODO: rodar Playwright contra ${{ secrets.WP_HOME }}"
 
   promote-to-main:
     needs: deploy-staging

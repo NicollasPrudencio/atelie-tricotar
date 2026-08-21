@@ -13,7 +13,55 @@
     <file>./config</file>
 
 
-    <rule ref="WordPress"/>
+    <!--
+    WordPress-Docs (dentro de "WordPress") exige docblock em todo arquivo/classe/funcao — vai
+    contra a convencao real do projeto (comentario so quando o "porque" nao e obvio, nao
+    documentacao do "o que"). YodaConditions e estilo controverso que o codigo nunca seguiu
+    consistentemente. DisallowShortTernary idem — ternario curto e usado de proposito no
+    projeto. FileName.* espera "class-nome.php": quebra tanto os mu-plugins (nomeados
+    "atelie-*.php" de proposito, sem prefixo "class-") quanto os templates do tema que
+    precisam bater com o slug do CPT no underscore (archive-atelie_case.php,
+    single-atelie_case.php — exigencia da propria hierarquia de templates do WordPress).
+    IniSet e GlobalVariablesOverride disparam em config/environments/*.php e
+    config/application.php, que sao os arquivos padrao gerados pelo Bedrock — nao vale a pena
+    editar boilerplate do framework pra agradar o linter. SlowDBQuery e so aviso de
+    performance sobre meta_query/tax_query, uso normal e esperado do WP_Query pra filtrar
+    CPTs por metadado. ValidFunctionName.MethodNameInvalid exclui so a interface de IA de
+    visao, que usa camelCase de proposito (nome dos metodos definido antes do padrao WPCS ser
+    configurado, ver Atelie_Ai_Vision_Service_Interface) — renomear tocaria varios pontos de
+    chamada por um ganho puramente estetico.
+    -->
+    <rule ref="WordPress">
+        <exclude name="WordPress-Docs"/>
+        <exclude name="WordPress.PHP.YodaConditions"/>
+        <exclude name="Universal.Operators.DisallowShortTernary"/>
+        <exclude name="WordPress.Files.FileName"/>
+        <exclude name="WordPress.PHP.IniSet"/>
+        <exclude name="WordPress.WP.GlobalVariablesOverride"/>
+        <exclude name="WordPress.DB.SlowDBQuery"/>
+        <exclude name="WordPress.NamingConventions.ValidFunctionName.MethodNameInvalid"/>
+        <exclude name="WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode"/>
+        <exclude name="WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode"/>
+        <!--
+        NonceVerification.Recommended (o nivel "aviso", disparado em leitura de $_GET/cookie —
+        diferente de .Missing, que e o nivel "erro" pra $_POST) so aparece neste projeto em
+        leitura pura de flag de UI (qual aviso mostrar, qual filtro aplicar numa listagem),
+        nunca em algo que muda estado — GET e feito pra ser idempotente, nao precisa de CSRF
+        pra isso. As poucas ocorrencias reais de $_POST sem nonce (hook do WooCommerce que ja
+        verifica nonce antes de disparar a acao) tem phpcs:disable pontual com justificativa.
+        -->
+        <exclude name="WordPress.Security.NonceVerification.Recommended"/>
+    </rule>
     <rule ref="PHPCompatibilityWP"/>
     <config name="testVersion" value="8.1-"/>
+
+    <!-- Capabilities customizadas do papel Vendedora — nao existem na lista padrao do WP. -->
+    <rule ref="WordPress.WP.Capabilities">
+        <properties>
+            <property name="custom_capabilities" type="array">
+                <element value="edit_products"/>
+                <element value="edit_atelie_cases"/>
+            </property>
+        </properties>
+    </rule>
 </ruleset>

@@ -8,39 +8,34 @@
  * no projeto pra chave do Gemini).
  */
 
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
-class Atelie_Drive_Config
-{
-    private const OPCAO_REFRESH_TOKEN = 'atelie_drive_refresh_token';
-    private const OPCAO_CONTA_EMAIL = 'atelie_drive_conta_email';
+class Atelie_Drive_Config {
 
-    public static function conectado(): bool
-    {
-        return self::obter_refresh_token() !== '';
-    }
+	private const OPCAO_REFRESH_TOKEN = 'atelie_drive_refresh_token';
+	private const OPCAO_CONTA_EMAIL   = 'atelie_drive_conta_email';
 
-    public static function obter_refresh_token(): string
-    {
-        return trim((string) get_option(self::OPCAO_REFRESH_TOKEN, ''));
-    }
+	public static function conectado(): bool {
+		return self::obter_refresh_token() !== '';
+	}
 
-    public static function conta_email(): string
-    {
-        return trim((string) get_option(self::OPCAO_CONTA_EMAIL, ''));
-    }
+	public static function obter_refresh_token(): string {
+		return trim( (string) get_option( self::OPCAO_REFRESH_TOKEN, '' ) );
+	}
 
-    public static function salvar_conexao(string $refreshToken, string $contaEmail): void
-    {
-        update_option(self::OPCAO_REFRESH_TOKEN, $refreshToken, false);
-        update_option(self::OPCAO_CONTA_EMAIL, $contaEmail, false);
-    }
+	public static function conta_email(): string {
+		return trim( (string) get_option( self::OPCAO_CONTA_EMAIL, '' ) );
+	}
 
-    public static function desconectar(): void
-    {
-        delete_option(self::OPCAO_REFRESH_TOKEN);
-        delete_option(self::OPCAO_CONTA_EMAIL);
-    }
+	public static function salvar_conexao( string $refresh_token, string $conta_email ): void {
+		update_option( self::OPCAO_REFRESH_TOKEN, $refresh_token, false );
+		update_option( self::OPCAO_CONTA_EMAIL, $conta_email, false );
+	}
+
+	public static function desconectar(): void {
+		delete_option( self::OPCAO_REFRESH_TOKEN );
+		delete_option( self::OPCAO_CONTA_EMAIL );
+	}
 }
