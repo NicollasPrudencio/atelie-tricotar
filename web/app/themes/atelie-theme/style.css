@@ -3,7 +3,7 @@ Theme Name: Atelie Theme
 Description: Tema do site do Ateliê Tricotar — identidade baseada no logo (pêssego, rosa,
              marfim, tipografia serifada quente + sans arredondada), tricô/crochê/amigurumi.
 Author: Atelier Tricotar
-Version: 0.2.6
+Version: 0.2.7
 Requires PHP: 8.1
 Text Domain: atelie-theme
 */
@@ -833,4 +833,78 @@ p.no-comments {
     font-size: 0.82rem;
     color: #cbb9ae;
     text-align: center;
+}
+
+/* ---------------------------------------------------------------------------
+ * Página 404
+ * ------------------------------------------------------------------------ */
+.atelie-404 {
+    display: flex;
+    justify-content: center;
+    padding: 4rem 1.5rem 5rem;
+}
+
+.atelie-404__card {
+    max-width: 32rem;
+    text-align: center;
+    background: var(--cor-superficie);
+    border: 1px solid var(--cor-pessego-clara);
+    border-radius: 20px;
+    padding: 3rem 2.5rem;
+    box-shadow: 0 12px 32px rgba(74, 59, 53, 0.08);
+}
+
+.atelie-404__numero {
+    font-family: var(--fonte-display);
+    font-size: 4rem;
+    line-height: 1;
+    margin: 0 0 0.5rem;
+    color: var(--cor-pessego);
+    font-weight: 600;
+}
+
+.atelie-404__card h1 {
+    font-family: var(--fonte-display);
+    font-size: 1.6rem;
+    color: var(--cor-rosa-escuro);
+    margin: 0 0 0.75rem;
+}
+
+.atelie-404__texto {
+    color: var(--cor-tinta-suave);
+    line-height: 1.6;
+    margin: 0 0 2rem;
+}
+
+.atelie-404__acoes {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.atelie-404__botao {
+    display: inline-block;
+    padding: 0.7rem 1.4rem;
+    border-radius: 999px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: var(--cor-rosa-escuro);
+    background: var(--cor-rosa-suave);
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.atelie-404__botao:hover {
+    background: var(--cor-rosa);
+    color: #fff;
+}
+
+.atelie-404__botao--primario {
+    background: var(--cor-rosa);
+    color: #fff;
+}
+
+.atelie-404__botao--primario:hover {
+    background: var(--cor-rosa-escuro);
 }
