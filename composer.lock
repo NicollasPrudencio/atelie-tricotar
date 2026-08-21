@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a0ef0c2b7a0ce7cff6852cdd45217951",
+    "content-hash": "d9e8dc1f4cce75fb45805e00176a9e72",
     "packages": [
         {
             "name": "composer/installers",
@@ -1059,6 +1059,24 @@
             "time": "2026-07-06T19:11:50+00:00"
         },
         {
+            "name": "wpackagist-plugin/complianz-gdpr",
+            "version": "7.5.3.1",
+            "source": {
+                "type": "svn",
+                "url": "https://plugins.svn.wordpress.org/complianz-gdpr/",
+                "reference": "tags/7.5.3.1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://downloads.wordpress.org/plugin/complianz-gdpr.7.5.3.1.zip"
+            },
+            "require": {
+                "composer/installers": "^1.0 || ^2.0"
+            },
+            "type": "wordpress-plugin",
+            "homepage": "https://wordpress.org/plugins/complianz-gdpr/"
+        },
+        {
             "name": "wpackagist-plugin/melhor-envio-cotacao",
             "version": "2.16.5",
             "source": {
@@ -1111,6 +1129,42 @@
             },
             "type": "wordpress-plugin",
             "homepage": "https://wordpress.org/plugins/woocommerce/"
+        },
+        {
+            "name": "wpackagist-plugin/woocommerce-extra-checkout-fields-for-brazil",
+            "version": "4.0.2",
+            "source": {
+                "type": "svn",
+                "url": "https://plugins.svn.wordpress.org/woocommerce-extra-checkout-fields-for-brazil/",
+                "reference": "tags/4.0.2"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://downloads.wordpress.org/plugin/woocommerce-extra-checkout-fields-for-brazil.4.0.2.zip"
+            },
+            "require": {
+                "composer/installers": "^1.0 || ^2.0"
+            },
+            "type": "wordpress-plugin",
+            "homepage": "https://wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/"
+        },
+        {
+            "name": "wpackagist-plugin/woocommerce-google-adwords-conversion-tracking-tag",
+            "version": "1.65.1",
+            "source": {
+                "type": "svn",
+                "url": "https://plugins.svn.wordpress.org/woocommerce-google-adwords-conversion-tracking-tag/",
+                "reference": "tags/1.65.1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://downloads.wordpress.org/plugin/woocommerce-google-adwords-conversion-tracking-tag.1.65.1.zip"
+            },
+            "require": {
+                "composer/installers": "^1.0 || ^2.0"
+            },
+            "type": "wordpress-plugin",
+            "homepage": "https://wordpress.org/plugins/woocommerce-google-adwords-conversion-tracking-tag/"
         },
         {
             "name": "wpackagist-plugin/woocommerce-mercadopago",
