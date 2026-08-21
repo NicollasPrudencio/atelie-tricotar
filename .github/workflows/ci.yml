@@ -29,7 +29,10 @@ jobs:
         run: composer install --no-interaction --prefer-dist
 
       - name: Auditoria de seguranca das dependencias
-        run: composer audit
+        # --abandoned=report: nao falha o build por pacote abandonado (so vulnerabilidade real
+        # deve travar o CI) — roots/wp-password-bcrypt se autodeclara abandonado por bug de
+        # metadado proprio do pacote, sem vulnerabilidade de seguranca nenhuma.
+        run: composer audit --abandoned=report
 
       - name: Lint (WordPress Coding Standards)
         run: composer run lint
