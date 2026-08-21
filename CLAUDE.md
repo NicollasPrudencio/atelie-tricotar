@@ -115,3 +115,5 @@ Bem além da Fase 0. Já construído e funcionando:
   orçamento personalizado" só mandar e-mail — cada envio agora também vira registro no painel
   (nome, contato, descrição, foto de referência, status Novo/Respondido), visível pra Vendedora
   e Administrador. Ver PR #4.
+- Página 404 customizada (2026-08-21) na loja (identidade visual do tema, CTAs pra loja/
+  portfólio) e no docs-site (link de volta pro manual). Ver PR #5.
