@@ -55,6 +55,8 @@ antigo (removido, este é o repo oficial novo).
   dessa doc — componente compartilhado em
   `web/app/mu-plugins/atelie-ajuda-drawer.php` (`Atelie_Ajuda_Drawer::render()`).
 - **Túnel fixo do Cloudflare pra dev local**: `docs/cloudflare-tunnel-fixo.md`.
+- **Acesso SSH ao servidor de dev** (conveniência de depuração, não muda o deploy oficial via
+  SFTP): `docs/acesso-ssh-dev.md`.
 - **Estrutura de pastas e convenções de código**: ver `README.md`.
 
 ## Estado atual
