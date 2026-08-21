@@ -111,7 +111,7 @@ Bem além da Fase 0. Já construído e funcionando:
   dump do MySQL com as 62 tabelas reais) — mecanismo de backup do host confirmado confiável.
 - Pendente do roadmap de IA: assistente de busca+tradução de receita em outro idioma (Fase F).
 - Pendente geral: deploy real pra produção (decisão explícita: fica por último).
-- Pendente confirmado com o usuário em 2026-08-20: o formulário público "Solicitar orçamento
-  personalizado" (`web/app/mu-plugins/atelie-orcamento.php`) só dispara um e-mail pro admin —
-  não grava em CPT/tabela nenhuma, então não existe tela no painel pra rever pedidos antigos.
-  Lacuna real, não escolha deliberada; falta construir uma tela de acompanhamento.
+- Tela "Pedidos de Orçamento" (2026-08-21): fecha a lacuna do formulário público "Solicitar
+  orçamento personalizado" só mandar e-mail — cada envio agora também vira registro no painel
+  (nome, contato, descrição, foto de referência, status Novo/Respondido), visível pra Vendedora
+  e Administrador. Ver PR #4.
