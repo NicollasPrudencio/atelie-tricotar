@@ -117,3 +117,8 @@ Bem além da Fase 0. Já construído e funcionando:
   e Administrador. Ver PR #4.
 - Página 404 customizada (2026-08-21) na loja (identidade visual do tema, CTAs pra loja/
   portfólio) e no docs-site (link de volta pro manual). Ver PR #5.
+- Bloqueio de MFA em 24h (2026-08-21): conta nova tem 24h pra configurar 2FA, bloqueio
+  persistente a cada login (não só aviso dispensável), trava total passadas as 24h até um
+  admin desbloquear — via configuração nativa do plugin WP 2FA + correção de um bypass real
+  encontrado (cookies de sessão já saíam válidos na resposta do login, permitindo pular a
+  tela de bloqueio acessando o wp-admin direto por URL). Ver PR #6.
