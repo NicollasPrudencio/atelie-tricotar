@@ -122,3 +122,8 @@ Bem além da Fase 0. Já construído e funcionando:
   admin desbloquear — via configuração nativa do plugin WP 2FA + correção de um bypass real
   encontrado (cookies de sessão já saíam válidos na resposta do login, permitindo pular a
   tela de bloqueio acessando o wp-admin direto por URL). Ver PR #6.
+- Tela "Anúncios" (2026-08-21, plugin `atelie-produto-ia`): IA gera texto de anúncio pago
+  (Meta + TikTok) em lote a partir de produtos/cases já publicados, pensando em gerar visita/
+  venda — não publica nem gasta nada sozinha, só o criativo pra copiar manualmente. Imagem
+  sugerida é foto já existente do item; vídeo pro TikTok é anexado manualmente (sem geração de
+  vídeo por IA). Testado com API real do Gemini. Ver PR #7.
