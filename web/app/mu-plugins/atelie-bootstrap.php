@@ -72,6 +72,43 @@ add_action(
 );
 
 /**
+ * Rede de seguranca pro bloqueio de 2FA: testado ao vivo (2026-08-21) que o
+ * formulario de "configure o 2FA" do WP 2FA e mostrado so como resposta do
+ * POST de login em si — os cookies de sessao ja saem validos nessa mesma
+ * resposta, entao acessar o wp-admin direto por URL (sem clicar no botao do
+ * formulario) pula o bloqueio inteiro. Isso quebra a regra pedida ("bloqueio
+ * persistente a cada acesso", nao um aviso de uma vez so). Esse hook fecha o
+ * furo usando o proprio estado que o plugin ja mantem (User_Helper), sem
+ * reimplementar a logica de carencia/expiracao dele.
+ */
+add_action(
+	'admin_init',
+	function (): void {
+		if ( ! is_user_logged_in() || wp_doing_ajax() || wp_doing_cron() ) {
+			return;
+		}
+
+		if ( ! class_exists( '\WP2FA\Admin\Helpers\User_Helper' ) ) {
+			return;
+		}
+
+		$user_helper = '\WP2FA\Admin\Helpers\User_Helper';
+		if ( ! $user_helper::is_enforced() || $user_helper::is_user_using_two_factor() ) {
+			return;
+		}
+
+		// Ja esta na propria tela de configurar o 2FA — nao redireciona de novo.
+		if ( isset( $GLOBALS['pagenow'] ) && 'profile.php' === $GLOBALS['pagenow'] ) {
+			return;
+		}
+
+		wp_safe_redirect( admin_url( 'profile.php?show=wp-2fa-setup' ) );
+		exit;
+	},
+	20
+);
+
+/**
  * Fora de producao (dev local, staging via tunel), o site fica invisivel
  * pra buscadores automaticamente — evita indexar um ambiente de teste sem
  * querer, mesmo estando publicamente acessivel via tunel. Nunca aplica em
