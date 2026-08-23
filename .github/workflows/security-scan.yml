@@ -1,0 +1,69 @@
+name: Security Scan (WPScan)
+
+# Fase 4 do roadmap (ver docs/decisions/0001, secao "Fase 4 — Hardening"). Escaneia o
+# ambiente contra a base de vulnerabilidades conhecidas do WPScan (core, plugins e temas
+# desatualizados/vulneraveis) — nao e usado pelo runtime do site, so por este workflow.
+#
+# Precisa do secret WPSCAN_API_TOKEN (conta gratuita em https://wpscan.com/register,
+# ~25 requisicoes/dia no free tier — sobra pra 1 scan semanal). Sem o secret configurado,
+# o job falha na autenticacao — configurar em Settings > Secrets and variables > Actions.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # toda segunda, 06:00 UTC (03:00 em Brasilia)
+  workflow_dispatch: {}
+
+jobs:
+  wpscan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Rodar WPScan
+        run: |
+          docker run --rm wpscanteam/wpscan \
+            --url "https://atelietricotar.online" \
+            --api-token "${{ secrets.WPSCAN_API_TOKEN }}" \
+            --enumerate vc,vp,vt \
+            --format json \
+            --no-banner \
+            --random-user-agent > wpscan-resultado.json
+        # TODO: trocar a URL pro dominio de producao quando o deploy real acontecer
+        # (ver CLAUDE.md, "Pendente geral").
+
+      - name: Guardar resultado bruto
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wpscan-resultado
+          path: wpscan-resultado.json
+          retention-days: 90
+
+      - name: Falhar o job se achou vulnerabilidade conhecida
+        run: |
+          python3 -c "
+          import json, sys
+
+          with open('wpscan-resultado.json') as f:
+              dados = json.load(f)
+
+          achados = []
+
+          def checar(no, caminho=''):
+              if isinstance(no, dict):
+                  if no.get('vulnerabilities'):
+                      achados.append((caminho, no.get('vulnerabilities')))
+                  for chave, valor in no.items():
+                      checar(valor, f'{caminho}/{chave}' if caminho else chave)
+              elif isinstance(no, list):
+                  for item in no:
+                      checar(item, caminho)
+
+          checar(dados)
+
+          if achados:
+              print('VULNERABILIDADE(S) CONHECIDA(S) ENCONTRADA(S):')
+              for caminho, vulns in achados:
+                  print(f'- {caminho}: {len(vulns)} vulnerabilidade(s)')
+              sys.exit(1)
+
+          print('Nenhuma vulnerabilidade conhecida encontrada.')
+          "
