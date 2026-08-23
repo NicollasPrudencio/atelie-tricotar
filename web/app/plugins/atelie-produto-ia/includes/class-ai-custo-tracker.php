@@ -25,29 +25,33 @@ class Atelie_Ai_Custo_Tracker {
 	 * (que passaria a ideia errada de "gratis") antes da primeira chamada.
 	 */
 	private const TOKENS_PADRAO_POR_OPERACAO = array(
-		'analisar'         => array(
+		'analisar'            => array(
 			'entrada' => 1200,
 			'saida'   => 220,
 		),
-		'revisar_texto'    => array(
+		'revisar_texto'       => array(
 			'entrada' => 350,
 			'saida'   => 180,
 		),
-		'testar_conexao'   => array(
+		'testar_conexao'      => array(
 			'entrada' => 15,
 			'saida'   => 10,
 		),
-		'gerar_anuncio'    => array(
+		'gerar_anuncio'       => array(
 			'entrada' => 400,
 			'saida'   => 220,
 		),
-		'buscar_receita'   => array(
+		'buscar_receita'      => array(
 			'entrada' => 600,
 			'saida'   => 300,
 		),
-		'traduzir_receita' => array(
+		'traduzir_receita'    => array(
 			'entrada' => 500,
 			'saida'   => 500,
+		),
+		'rascunhar_orcamento' => array(
+			'entrada' => 250,
+			'saida'   => 200,
 		),
 	);
 
