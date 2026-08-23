@@ -31,21 +31,81 @@ add_action(
 /**
  * 2FA obrigatorio pra qualquer conta com acesso ao painel — mais de uma
  * pessoa vai ter login (ver plano, secao "Papeis e permissoes no painel").
- * O plugin WP 2FA ja vem com metodos padrao sensatos (app TOTP, codigo por
- * e-mail, codigos de backup, carencia de 3 dias) — so falta ligar a
- * obrigatoriedade, o que fica automatico aqui pra nao depender de alguem
- * lembrar de configurar em cada ambiente novo.
+ * O plugin WP 2FA ja vem com tudo que a regra pedida precisa, nativo (sem
+ * codigo customizado pra logica de bloqueio):
+ * - 'grace-policy' + 'grace-period'/'grace-period-denominator': carencia de
+ *   24h pra configurar o MFA depois da conta criada.
+ * - Sem 'grace-policy-notification-show' definido como 'dashboard-notification'
+ *   (o padrao do plugin ja bloqueia o dashboard durante a carencia, so libera
+ *   configurar o MFA — nao e so um aviso dispensavel).
+ * - 'grace-policy-after-expire-action' => 'manual-block': passadas as 24h
+ *   ainda sem MFA configurado, a conta trava de vez — so um admin consegue
+ *   destravar (botao nativo "Unlock user and reset the grace period" na
+ *   tela de perfil do usuario).
  */
 add_action(
 	'init',
 	function (): void {
 		$policy = get_option( 'wp_2fa_policy', array() );
-		if ( is_array( $policy ) && ( $policy['enforcement-policy'] ?? '' ) !== 'all-users' ) {
-			$policy['enforcement-policy'] = 'all-users';
+		$alvo   = array(
+			'enforcement-policy'               => 'all-users',
+			'grace-policy'                     => 'use-grace-period',
+			'grace-period'                     => '24',
+			'grace-period-denominator'         => 'hours',
+			'grace-policy-after-expire-action' => 'manual-block',
+		);
+
+		$precisa_atualizar = false;
+		foreach ( $alvo as $chave => $valor ) {
+			if ( ! is_array( $policy ) || ( $policy[ $chave ] ?? '' ) !== $valor ) {
+				$precisa_atualizar = true;
+				break;
+			}
+		}
+
+		if ( $precisa_atualizar ) {
+			$policy = is_array( $policy ) ? array_merge( $policy, $alvo ) : $alvo;
 			update_option( 'wp_2fa_policy', $policy );
 		}
 	},
 	5
+);
+
+/**
+ * Rede de seguranca pro bloqueio de 2FA: testado ao vivo (2026-08-21) que o
+ * formulario de "configure o 2FA" do WP 2FA e mostrado so como resposta do
+ * POST de login em si — os cookies de sessao ja saem validos nessa mesma
+ * resposta, entao acessar o wp-admin direto por URL (sem clicar no botao do
+ * formulario) pula o bloqueio inteiro. Isso quebra a regra pedida ("bloqueio
+ * persistente a cada acesso", nao um aviso de uma vez so). Esse hook fecha o
+ * furo usando o proprio estado que o plugin ja mantem (User_Helper), sem
+ * reimplementar a logica de carencia/expiracao dele.
+ */
+add_action(
+	'admin_init',
+	function (): void {
+		if ( ! is_user_logged_in() || wp_doing_ajax() || wp_doing_cron() ) {
+			return;
+		}
+
+		if ( ! class_exists( '\WP2FA\Admin\Helpers\User_Helper' ) ) {
+			return;
+		}
+
+		$user_helper = '\WP2FA\Admin\Helpers\User_Helper';
+		if ( ! $user_helper::is_enforced() || $user_helper::is_user_using_two_factor() ) {
+			return;
+		}
+
+		// Ja esta na propria tela de configurar o 2FA — nao redireciona de novo.
+		if ( isset( $GLOBALS['pagenow'] ) && 'profile.php' === $GLOBALS['pagenow'] ) {
+			return;
+		}
+
+		wp_safe_redirect( admin_url( 'profile.php?show=wp-2fa-setup' ) );
+		exit;
+	},
+	20
 );
 
 /**

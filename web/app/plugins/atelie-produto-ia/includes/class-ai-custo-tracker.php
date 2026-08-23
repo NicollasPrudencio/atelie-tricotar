@@ -37,6 +37,10 @@ class Atelie_Ai_Custo_Tracker {
 			'entrada' => 15,
 			'saida'   => 10,
 		),
+		'gerar_anuncio'       => array(
+			'entrada' => 400,
+			'saida'   => 220,
+		),
 		'rascunhar_orcamento' => array(
 			'entrada' => 250,
 			'saida'   => 200,
