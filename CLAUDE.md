@@ -88,8 +88,52 @@ Bem além da Fase 0. Já construído e funcionando:
 - Tela "Pendências" (cross-lote, força reprocessamento de itens atrasados só de ser visitada —
   "cutucar_pendentes()") + cron real do cPanel no ambiente dev (`DISABLE_WP_CRON=true` no `.env`
   do servidor, WP-Cron pseudo-cron não é confiável nesse host).
-- Site de documentação (`docs-site/`, GitHub Pages) + botão de ajuda contextual no painel (ver
-  seção "Onde encontrar o resto").
+  seção "Onde encontrar o resto"), com cobertura completa das telas do painel, incluindo
+  Precificação interna.
+- Acesso SSH real ao servidor de dev liberado via chamado de suporte (ver
+  `docs/acesso-ssh-dev.md`) — usado pra corrigir, no mesmo dia (2026-08-21), dois bugs que
+  faziam o pipeline de CI/CD nunca ter rodado de verdade contra hospedagem real: `composer.lock`
+  desatualizado + `composer audit` travando por pacote abandonado sem vulnerabilidade real, e um
+  bug de sintaxe YAML no `deploy.yml` que derrubava o workflow inteiro silenciosamente. Lint
+  (WPCS) também nunca tinha rodado de verdade — rodado pela primeira vez, ~9.590 problemas
+  encontrados e corrigidos/justificados.
+- Pipeline de deploy (2026-08-23): 100% automático, sem aprovação manual em nenhum ponto — push
+  em `develop` roda lint/auditoria, faz deploy em homolog, roda teste de stress/fumaça (k6) contra
+  o ambiente já no ar, e se passar promove `develop` → `main` sozinho, disparando o deploy de
+  produção (lint/auditoria de novo, depois deploy). GitHub Environments `staging`/`production`
+  criados, com os 8 salts de segurança do WordPress já configurados em cada um (gerados
+  aleatoriamente, nunca reaproveitados entre ambientes) — os ~22 secrets restantes (banco, SFTP,
+  chaves de API de pagamento/frete/IA/tracking) ainda pendentes, o usuário está configurando via
+  `gh secret set` diretamente (nunca colados no chat, por segurança).
+- Fase 2 de tracking: plugins instalados e ativos no dev (Pixel Manager for WooCommerce, versão
+  gratuita — Meta Pixel só navegador + GA4, sem Meta CAPI por decisão explícita de custo; e
+  Complianz pro banner de consentimento LGPD). Falta o usuário criar as contas reais (Pixel do
+  Meta, propriedade GA4) e revisar o texto do banner de consentimento.
+- Hardening (Fase 4): scan de segurança agendado (WPScan, semanal) criado como workflow —
+  falta o usuário configurar o secret `WPSCAN_API_TOKEN` (conta gratuita em wpscan.com) pra
+  funcionar de verdade. Teste de restore de backup feito e confirmado 2026-08-21 (backup
+  completo via cPanel, extraído em pasta isolada, arquivos batendo 100% com o site ao vivo e
+  dump do MySQL com as 62 tabelas reais) — mecanismo de backup do host confirmado confiável.
+- Tela "Pedidos de Orçamento" (2026-08-21): fecha a lacuna que o formulário público "Solicitar
+  orçamento personalizado" tinha — antes só mandava e-mail, sem nenhum registro no painel. Cada
+  envio agora também vira registro (nome, contato, descrição, foto de referência, status Novo/
+  Respondido), visível pra Vendedora e Administrador.
+- Página 404 customizada (2026-08-21) na loja (identidade visual do tema, CTAs pra loja/
+  portfólio) e no docs-site (link de volta pro manual).
+- Bloqueio de MFA em 24h (2026-08-21): conta nova tem 24h pra configurar 2FA, bloqueio
+  persistente a cada login (não só aviso dispensável), trava total passadas as 24h até um
+  admin desbloquear — via configuração nativa do plugin WP 2FA + correção de um bypass real
+  encontrado (cookies de sessão já saíam válidos na resposta do login, permitindo pular a
+  tela de bloqueio acessando o wp-admin direto por URL).
+- Tela "Anúncios" (2026-08-21, plugin `atelie-produto-ia`): IA gera texto de anúncio pago
+  (Meta + TikTok) em lote a partir de produtos/cases já publicados, pensando em gerar visita/
+  venda — não publica nem gasta nada sozinha, só o criativo pra copiar manualmente. Imagem
+  sugerida é foto já existente do item; vídeo pro TikTok é anexado manualmente (sem geração de
+  vídeo por IA). Testado com API real do Gemini.
+- Páginas legais (2026-08-23): política de privacidade, termos de uso e trocas/devoluções
+  publicadas com dados reais (antes: uma não existia, uma era rascunho, uma tinha link
+  quebrado no rodapé). Ainda sem revisão de advogado/contador; resolver antes de ligar tráfego
+  pago de verdade.
 - Roadmap de IA (Fase F): tela "Receita em outro idioma" (submenu de Produtos) — "Buscar" usa
   grounding com Google Search do Gemini pra indicar candidatos de padrão em outro idioma (só
   título/fonte/resumo, nunca a receita inteira, por risco de direito autoral); "Traduzir" traduz
@@ -97,21 +141,14 @@ Bem além da Fase 0. Já construído e funcionando:
   API real (funcionou). "Buscar" bateu em erro de quota/billing do Google ao usar grounding
   (mesma pendência de faturamento da edição de imagem, ver acima) — parsing do resultado real
   ainda não verificado, ver memória `project_testar_apos_merge_prs`.
-- Mais 4 pontos de entrada da IA (avaliados em 2026-08-20, construídos em 2026-08-23, PRs
-  #10-#13): tela "SEO" (meta título/descrição + alt text, salvos direto no post, nunca copiar/
-  colar); botão "IA sugere edição" de imagem (diagnostica a foto sozinha e decide se edita, sem
-  usuário descrever — reaproveita `editarImagem()`); botão "Rascunhar resposta" na tela Pedidos
-  de Orçamento (nunca decide prazo/preço sozinha, marca `[PREENCHER]`); botão "IA sugere preço
-  de venda" na tela de produto do WooCommerce (nunca preenche o campo de preço sozinha, só
+- Mais 4 pontos de entrada da IA (avaliados em 2026-08-20, construídos em 2026-08-23): tela
+  "SEO" (meta título/descrição + alt text, salvos direto no post, nunca copiar/colar); botão
+  "IA sugere edição" de imagem (diagnostica a foto sozinha e decide se edita, sem usuário
+  descrever — reaproveita `editarImagem()`); botão "Rascunhar resposta" na tela Pedidos de
+  Orçamento (nunca decide prazo/preço sozinha, marca `[PREENCHER]`); botão "IA sugere preço de
+  venda" na tela de produto do WooCommerce (nunca preenche o campo de preço sozinha, só
   sugestão com faixa e justificativa). Todos testados com API real; detalhes de cobertura de
   teste em `project_testar_apos_merge_prs`. Ficaram de fora desta leva (avaliados, não
   construídos): busca de imagem na web (precisa decisão de fonte/licença — risco de direito
   autoral), e-mail via Brevo (integração nova do zero) e curadoria de reviews (sem reviews reais
   ainda) — ver memória `project_futuros_pontos_ia`.
-- Pendente geral: deploy real (CI/CD ainda não rodou contra hospedagem de verdade), Fase 2
-  completa de tracking (Meta Pixel/CAPI, GA4, banner LGPD), hardening da Fase 4 (WPScan
-  agendado, teste de restore de backup).
-- Pendente confirmado com o usuário em 2026-08-20: o formulário público "Solicitar orçamento
-  personalizado" (`web/app/mu-plugins/atelie-orcamento.php`) só dispara um e-mail pro admin —
-  não grava em CPT/tabela nenhuma, então não existe tela no painel pra rever pedidos antigos.
-  Lacuna real, não escolha deliberada; falta construir uma tela de acompanhamento.
