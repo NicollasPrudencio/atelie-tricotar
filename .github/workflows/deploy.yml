@@ -131,6 +131,7 @@ jobs:
     needs: deploy-staging
     if: github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
+    environment: staging # sem isso, secrets.WP_HOME nao pega o valor configurado no environment staging
     steps:
       - uses: actions/checkout@v4
 
