@@ -49,6 +49,10 @@ class Atelie_Ai_Custo_Tracker {
 			'entrada' => 500,
 			'saida'   => 500,
 		),
+		'sugerir_seo'      => array(
+			'entrada' => 300,
+			'saida'   => 150,
+		),
 	);
 
 	public static function nome_tabela(): string {

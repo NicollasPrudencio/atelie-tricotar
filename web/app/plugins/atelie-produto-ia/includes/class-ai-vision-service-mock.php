@@ -144,4 +144,14 @@ class Atelie_Ai_Vision_Service_Mock implements Atelie_Ai_Vision_Service_Interfac
 			'mensagem'        => '',
 		);
 	}
+
+	public function sugerirSeo( string $titulo, string $descricao, string $tipo_objeto ): array {
+		usleep( 600000 );
+
+		return array(
+			'meta_titulo'    => "[MOCK] {$titulo} | Ateliê Tricotar",
+			'meta_descricao' => '[MOCK] Descrição simulada pra resultado de busca — ' . mb_substr( $descricao, 0, 90 ) . '…',
+			'alt_text'       => "[MOCK] {$titulo}, peça artesanal feita à mão",
+		);
+	}
 }

@@ -101,4 +101,15 @@ interface Atelie_Ai_Vision_Service_Interface {
 	 * @return array{ok: bool, texto_traduzido: string, mensagem: string}
 	 */
 	public function traduzirReceita( string $texto_original ): array;
+
+	/**
+	 * Gera meta título/descrição pra SEO orgânico e o alt text da foto
+	 * principal, a partir do título/descrição já publicados do produto/case —
+	 * hoje o único canal de tráfego é pago (Meta/Google Ads); isso mira busca
+	 * orgânica e Google Imagens (canal de descoberta real pra artesanato, que
+	 * é muito visual), sem custo por clique.
+	 *
+	 * @return array{meta_titulo: string, meta_descricao: string, alt_text: string}
+	 */
+	public function sugerirSeo( string $titulo, string $descricao, string $tipo_objeto ): array;
 }
