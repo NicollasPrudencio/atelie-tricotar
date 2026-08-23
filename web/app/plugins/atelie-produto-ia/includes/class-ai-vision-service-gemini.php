@@ -751,7 +751,7 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 		}
 
 		$prompt = 'Você ajuda a dona de um ateliê de tricô, crochê e amigurumis artesanais a precificar uma peça pra venda. '
-			. "O custo já calculado (matéria-prima + hora técnica) dessa peça é R$ " . number_format( $custo, 2, '.', '' ) . '. '
+			. 'O custo já calculado (matéria-prima + hora técnica) dessa peça é R$ ' . number_format( $custo, 2, '.', '' ) . '. '
 			. 'Considerando esse custo, o tipo de peça e uma referência realista de mercado pra artesanato semelhante vendido no Brasil, '
 			. 'sugira um preço de venda com margem saudável pra um ateliê pequeno (o preço final é sempre decisão de quem vende, isso é só uma sugestão de referência). '
 			. 'Responda SOMENTE um objeto JSON no formato: {"preco_sugerido": 00.00, "faixa_min": 00.00, "faixa_max": 00.00, "justificativa": "1-2 frases curtas explicando o raciocínio"} — todos os valores numéricos em reais, sem símbolo de moeda.'
