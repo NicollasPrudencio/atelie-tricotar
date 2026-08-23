@@ -79,6 +79,21 @@ class Atelie_Rest_Controller {
 
 				register_rest_route(
 					'atelie/v1',
+					'/sugerir-preco',
+					array(
+						'methods'             => 'POST',
+						'callback'            => array( $this, 'sugerir_preco' ),
+						'permission_callback' => array( $this, 'usuario_pode_criar_produto' ),
+						'args'                => array(
+							'titulo'    => array( 'required' => true ),
+							'descricao' => array( 'required' => false ),
+							'custo'     => array( 'required' => true ),
+						),
+					)
+				);
+
+				register_rest_route(
+					'atelie/v1',
 					'/drive-listar',
 					array(
 						'methods'             => 'GET',
@@ -327,6 +342,45 @@ class Atelie_Rest_Controller {
 			array(
 				'imagem_id' => $novo_id,
 				'url'       => wp_get_attachment_image_url( $novo_id, 'thumbnail' ),
+			),
+			200
+		);
+	}
+
+	public function sugerir_preco( WP_REST_Request $request ): WP_REST_Response {
+		$titulo    = sanitize_text_field( (string) $request->get_param( 'titulo' ) );
+		$descricao = sanitize_textarea_field( (string) ( $request->get_param( 'descricao' ) ?? '' ) );
+		$custo     = (float) $request->get_param( 'custo' );
+
+		if ( $titulo === '' || $custo <= 0 ) {
+			return new WP_REST_Response( array( 'erro' => 'Informe o título do produto e um custo maior que zero.' ), 400 );
+		}
+
+		if ( ! $this->dentro_do_limite_diario() ) {
+			return new WP_REST_Response( array( 'erro' => 'Limite diário de chamadas de IA atingido. Tente de novo amanhã.' ), 429 );
+		}
+
+		try {
+			$servico   = Atelie_Ai_Vision_Service_Factory::criar();
+			$resultado = $servico->sugerirPrecoVenda( $titulo, $descricao, $custo );
+		} catch ( Throwable $e ) {
+			$this->registrar_log( 'erro (sugerir preço): ' . $e->getMessage() );
+			return new WP_REST_Response( array( 'erro' => 'Não foi possível sugerir um preço agora.' ), 502 );
+		}
+
+		if ( ! $resultado['ok'] ) {
+			$this->registrar_log( 'erro (sugerir preço): ' . $resultado['mensagem'] );
+			return new WP_REST_Response( array( 'erro' => $resultado['mensagem'] ), 502 );
+		}
+
+		$this->incrementar_contador_diario();
+
+		return new WP_REST_Response(
+			array(
+				'preco_sugerido' => $resultado['preco_sugerido'],
+				'faixa_min'      => $resultado['faixa_min'],
+				'faixa_max'      => $resultado['faixa_max'],
+				'justificativa'  => $resultado['justificativa'],
 			),
 			200
 		);
