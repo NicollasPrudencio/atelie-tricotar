@@ -26,3 +26,13 @@ encomendar e a foto de referência, se ela anexou uma.
   que já foi tratado, sem precisar abrir um por um.
 - Essa tela aparece tanto pro login **Administrador** quanto **Vendedora** — acompanhar esses
   pedidos é trabalho do dia a dia, não só de quem administra o site.
+
+## Rascunho de resposta por IA
+
+Dentro de cada pedido, o botão **"✨ Rascunhar resposta"** pede pra IA escrever um rascunho de
+mensagem pra responder a cliente — tom acolhedor, confirmando o que ela quer e perguntando
+detalhes que estejam faltando.
+
+A IA **nunca decide prazo de produção nem preço sozinha** — os dois ficam marcados como
+`[PREENCHER]` no rascunho. Complete esses dois pontos com o prazo real e o valor calculado (veja
+[Precificação interna](/admin/precificacao/) antes de copiar e enviar pelo contato informado.

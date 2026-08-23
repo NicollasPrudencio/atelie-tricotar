@@ -222,11 +222,78 @@ add_action(
 				</select>
 			</p>
 				<?php
+				atelie_orcamento_render_rascunho_ia( $post->ID, $descricao );
 			},
 			'atelie_pedido_orc',
 			'normal',
 			'high'
 		);
+	}
+);
+
+/**
+ * Rascunho de resposta por IA — só o texto de acompanhamento (tom, perguntas
+ * de esclarecimento), nunca prazo/preço de verdade (fica marcado como
+ * "[PREENCHER]"). É sempre uma sugestão pra copiar, completar e enviar
+ * manualmente pelo contato da cliente — nunca sai sozinho.
+ */
+function atelie_orcamento_render_rascunho_ia( int $post_id, string $descricao ): void {
+	if ( ! class_exists( 'Atelie_Ai_Vision_Service_Factory' ) ) {
+		return;
+	}
+
+	$rascunho = get_transient( 'atelie_orcamento_rascunho_' . $post_id );
+	?>
+	<hr>
+	<p>
+		<strong><?php esc_html_e( 'Rascunho de resposta (IA)', 'atelie-theme' ); ?></strong>
+	</p>
+	<?php if ( is_string( $rascunho ) && $rascunho !== '' ) : ?>
+		<p>
+			<textarea readonly rows="6" style="width:100%;"><?php echo esc_textarea( $rascunho ); ?></textarea>
+		</p>
+		<p class="description">
+			<?php esc_html_e( 'Preencha o prazo e o valor antes de copiar e enviar — a IA nunca decide isso sozinha.', 'atelie-theme' ); ?>
+		</p>
+	<?php endif; ?>
+	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+		<input type="hidden" name="action" value="atelie_orcamento_rascunhar">
+		<input type="hidden" name="post_id" value="<?php echo esc_attr( $post_id ); ?>">
+		<?php wp_nonce_field( 'atelie_orcamento_rascunhar_' . $post_id, 'atelie_orcamento_rascunhar_nonce' ); ?>
+		<button type="submit" class="button" <?php disabled( trim( $descricao ) === '' ); ?>>
+			✨ <?php esc_html_e( 'Rascunhar resposta', 'atelie-theme' ); ?>
+		</button>
+	</form>
+	<?php
+}
+
+add_action(
+	'admin_post_atelie_orcamento_rascunhar',
+	function (): void {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- precisa do post_id pra montar a action dinamica do nonce, verificado logo abaixo com esse mesmo valor.
+		$post_id = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
+
+		if (
+			! $post_id
+			|| ! current_user_can( 'edit_post', $post_id )
+			|| ! isset( $_POST['atelie_orcamento_rascunhar_nonce'] )
+			|| ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['atelie_orcamento_rascunhar_nonce'] ) ), 'atelie_orcamento_rascunhar_' . $post_id )
+		) {
+			wp_die( 'Ação não permitida.' );
+		}
+
+		$descricao = (string) get_post_meta( $post_id, '_atelie_lead_descricao', true );
+
+		if ( $descricao !== '' && class_exists( 'Atelie_Ai_Vision_Service_Factory' ) ) {
+			$servico   = Atelie_Ai_Vision_Service_Factory::criar();
+			$resultado = $servico->rascunharRespostaOrcamento( $descricao );
+			if ( $resultado['ok'] ) {
+				set_transient( 'atelie_orcamento_rascunho_' . $post_id, $resultado['rascunho'], 10 * MINUTE_IN_SECONDS );
+			}
+		}
+
+		wp_safe_redirect( admin_url( 'post.php?post=' . $post_id . '&action=edit' ) );
+		exit;
 	}
 );
 

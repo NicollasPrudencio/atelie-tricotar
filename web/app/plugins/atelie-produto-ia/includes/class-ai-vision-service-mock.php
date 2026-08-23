@@ -105,4 +105,23 @@ class Atelie_Ai_Vision_Service_Mock implements Atelie_Ai_Vision_Service_Interfac
 			),
 		);
 	}
+
+	public function rascunharRespostaOrcamento( string $descricao_pedido ): array {
+		usleep( 600000 );
+
+		if ( trim( $descricao_pedido ) === '' ) {
+			return array(
+				'ok'       => false,
+				'rascunho' => '',
+				'mensagem' => 'Sem descrição do pedido pra rascunhar uma resposta.',
+			);
+		}
+
+		return array(
+			'ok'       => true,
+			'rascunho' => '[MOCK] Oi! Recebi seu pedido — "' . mb_substr( $descricao_pedido, 0, 60 ) . '"… Adorei a ideia! '
+				. 'O prazo de produção fica em [PREENCHER] e o valor em [PREENCHER]. Consegue me confirmar mais algum detalhe? Bjs!',
+			'mensagem' => '',
+		);
+	}
 }
