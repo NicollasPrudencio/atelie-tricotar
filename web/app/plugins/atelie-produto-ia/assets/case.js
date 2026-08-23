@@ -51,6 +51,9 @@
                     AtelieEditarImagem.anexar(wrapper, img, item.id, atelieCaseIA, function (novoId) {
                         fotosIds[indice] = novoId;
                     });
+                    AtelieEditarImagem.anexarSugestao(wrapper, img, item.id, atelieCaseIA, function (novoId) {
+                        fotosIds[indice] = novoId;
+                    });
                 });
                 dropzoneTexto.textContent = fotosIds.length + " foto(s) anexada(s)";
                 atualizarBotaoSugerir();

@@ -43,6 +43,9 @@
             AtelieEditarImagem.anexar(wrapper, img, id, atelieProdutoIA, function (novoId) {
                 fotosIds[indice] = novoId;
             });
+            AtelieEditarImagem.anexarSugestao(wrapper, img, id, atelieProdutoIA, function (novoId) {
+                fotosIds[indice] = novoId;
+            });
         }
 
         // Ponto de entrada pra outras fontes de foto (ex.: fotos soltas escolhidas no modal

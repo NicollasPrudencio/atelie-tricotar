@@ -18,10 +18,12 @@ permalink: /entrar/
    - Um "código de backup" — uma lista de códigos de reserva, entregue quando sua conta foi
      criada, para usar caso você perca acesso às outras formas.
 
-   Na primeira vez que você entrar, o sistema vai te guiar por uma configuração rápida dessa
-   segunda etapa. Depois de configurada, você tem alguns dias de tolerância antes que ela passe
-   a ser exigida em todo login — se tiver dúvida nessa configuração inicial, peça ajuda a quem
-   te repassou o acesso.
+   Na primeira vez que você entrar, o sistema já vai te levar direto pra essa configuração — você
+   tem **24 horas** a partir da criação da sua conta pra concluir, e enquanto isso não acontecer,
+   toda vez que você entrar vai cair nessa tela de configuração (não dá pra "deixar pra depois" e
+   usar o resto do painel normalmente). Se as 24 horas passarem sem configurar, a conta é
+   **bloqueada** — só quem administra o site consegue liberar de novo. Se tiver qualquer dúvida
+   nessa configuração, peça ajuda a quem te repassou o acesso, antes de ficar sem tempo.
 
 **Esqueceu a senha?** Na tela de login, existe um link "Perdeu a senha?" — clique nele e siga
 as instruções enviadas por e-mail. Se não tiver mais acesso ao e-mail cadastrado, peça pra quem

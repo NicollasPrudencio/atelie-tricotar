@@ -90,7 +90,24 @@ Bem além da Fase 0. Já construído e funcionando:
   do servidor, WP-Cron pseudo-cron não é confiável nesse host).
 - Site de documentação (`docs-site/`, GitHub Pages) + botão de ajuda contextual no painel (ver
   seção "Onde encontrar o resto").
-- Pendente do roadmap de IA: assistente de busca+tradução de receita em outro idioma (Fase F).
+- Roadmap de IA (Fase F): tela "Receita em outro idioma" (submenu de Produtos) — "Buscar" usa
+  grounding com Google Search do Gemini pra indicar candidatos de padrão em outro idioma (só
+  título/fonte/resumo, nunca a receita inteira, por risco de direito autoral); "Traduzir" traduz
+  fielmente um texto que a artesã já tem, em qualquer idioma de origem. "Traduzir" testado com
+  API real (funcionou). "Buscar" bateu em erro de quota/billing do Google ao usar grounding
+  (mesma pendência de faturamento da edição de imagem, ver acima) — parsing do resultado real
+  ainda não verificado, ver memória `project_testar_apos_merge_prs`.
+- Mais 4 pontos de entrada da IA (avaliados em 2026-08-20, construídos em 2026-08-23, PRs
+  #10-#13): tela "SEO" (meta título/descrição + alt text, salvos direto no post, nunca copiar/
+  colar); botão "IA sugere edição" de imagem (diagnostica a foto sozinha e decide se edita, sem
+  usuário descrever — reaproveita `editarImagem()`); botão "Rascunhar resposta" na tela Pedidos
+  de Orçamento (nunca decide prazo/preço sozinha, marca `[PREENCHER]`); botão "IA sugere preço
+  de venda" na tela de produto do WooCommerce (nunca preenche o campo de preço sozinha, só
+  sugestão com faixa e justificativa). Todos testados com API real; detalhes de cobertura de
+  teste em `project_testar_apos_merge_prs`. Ficaram de fora desta leva (avaliados, não
+  construídos): busca de imagem na web (precisa decisão de fonte/licença — risco de direito
+  autoral), e-mail via Brevo (integração nova do zero) e curadoria de reviews (sem reviews reais
+  ainda) — ver memória `project_futuros_pontos_ia`.
 - Pendente geral: deploy real (CI/CD ainda não rodou contra hospedagem de verdade), Fase 2
   completa de tracking (Meta Pixel/CAPI, GA4, banner LGPD), hardening da Fase 4 (WPScan
   agendado, teste de restore de backup).
