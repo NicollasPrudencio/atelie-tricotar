@@ -1,16 +1,55 @@
 name: Deploy
 
-# Pipeline em 2 estagios (ver docs/decisions/0001, secao "Pipeline CI/CD"):
-# push em develop -> deploy em staging -> (gate de testes) -> promove sozinho para main -> deploy em producao.
-# Sem aprovacao manual no fluxo padrao. Hospedagem: HostGator compartilhado, cPanel, so SFTP (sem SSH),
-# PHP ate 8.2 via seletor do cPanel — por isso o build roda aqui no runner, o servidor so recebe arquivos prontos.
+# Pipeline em 2 estagios, 100% automatico (ver docs/decisions/0001, secao "Pipeline CI/CD"):
+# push em develop -> lint/testes -> deploy em homolog -> teste de stress/fumaca (k6) contra o
+# homolog JA NO AR -> se passar, promove develop -> main sozinho -> lint/testes de novo -> deploy
+# em producao. Sem aprovacao manual em nenhum ponto — quem usa o pipeline so precisa dar
+# commit/push em develop; o resto (incluindo a decisao de virar candidato a producao) e o
+# pipeline que decide, com base no teste de stress passar ou nao. Hospedagem: HostGator
+# compartilhado, cPanel, so SFTP (sem SSH), PHP ate 8.2 via seletor do cPanel — por isso o build
+# roda aqui no runner, o servidor so recebe arquivos prontos.
 
 on:
   push:
     branches: [develop, main]
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          tools: composer:v2
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Instalar dependencias
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Auditoria de seguranca das dependencias
+        run: composer audit --abandoned=report
+
+      - name: Lint (WordPress Coding Standards)
+        run: composer run lint
+
+      - name: Testes unitarios
+        if: false # habilita quando tests/unit/phpunit.xml existir (Fase 1+)
+        env:
+          AI_MOCK_MODE: "true"
+        run: composer run test:unit
+
   deploy-staging:
+    needs: test
     if: github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
     environment: staging
@@ -26,7 +65,7 @@ jobs:
       - name: Instalar dependencias de producao
         run: composer install --no-interaction --prefer-dist --no-dev --optimize-autoloader
 
-      - name: Gerar .env de staging a partir dos secrets
+      - name: Gerar .env de homolog a partir dos secrets
         run: |
           cat > .env <<EOF
           WP_ENV=staging
@@ -62,7 +101,7 @@ jobs:
           BREVO_API_KEY=${{ secrets.BREVO_API_KEY }}
           EOF
 
-      - name: Deploy do site (web/) via SFTP para staging
+      - name: Deploy do site (web/) via SFTP para homolog
         uses: wlixcc/SFTP-Deploy-Action@v1.2.6
         with:
           username: ${{ secrets.SFTP_USER }}
@@ -73,7 +112,7 @@ jobs:
           remote_path: ${{ secrets.WEB_REMOTE_PATH }}
           sftpArgs: "-o ConnectTimeout=10"
 
-      - name: Deploy do .env via SFTP para staging
+      - name: Deploy do .env via SFTP para homolog
         uses: wlixcc/SFTP-Deploy-Action@v1.2.6
         with:
           username: ${{ secrets.SFTP_USER }}
@@ -88,13 +127,22 @@ jobs:
           remote_path: ${{ secrets.ENV_REMOTE_PATH }}
           sftpArgs: "-o ConnectTimeout=10"
 
-      - name: Testes de fumaca contra staging (gate para promocao)
-        if: false # habilita quando tests/e2e existir (Fase 3) — ate la o gate e so o deploy ter funcionado
-        run: |
-          echo "TODO: rodar Playwright contra ${{ secrets.WP_HOME }}"
+  stress-test:
+    needs: deploy-staging
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Teste de stress/fumaca contra homolog (k6)
+        uses: grafana/k6-action@v0.3.1
+        with:
+          filename: tests/stress/homolog.js
+        env:
+          BASE_URL: ${{ secrets.WP_HOME }}
 
   promote-to-main:
-    needs: deploy-staging
+    needs: stress-test
     if: github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
     permissions:
@@ -108,6 +156,7 @@ jobs:
         run: git push origin HEAD:main
 
   deploy-production:
+    needs: test
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: production
