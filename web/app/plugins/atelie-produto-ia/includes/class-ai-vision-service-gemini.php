@@ -732,6 +732,63 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 		);
 	}
 
+	public function rascunharRespostaOrcamento( string $descricao_pedido ): array {
+		if ( empty( $this->api_key ) ) {
+			return array(
+				'ok'       => false,
+				'rascunho' => '',
+				'mensagem' => 'IA não configurada.',
+			);
+		}
+
+		if ( trim( $descricao_pedido ) === '' ) {
+			return array(
+				'ok'       => false,
+				'rascunho' => '',
+				'mensagem' => 'Sem descrição do pedido pra rascunhar uma resposta.',
+			);
+		}
+
+		$prompt = 'Você ajuda a dona de um ateliê de tricô, crochê e amigurumis a responder um pedido de orçamento personalizado. '
+			. 'Escreva um rascunho de mensagem (WhatsApp ou e-mail, tom acolhedor e profissional) que: '
+			. '(1) confirma que recebeu o pedido e mostra que entendeu o que a cliente quer; '
+			. '(2) se a descrição do pedido estiver vaga em algum ponto importante (medida, cor, quantidade, prazo desejado pela cliente), pergunta o que falta; '
+			. '(3) informa que o prazo de produção é "[PREENCHER]" e o valor é "[PREENCHER]" — NUNCA invente prazo nem preço, deixe literalmente esses dois placeholders pra artesã completar depois com dado real; '
+			. '(4) termina de forma calorosa, sem soar robótico. '
+			. 'Responda SOMENTE o texto da mensagem, sem comentário antes ou depois, sem aspas envolvendo tudo.'
+			. "\n\nPedido da cliente:\n{$descricao_pedido}";
+
+		try {
+			$body = $this->chamar(
+				array( 'contents' => array( array( 'parts' => array( array( 'text' => $prompt ) ) ) ) ),
+				'rascunhar_orcamento',
+				30
+			);
+		} catch ( Throwable $e ) {
+			return array(
+				'ok'       => false,
+				'rascunho' => '',
+				'mensagem' => 'Não deu pra rascunhar agora: ' . $e->getMessage(),
+			);
+		}
+
+		$rascunho = (string) ( $body['candidates'][0]['content']['parts'][0]['text'] ?? '' );
+
+		if ( trim( $rascunho ) === '' ) {
+			return array(
+				'ok'       => false,
+				'rascunho' => '',
+				'mensagem' => 'A IA não devolveu nenhum texto — tente de novo.',
+			);
+		}
+
+		return array(
+			'ok'       => true,
+			'rascunho' => $rascunho,
+			'mensagem' => '',
+		);
+	}
+
 	private function mime_type( string $path ): string {
 		$ext = strtolower( (string) pathinfo( $path, PATHINFO_EXTENSION ) );
 		return match ( $ext ) {
