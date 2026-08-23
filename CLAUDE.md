@@ -127,3 +127,7 @@ Bem além da Fase 0. Já construído e funcionando:
   venda — não publica nem gasta nada sozinha, só o criativo pra copiar manualmente. Imagem
   sugerida é foto já existente do item; vídeo pro TikTok é anexado manualmente (sem geração de
   vídeo por IA). Testado com API real do Gemini. Ver PR #7.
+- Páginas legais (2026-08-23): política de privacidade, termos de uso e trocas/devoluções
+  publicadas com dados reais (antes: uma não existia, uma era rascunho, uma tinha link
+  quebrado no rodapé) — ver PR #8. Ainda sem revisão de advogado/contador; resolver antes de
+  ligar tráfego pago de verdade.
