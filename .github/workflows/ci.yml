@@ -2,8 +2,9 @@ name: CI
 
 on:
   pull_request:
-  push:
-    branches: [main, develop]
+    # push em main/develop nao dispara mais este workflow — o job "test" dentro de
+    # deploy.yml ja cobre lint/auditoria nesses pushes, como gate antes do deploy. Manter
+    # os dois rodando no push duplicaria o trabalho sem ganho nenhum.
 
 jobs:
   lint-and-test:
@@ -29,7 +30,10 @@ jobs:
         run: composer install --no-interaction --prefer-dist
 
       - name: Auditoria de seguranca das dependencias
-        run: composer audit
+        # --abandoned=report: nao falha o build por pacote abandonado (so vulnerabilidade real
+        # deve travar o CI) — roots/wp-password-bcrypt se autodeclara abandonado por bug de
+        # metadado proprio do pacote, sem vulnerabilidade de seguranca nenhuma.
+        run: composer audit --abandoned=report
 
       - name: Lint (WordPress Coding Standards)
         run: composer run lint

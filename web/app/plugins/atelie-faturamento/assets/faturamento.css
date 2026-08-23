@@ -51,3 +51,71 @@
     border: 2px solid #d8779e;
     background: #f7dfe9;
 }
+
+/* Teto do MEI */
+.atelie-faturamento .atelie-fat-card-mei {
+    border-left: 4px solid #3f6b4c;
+}
+
+.atelie-faturamento .atelie-fat-card-mei-aviso {
+    border-left-color: #b8823c;
+}
+
+.atelie-faturamento .atelie-fat-card-mei-atencao,
+.atelie-faturamento .atelie-fat-card-mei-critico {
+    border-left-color: #a8434b;
+}
+
+.atelie-faturamento .atelie-fat-mei-cabecalho {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.6rem;
+}
+
+.atelie-faturamento .atelie-fat-mei-numeros {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: #1d2327;
+}
+
+.atelie-faturamento .atelie-fat-mei-barra-fundo {
+    height: 12px;
+    background: #f0eef2;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.atelie-faturamento .atelie-fat-mei-barra {
+    height: 100%;
+    background: #3f6b4c;
+    border-radius: 999px;
+    transition: width 0.2s ease;
+}
+
+.atelie-faturamento .atelie-fat-card-mei-aviso .atelie-fat-mei-barra {
+    background: #b8823c;
+}
+
+.atelie-faturamento .atelie-fat-card-mei-atencao .atelie-fat-mei-barra,
+.atelie-faturamento .atelie-fat-card-mei-critico .atelie-fat-mei-barra {
+    background: #a8434b;
+}
+
+.atelie-faturamento .atelie-fat-mei-mensagem {
+    margin: 0.7rem 0 0;
+    font-size: 0.86rem;
+    color: #6c6072;
+}
+
+.atelie-faturamento .atelie-fat-prazos {
+    margin: 0.5rem 0 0;
+    padding-left: 1.2rem;
+}
+
+.atelie-faturamento .atelie-fat-prazos li {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}

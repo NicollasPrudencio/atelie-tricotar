@@ -18,6 +18,7 @@ web/app/mu-plugins/      Plugins sempre ativos (hardening/bootstrap)
 docker/                  Ambiente de desenvolvimento local
 .github/workflows/       CI/CD
 docs/decisions/          Log de decisoes de arquitetura
+docs-site/               Manual do painel (Jekyll, publicado via GitHub Pages)
 tests/                   PHPUnit (unit/) e Playwright (e2e/)
 ```
 

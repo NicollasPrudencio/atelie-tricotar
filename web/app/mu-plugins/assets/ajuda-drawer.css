@@ -1,0 +1,106 @@
+.atelie-ajuda-botao {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    margin-left: 8px;
+    border-radius: 50%;
+    border: 1px solid #c3b8c9;
+    background: #fff;
+    color: #6c6072;
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    vertical-align: middle;
+}
+
+.atelie-ajuda-botao:hover,
+.atelie-ajuda-botao:focus-visible {
+    background: #f7e9ec;
+    border-color: #d88fa3;
+}
+
+.atelie-ajuda-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(30, 20, 25, 0.35);
+    z-index: 100000;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.atelie-ajuda-overlay[hidden] {
+    display: none;
+}
+
+.atelie-ajuda-painel {
+    width: min(380px, 90vw);
+    height: 100%;
+    background: #fff;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+    padding: 24px;
+    overflow-y: auto;
+    animation: atelie-ajuda-entrar 0.2s ease-out;
+}
+
+@keyframes atelie-ajuda-entrar {
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+.atelie-ajuda-painel-cabecalho {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin: 0 0 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eee1e5;
+}
+
+.atelie-ajuda-painel-cabecalho h2 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.atelie-ajuda-fechar {
+    background: none;
+    border: none;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    color: #6c6072;
+    padding: 0 4px;
+}
+
+.atelie-ajuda-fechar:hover,
+.atelie-ajuda-fechar:focus-visible {
+    color: #b3486a;
+}
+
+.atelie-ajuda-lista {
+    margin: 0 0 24px;
+    padding-left: 20px;
+}
+
+.atelie-ajuda-lista li {
+    margin-bottom: 12px;
+    line-height: 1.55;
+}
+
+.atelie-ajuda-link-completo {
+    display: inline-block;
+    font-weight: 600;
+    text-decoration: none;
+    color: #b3486a;
+}
+
+.atelie-ajuda-link-completo:hover {
+    text-decoration: underline;
+}

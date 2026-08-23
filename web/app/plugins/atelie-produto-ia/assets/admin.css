@@ -15,6 +15,30 @@
     margin-bottom: 0.75rem;
 }
 
+.atelie-novo-produto .atelie-lote-origem-fotos {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.atelie-novo-produto .atelie-lote-drive-import,
+.atelie-novo-produto .atelie-lote-drive-import-form,
+.atelie-novo-produto .atelie-lote-drive-desconectar-form {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.atelie-novo-produto .atelie-lote-drive-import input[type="text"] {
+    min-width: 260px;
+}
+
+.atelie-novo-produto .atelie-dica-limite {
+    color: #646970;
+    font-size: 0.85em;
+}
+
 .atelie-novo-produto .atelie-fotos-preview {
     display: flex;
     flex-wrap: wrap;
@@ -227,4 +251,164 @@
     color: #a8434b;
     font-weight: 600;
     margin-bottom: 0.3rem;
+}
+
+/* Modal proprio de navegacao/selecao do Google Drive (pastas + fotos, clique marca) */
+.atelie-drive-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.atelie-drive-modal {
+    background: #fff;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 780px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.atelie-drive-modal-cabecalho {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid #dcdcde;
+}
+
+.atelie-drive-breadcrumb {
+    font-size: 0.9rem;
+    color: #6c6072;
+}
+
+.atelie-drive-breadcrumb-item {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #2271b1;
+    cursor: pointer;
+    font-size: inherit;
+}
+
+.atelie-drive-breadcrumb-item:disabled {
+    color: #1d2327;
+    font-weight: 600;
+    cursor: default;
+}
+
+.atelie-drive-modal-fechar {
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+    color: #6c6072;
+    padding: 0.2rem 0.4rem;
+}
+
+.atelie-drive-modal-corpo {
+    padding: 1.25rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.atelie-drive-carregando,
+.atelie-drive-vazio {
+    color: #6c6072;
+    text-align: center;
+    padding: 2rem 0;
+}
+
+.atelie-drive-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.85rem;
+}
+
+.atelie-drive-item {
+    position: relative;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    padding: 0.5rem;
+    cursor: pointer;
+    text-align: center;
+    background: #fff;
+}
+
+.atelie-drive-item:hover {
+    border-color: #2271b1;
+}
+
+.atelie-drive-item-pasta {
+    background: #fbf9fc;
+}
+
+.atelie-drive-item-thumb {
+    width: 100%;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    overflow: hidden;
+    border-radius: 4px;
+    margin-bottom: 0.4rem;
+    background: #f0f0f1;
+}
+
+.atelie-drive-item-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.atelie-drive-item-nome {
+    font-size: 0.78rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.atelie-drive-item-check {
+    position: absolute;
+    top: 0.4rem;
+    left: 0.4rem;
+    width: 22px;
+    height: 22px;
+    border: 2px solid #fff;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 0 0 1px #8c8f94;
+    cursor: pointer;
+    font-size: 0.85rem;
+    line-height: 18px;
+    color: #fff;
+    z-index: 2;
+}
+
+.atelie-drive-item-check-marcado {
+    background: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1;
+}
+
+.atelie-drive-modal-rodape {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1.25rem;
+    border-top: 1px solid #dcdcde;
+}
+
+.atelie-drive-modal-contagem {
+    color: #6c6072;
+    font-size: 0.85rem;
+    margin-right: auto;
 }

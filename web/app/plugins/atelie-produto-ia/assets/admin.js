@@ -2,6 +2,7 @@
     "use strict";
 
     document.addEventListener("DOMContentLoaded", function () {
+        var LIMITE_FOTOS = 10;
         var fotosIds = [];
         var receitaImagemId = null;
 
@@ -26,6 +27,40 @@
             mostrarFormulario();
         });
 
+        function adicionarFoto(id, thumbnailUrl) {
+            fotosIds.push(id);
+            var indice = fotosIds.length - 1;
+
+            var wrapper = document.createElement("div");
+            wrapper.className = "atelie-foto-item";
+
+            var img = document.createElement("img");
+            img.src = thumbnailUrl;
+            img.className = "atelie-foto-thumb";
+            wrapper.appendChild(img);
+            fotosPreview.appendChild(wrapper);
+
+            AtelieEditarImagem.anexar(wrapper, img, id, atelieProdutoIA, function (novoId) {
+                fotosIds[indice] = novoId;
+            });
+        }
+
+        // Ponto de entrada pra outras fontes de foto (ex.: fotos soltas escolhidas no modal
+        // do Drive, ja baixadas e salvas na Biblioteca de Midia) entrarem no mesmo estado
+        // e fluxo de "Escolher fotos" — mesmo limite, mesmo botao Sugerir/Manual.
+        window.AtelieNovoProduto = {
+            vagasDisponiveis: function () {
+                return LIMITE_FOTOS - fotosIds.length;
+            },
+            adicionarFotosExternas: function (lista) {
+                lista.forEach(function (item) {
+                    adicionarFoto(item.id, item.url);
+                });
+                dropzoneTexto.textContent = fotosIds.length + " foto(s) anexada(s)";
+                atualizarBotaoSugerir();
+            },
+        };
+
         function abrirSeletorMidia(callback, multiplo) {
             var frame = wp.media({
                 title: "Escolher imagem",
@@ -40,23 +75,20 @@
         }
 
         btnEscolherFotos.addEventListener("click", function () {
+            if (fotosIds.length >= LIMITE_FOTOS) {
+                alert("Máximo de " + LIMITE_FOTOS + " fotos por produto — remova alguma antes de escolher mais.");
+                return;
+            }
+
             abrirSeletorMidia(function (itens) {
+                var vagas = LIMITE_FOTOS - fotosIds.length;
+                if (itens.length > vagas) {
+                    alert("Máximo de " + LIMITE_FOTOS + " fotos por produto — só as primeiras " + vagas + " dessa seleção foram anexadas.");
+                    itens = itens.slice(0, vagas);
+                }
+
                 itens.forEach(function (item) {
-                    fotosIds.push(item.id);
-                    var indice = fotosIds.length - 1;
-
-                    var wrapper = document.createElement("div");
-                    wrapper.className = "atelie-foto-item";
-
-                    var img = document.createElement("img");
-                    img.src = item.sizes && item.sizes.thumbnail ? item.sizes.thumbnail.url : item.url;
-                    img.className = "atelie-foto-thumb";
-                    wrapper.appendChild(img);
-                    fotosPreview.appendChild(wrapper);
-
-                    AtelieEditarImagem.anexar(wrapper, img, item.id, atelieProdutoIA, function (novoId) {
-                        fotosIds[indice] = novoId;
-                    });
+                    adicionarFoto(item.id, item.sizes && item.sizes.thumbnail ? item.sizes.thumbnail.url : item.url);
                 });
                 dropzoneTexto.textContent = fotosIds.length + " foto(s) anexada(s)";
                 atualizarBotaoSugerir();

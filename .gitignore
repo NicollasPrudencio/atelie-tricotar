@@ -18,6 +18,9 @@
 !/web/app/mu-plugins/atelie-orcamento.php
 !/web/app/mu-plugins/atelie-precificacao.php
 !/web/app/mu-plugins/atelie-integracoes-sync.php
+!/web/app/mu-plugins/atelie-ajuda-drawer.php
+!/web/app/mu-plugins/atelie-checkout-campos-br.php
+!/web/app/mu-plugins/assets
 /web/app/themes/*
 !/web/app/themes/atelie-theme
 
@@ -30,6 +33,9 @@
 # conteúdo de terceiro, mesma lógica do /web/wp. Precisa ser reinstalado em
 # qualquer ambiente novo (dev local, CI, staging, produção).
 /web/app/languages
+
+# Build do site de documentação (gerado pelo Jekyll, ver .github/workflows/docs.yml)
+/_site
 
 # Artefatos locais
 *.log
