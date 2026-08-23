@@ -455,6 +455,125 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 			. "\n\nTítulo do item: {$titulo}\nDescrição do item: {$descricao}";
 	}
 
+	public function buscarReceita( string $descricao ): array {
+		if ( empty( $this->api_key ) ) {
+			return array(
+				'ok'         => false,
+				'resultados' => array(),
+				'mensagem'   => 'IA não configurada.',
+			);
+		}
+
+		$prompt = 'Busque na web receitas/padrões (em qualquer idioma) de tricô, crochê ou amigurumi que combinem com a descrição a seguir. '
+			. 'IMPORTANTE: nunca reproduza o texto completo de uma receita encontrada — isso pode violar direito autoral do criador do padrão. '
+			. 'Devolva no máximo 5 candidatos, cada um em UMA linha, exatamente neste formato (sem markdown, sem numeração): '
+			. 'RESULTADO: título curto | URL da fonte | resumo de até 20 palavras (o que é a peça, não como fazer)'
+			. "\n\nDescrição buscada: {$descricao}";
+
+		try {
+			$body = $this->chamar(
+				array(
+					'contents' => array( array( 'parts' => array( array( 'text' => $prompt ) ) ) ),
+					'tools'    => array( array( 'google_search' => new stdClass() ) ),
+				),
+				'buscar_receita',
+				45
+			);
+		} catch ( Throwable $e ) {
+			return array(
+				'ok'         => false,
+				'resultados' => array(),
+				'mensagem'   => 'Não deu pra buscar agora: ' . $e->getMessage(),
+			);
+		}
+
+		$texto  = $body['candidates'][0]['content']['parts'][0]['text'] ?? '';
+		$linhas = array_filter( explode( "\n", (string) $texto ) );
+
+		$resultados = array();
+		foreach ( $linhas as $linha ) {
+			if ( stripos( $linha, 'RESULTADO:' ) !== 0 ) {
+				continue;
+			}
+			$campos = explode( '|', substr( $linha, strlen( 'RESULTADO:' ) ) );
+			if ( count( $campos ) < 3 ) {
+				continue;
+			}
+			$resultados[] = array(
+				'titulo' => trim( $campos[0] ),
+				'url'    => trim( $campos[1] ),
+				'resumo' => trim( $campos[2] ),
+			);
+		}
+
+		if ( empty( $resultados ) ) {
+			return array(
+				'ok'         => false,
+				'resultados' => array(),
+				'mensagem'   => 'Não encontrei nenhum resultado pra essa descrição — tente descrever de outro jeito.',
+			);
+		}
+
+		return array(
+			'ok'         => true,
+			'resultados' => $resultados,
+			'mensagem'   => '',
+		);
+	}
+
+	public function traduzirReceita( string $texto_original ): array {
+		if ( empty( $this->api_key ) ) {
+			return array(
+				'ok'              => false,
+				'texto_traduzido' => '',
+				'mensagem'        => 'IA não configurada.',
+			);
+		}
+
+		if ( trim( $texto_original ) === '' ) {
+			return array(
+				'ok'              => false,
+				'texto_traduzido' => '',
+				'mensagem'        => 'Cole o texto da receita antes de traduzir.',
+			);
+		}
+
+		$prompt = 'Traduza pro português (Brasil) o texto de receita/padrão de tricô, crochê ou amigurumi abaixo, em qualquer idioma que esteja. '
+			. 'Traduza fielmente as instruções técnicas (pontos, quantidades, medidas — mantenha abreviações de ponto padrão em português quando existir equivalente conhecido). '
+			. 'Não resuma, não invente nem complete partes que não estejam no original. Responda SOMENTE com o texto traduzido, sem comentário nenhum antes ou depois.'
+			. "\n\nTexto original:\n{$texto_original}";
+
+		try {
+			$body = $this->chamar(
+				array( 'contents' => array( array( 'parts' => array( array( 'text' => $prompt ) ) ) ) ),
+				'traduzir_receita',
+				45
+			);
+		} catch ( Throwable $e ) {
+			return array(
+				'ok'              => false,
+				'texto_traduzido' => '',
+				'mensagem'        => 'Não deu pra traduzir agora: ' . $e->getMessage(),
+			);
+		}
+
+		$traduzido = (string) ( $body['candidates'][0]['content']['parts'][0]['text'] ?? '' );
+
+		if ( trim( $traduzido ) === '' ) {
+			return array(
+				'ok'              => false,
+				'texto_traduzido' => '',
+				'mensagem'        => 'A IA não devolveu nenhum texto — tente de novo.',
+			);
+		}
+
+		return array(
+			'ok'              => true,
+			'texto_traduzido' => $traduzido,
+			'mensagem'        => '',
+		);
+	}
+
 	private function mime_type( string $path ): string {
 		$ext = strtolower( (string) pathinfo( $path, PATHINFO_EXTENSION ) );
 		return match ( $ext ) {

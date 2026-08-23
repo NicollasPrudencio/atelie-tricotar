@@ -76,4 +76,29 @@ interface Atelie_Ai_Vision_Service_Interface {
 	 * }
 	 */
 	public function gerarAnuncio( string $titulo, string $descricao, string $tipo_objeto ): array;
+
+	/**
+	 * Busca na web candidatos de receita/padrão em outro idioma a partir de
+	 * uma descricao (ex.: "amigurumi de elefante"). NUNCA reproduz o texto
+	 * completo da receita encontrada (risco de direito autoral) — só aponta
+	 * titulo/fonte/resumo curto, pra artesã decidir se quer abrir a fonte
+	 * original e trazer o texto ela mesma (pra depois usar em
+	 * `traduzirReceita()`).
+	 *
+	 * @return array{
+	 *     ok: bool,
+	 *     resultados: array<int, array{titulo: string, url: string, resumo: string}>,
+	 *     mensagem: string
+	 * }
+	 */
+	public function buscarReceita( string $descricao ): array;
+
+	/**
+	 * Traduz pro portugues um texto de receita/padrao que a artesã já tem
+	 * (colado ou extraido de PDF/foto), em qualquer idioma de origem — sem
+	 * resumir nem reinterpretar, só traduzir fielmente as instrucoes.
+	 *
+	 * @return array{ok: bool, texto_traduzido: string, mensagem: string}
+	 */
+	public function traduzirReceita( string $texto_original ): array;
 }

@@ -105,4 +105,43 @@ class Atelie_Ai_Vision_Service_Mock implements Atelie_Ai_Vision_Service_Interfac
 			),
 		);
 	}
+
+	public function buscarReceita( string $descricao ): array {
+		usleep( 600000 );
+
+		return array(
+			'ok'         => true,
+			'resultados' => array(
+				array(
+					'titulo' => "[MOCK] Padrão de {$descricao} (site A)",
+					'url'    => 'https://exemplo.com/padrao-mock-1',
+					'resumo' => '[MOCK] Resumo curto do que é a peça, sem instruções completas.',
+				),
+				array(
+					'titulo' => "[MOCK] Outro padrão de {$descricao} (site B)",
+					'url'    => 'https://exemplo.com/padrao-mock-2',
+					'resumo' => '[MOCK] Segundo resultado simulado, pra testar a lista com mais de um item.',
+				),
+			),
+			'mensagem'   => '',
+		);
+	}
+
+	public function traduzirReceita( string $texto_original ): array {
+		usleep( 600000 );
+
+		if ( trim( $texto_original ) === '' ) {
+			return array(
+				'ok'              => false,
+				'texto_traduzido' => '',
+				'mensagem'        => 'Cole o texto da receita antes de traduzir.',
+			);
+		}
+
+		return array(
+			'ok'              => true,
+			'texto_traduzido' => '[MOCK — tradução simulada] ' . $texto_original,
+			'mensagem'        => '',
+		);
+	}
 }
