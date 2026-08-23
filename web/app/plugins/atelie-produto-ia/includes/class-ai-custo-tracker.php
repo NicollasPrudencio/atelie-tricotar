@@ -53,6 +53,10 @@ class Atelie_Ai_Custo_Tracker {
 			'entrada' => 300,
 			'saida'   => 150,
 		),
+		'diagnosticar_foto'   => array(
+			'entrada' => 1100,
+			'saida'   => 120,
+		),
 		'rascunhar_orcamento' => array(
 			'entrada' => 250,
 			'saida'   => 200,

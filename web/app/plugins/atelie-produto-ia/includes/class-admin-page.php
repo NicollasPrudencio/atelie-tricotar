@@ -72,14 +72,15 @@ class Atelie_Admin_Page {
 			'atelie-produto-ia-admin',
 			'atelieProdutoIA',
 			array(
-				'restUrl'             => esc_url_raw( rest_url( 'atelie/v1/analisar-fotos' ) ),
-				'editarImagemUrl'     => esc_url_raw( rest_url( 'atelie/v1/editar-imagem' ) ),
-				'driveListarUrl'      => esc_url_raw( rest_url( 'atelie/v1/drive-listar' ) ),
-				'driveBaixarFotosUrl' => esc_url_raw( rest_url( 'atelie/v1/drive-baixar-fotos' ) ),
-				'driveConectado'      => Atelie_Drive_Config::conectado(),
-				'nonce'               => wp_create_nonce( 'wp_rest' ),
-				'iaDisponivel'        => Atelie_Ai_Config::esta_disponivel(),
-				'custoEdicaoImagem'   => number_format( Atelie_Ai_Custo_Tracker::estimar( 'editar_imagem' ), 4, ',', '.' ),
+				'restUrl'                => esc_url_raw( rest_url( 'atelie/v1/analisar-fotos' ) ),
+				'editarImagemUrl'        => esc_url_raw( rest_url( 'atelie/v1/editar-imagem' ) ),
+				'sugerirEdicaoImagemUrl' => esc_url_raw( rest_url( 'atelie/v1/sugerir-edicao-imagem' ) ),
+				'driveListarUrl'         => esc_url_raw( rest_url( 'atelie/v1/drive-listar' ) ),
+				'driveBaixarFotosUrl'    => esc_url_raw( rest_url( 'atelie/v1/drive-baixar-fotos' ) ),
+				'driveConectado'         => Atelie_Drive_Config::conectado(),
+				'nonce'                  => wp_create_nonce( 'wp_rest' ),
+				'iaDisponivel'           => Atelie_Ai_Config::esta_disponivel(),
+				'custoEdicaoImagem'      => number_format( Atelie_Ai_Custo_Tracker::estimar( 'editar_imagem' ), 4, ',', '.' ),
 			)
 		);
 	}

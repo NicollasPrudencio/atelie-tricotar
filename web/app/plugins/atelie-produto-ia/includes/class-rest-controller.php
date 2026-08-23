@@ -66,6 +66,19 @@ class Atelie_Rest_Controller {
 
 				register_rest_route(
 					'atelie/v1',
+					'/sugerir-edicao-imagem',
+					array(
+						'methods'             => 'POST',
+						'callback'            => array( $this, 'sugerir_edicao_imagem' ),
+						'permission_callback' => array( $this, 'usuario_pode_editar_imagem' ),
+						'args'                => array(
+							'foto_id' => array( 'required' => true ),
+						),
+					)
+				);
+
+				register_rest_route(
+					'atelie/v1',
 					'/drive-listar',
 					array(
 						'methods'             => 'GET',
@@ -314,6 +327,65 @@ class Atelie_Rest_Controller {
 			array(
 				'imagem_id' => $novo_id,
 				'url'       => wp_get_attachment_image_url( $novo_id, 'thumbnail' ),
+			),
+			200
+		);
+	}
+
+	public function sugerir_edicao_imagem( WP_REST_Request $request ): WP_REST_Response {
+		$foto_id = absint( $request->get_param( 'foto_id' ) );
+
+		if ( ! $foto_id ) {
+			return new WP_REST_Response( array( 'erro' => 'Selecione a foto.' ), 400 );
+		}
+
+		if ( ! $this->dentro_do_limite_diario() ) {
+			return new WP_REST_Response( array( 'erro' => 'Limite diário de chamadas de IA atingido. Tente de novo amanhã.' ), 429 );
+		}
+
+		$caminho = get_attached_file( $foto_id );
+		if ( ! $caminho ) {
+			return new WP_REST_Response( array( 'erro' => 'Foto não encontrada.' ), 404 );
+		}
+
+		try {
+			$servico   = Atelie_Ai_Vision_Service_Factory::criar();
+			$resultado = $servico->sugerirEdicaoImagem( $caminho );
+		} catch ( Throwable $e ) {
+			$this->registrar_log( 'erro (sugerir edição imagem): ' . $e->getMessage() );
+			return new WP_REST_Response( array( 'erro' => 'Não foi possível avaliar a foto agora.' ), 502 );
+		}
+
+		if ( ! $resultado['ok'] ) {
+			$this->registrar_log( 'erro (sugerir edição imagem): ' . $resultado['mensagem'] );
+			return new WP_REST_Response( array( 'erro' => $resultado['mensagem'] ), 502 );
+		}
+
+		if ( $resultado['imagem_base64'] === null ) {
+			$this->incrementar_contador_diario();
+			return new WP_REST_Response(
+				array(
+					'editado'     => false,
+					'diagnostico' => $resultado['diagnostico'],
+				),
+				200
+			);
+		}
+
+		$novo_id = $this->salvar_imagem_editada( (string) $resultado['imagem_base64'], (string) $resultado['mime_type'], $foto_id );
+		if ( ! $novo_id ) {
+			return new WP_REST_Response( array( 'erro' => 'A IA editou a imagem, mas não deu pra salvar na biblioteca de mídia.' ), 500 );
+		}
+
+		$this->incrementar_contador_diario();
+		$this->registrar_log( 'ok (sugerir edição imagem), origem foto ' . $foto_id . ' -> nova ' . $novo_id );
+
+		return new WP_REST_Response(
+			array(
+				'editado'     => true,
+				'imagem_id'   => $novo_id,
+				'url'         => wp_get_attachment_image_url( $novo_id, 'thumbnail' ),
+				'diagnostico' => $resultado['diagnostico'],
 			),
 			200
 		);

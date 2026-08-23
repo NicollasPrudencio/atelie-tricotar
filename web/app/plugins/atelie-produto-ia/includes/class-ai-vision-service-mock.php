@@ -155,6 +155,31 @@ class Atelie_Ai_Vision_Service_Mock implements Atelie_Ai_Vision_Service_Interfac
 		);
 	}
 
+	public function sugerirEdicaoImagem( string $imagem_path ): array {
+		usleep( 600000 );
+
+		if ( ! is_readable( $imagem_path ) ) {
+			return array(
+				'ok'            => false,
+				'imagem_base64' => null,
+				'mime_type'     => null,
+				'diagnostico'   => '',
+				'mensagem'      => 'Foto não encontrada.',
+			);
+		}
+
+		// [MOCK] sempre "sugere" uma edição e devolve a mesma foto sem alterar — só pra
+		// testar o fluxo (avaliar, aplicar, trocar no formulário) sem gastar API de verdade.
+		return array(
+			'ok'            => true,
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- leitura de arquivo local (upload do WP), nao URL remota.
+			'imagem_base64' => base64_encode( (string) file_get_contents( $imagem_path ) ),
+			'mime_type'     => 'image/jpeg',
+			'diagnostico'   => '[MOCK] Fundo um pouco escuro e enquadramento apertado — deixei o fundo mais claro (imagem não foi alterada de verdade, modo simulado).',
+			'mensagem'      => '',
+		);
+	}
+
 	public function rascunharRespostaOrcamento( string $descricao_pedido ): array {
 		usleep( 600000 );
 

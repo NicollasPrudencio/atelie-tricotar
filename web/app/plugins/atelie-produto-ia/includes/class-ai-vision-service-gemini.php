@@ -625,6 +625,113 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 			. "\n\nTítulo: {$titulo}\nDescrição: {$descricao}";
 	}
 
+	public function sugerirEdicaoImagem( string $imagem_path ): array {
+		$vazio = array(
+			'ok'            => false,
+			'imagem_base64' => null,
+			'mime_type'     => null,
+			'diagnostico'   => '',
+			'mensagem'      => '',
+		);
+
+		if ( empty( $this->api_key ) ) {
+			return array_merge( $vazio, array( 'mensagem' => 'IA não configurada.' ) );
+		}
+
+		if ( ! is_readable( $imagem_path ) ) {
+			return array_merge( $vazio, array( 'mensagem' => 'Foto não encontrada no servidor.' ) );
+		}
+
+		$diagnostico = $this->diagnosticar_foto( $imagem_path );
+
+		if ( ! $diagnostico['ok'] ) {
+			return array_merge( $vazio, array( 'mensagem' => $diagnostico['mensagem'] ) );
+		}
+
+		if ( $diagnostico['prompt_edicao'] === '' ) {
+			return array(
+				'ok'            => true,
+				'imagem_base64' => null,
+				'mime_type'     => null,
+				'diagnostico'   => $diagnostico['diagnostico'],
+				'mensagem'      => '',
+			);
+		}
+
+		$edicao = $this->editarImagem( $imagem_path, $diagnostico['prompt_edicao'] );
+
+		return array(
+			'ok'            => $edicao['ok'],
+			'imagem_base64' => $edicao['imagem_base64'],
+			'mime_type'     => $edicao['mime_type'],
+			'diagnostico'   => $diagnostico['diagnostico'],
+			'mensagem'      => $edicao['mensagem'],
+		);
+	}
+
+	/**
+	 * @return array{ok: bool, diagnostico: string, prompt_edicao: string, mensagem: string}
+	 */
+	private function diagnosticar_foto( string $imagem_path ): array {
+		$prompt = 'Você é fotógrafo de produto especialista em maximizar conversão em venda de e-commerce artesanal '
+			. '(tricô, crochê, amigurumis). Avalie esta foto — iluminação, fundo, enquadramento, nitidez — e decida se ela '
+			. 'se beneficiaria de uma edição simples (a edição não pode inventar nem remover elementos da peça em si, só '
+			. 'melhorar apresentação: fundo, luz, corte, nitidez). '
+			. 'Se sim, escreva um pedido de edição direto e objetivo em português, como se fosse escrito por uma pessoa '
+			. '(ex.: "deixe o fundo branco e aumente um pouco o brilho"). Se a foto já estiver boa o suficiente, não sugira edição nenhuma. '
+			. 'Responda SOMENTE um objeto JSON no formato: {"diagnostico": "resumo curto do que avaliou na foto", "prompt_edicao": "pedido de edição, ou string vazia se a foto já está boa"}.';
+
+		try {
+			$body = $this->chamar(
+				array(
+					'contents'         => array(
+						array(
+							'parts' => array(
+								array( 'text' => $prompt ),
+								array(
+									'inline_data' => array(
+										'mime_type' => $this->mime_type( $imagem_path ),
+										// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents, WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- leitura de arquivo local (upload do WP), nao URL remota; base64 aqui e formato exigido pela API, nao ofuscacao.
+										'data'      => base64_encode( (string) file_get_contents( $imagem_path ) ),
+									),
+								),
+							),
+						),
+					),
+					'generationConfig' => array( 'responseMimeType' => 'application/json' ),
+				),
+				'diagnosticar_foto',
+				30
+			);
+		} catch ( Throwable $e ) {
+			return array(
+				'ok'            => false,
+				'diagnostico'   => '',
+				'prompt_edicao' => '',
+				'mensagem'      => 'Não deu pra avaliar a foto agora: ' . $e->getMessage(),
+			);
+		}
+
+		$texto_json = $body['candidates'][0]['content']['parts'][0]['text'] ?? null;
+		$dados      = is_string( $texto_json ) ? json_decode( $texto_json, true ) : null;
+
+		if ( ! is_array( $dados ) ) {
+			return array(
+				'ok'            => false,
+				'diagnostico'   => '',
+				'prompt_edicao' => '',
+				'mensagem'      => 'Resposta da IA não veio no formato esperado.',
+			);
+		}
+
+		return array(
+			'ok'            => true,
+			'diagnostico'   => (string) ( $dados['diagnostico'] ?? '' ),
+			'prompt_edicao' => (string) ( $dados['prompt_edicao'] ?? '' ),
+			'mensagem'      => '',
+		);
+	}
+
 	public function rascunharRespostaOrcamento( string $descricao_pedido ): array {
 		if ( empty( $this->api_key ) ) {
 			return array(
