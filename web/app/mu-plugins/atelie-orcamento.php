@@ -270,6 +270,7 @@ function atelie_orcamento_render_rascunho_ia( int $post_id, string $descricao ):
 add_action(
 	'admin_post_atelie_orcamento_rascunhar',
 	function (): void {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- precisa do post_id pra montar a action dinamica do nonce, verificado logo abaixo com esse mesmo valor.
 		$post_id = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
 
 		if (

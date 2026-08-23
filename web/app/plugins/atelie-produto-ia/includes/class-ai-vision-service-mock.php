@@ -105,8 +105,8 @@ class Atelie_Ai_Vision_Service_Mock implements Atelie_Ai_Vision_Service_Interfac
 
 		return array(
 			'ok'       => true,
-			'rascunho' => "[MOCK] Oi! Recebi seu pedido — \"" . mb_substr( $descricao_pedido, 0, 60 ) . "\"… Adorei a ideia! "
-				. "O prazo de produção fica em [PREENCHER] e o valor em [PREENCHER]. Consegue me confirmar mais algum detalhe? Bjs!",
+			'rascunho' => '[MOCK] Oi! Recebi seu pedido — "' . mb_substr( $descricao_pedido, 0, 60 ) . '"… Adorei a ideia! '
+				. 'O prazo de produção fica em [PREENCHER] e o valor em [PREENCHER]. Consegue me confirmar mais algum detalhe? Bjs!',
 			'mensagem' => '',
 		);
 	}
