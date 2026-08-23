@@ -129,3 +129,174 @@ function atelie_orcamento_handle_submit(): void {
 }
 add_action( 'admin_post_atelie_orcamento_submit', 'atelie_orcamento_handle_submit' );
 add_action( 'admin_post_nopriv_atelie_orcamento_submit', 'atelie_orcamento_handle_submit' );
+
+/**
+ * Tela de acompanhamento — antes disso, o unico registro de um pedido de
+ * orcamento personalizado era o e-mail avulso pro admin, sem nenhuma tela pra
+ * rever pedidos antigos. Lacuna confirmada com o usuario em 2026-08-20 (nao
+ * era escolha deliberada) — ver CLAUDE.md, secao "Estado atual".
+ */
+add_action(
+	'init',
+	function (): void {
+		register_post_type(
+			'atelie_pedido_orc',
+			array(
+				'label'           => __( 'Pedidos de Orçamento', 'atelie-theme' ),
+				'labels'          => array(
+					'name'          => __( 'Pedidos de Orçamento', 'atelie-theme' ),
+					'singular_name' => __( 'Pedido de Orçamento', 'atelie-theme' ),
+					'all_items'     => __( 'Pedidos de Orçamento', 'atelie-theme' ),
+				),
+				'public'          => false,
+				'show_ui'         => true,
+				'menu_icon'       => 'dashicons-format-chat',
+				// Mesmo padrao do atelie_case: capability_type proprio + map_meta_cap, capabilities
+				// derivadas concedidas explicitamente pra Vendedora e Administrador em
+				// atelie-bootstrap.php — "acompanhar pedidos" e trabalho dela, nao so do admin.
+				'capability_type' => array( 'atelie_pedido_orc', 'atelie_pedidos_orc' ),
+				'map_meta_cap'    => true,
+				'supports'        => array( 'title' ),
+			)
+		);
+	},
+	10
+);
+
+add_action(
+	'atelie_lead_submitted',
+	function ( array $lead ): void {
+		$post_id = wp_insert_post(
+			array(
+				'post_type'   => 'atelie_pedido_orc',
+				'post_title'  => sprintf( '%s — %s', $lead['nome'], gmdate( 'd/m/Y H:i', strtotime( $lead['enviado_em'] ) ) ),
+				'post_status' => 'publish',
+			)
+		);
+
+		if ( is_wp_error( $post_id ) || $post_id === 0 ) {
+			return;
+		}
+
+		update_post_meta( $post_id, '_atelie_lead_contato', $lead['contato'] );
+		update_post_meta( $post_id, '_atelie_lead_descricao', $lead['descricao'] );
+		update_post_meta( $post_id, '_atelie_lead_anexo_url', $lead['anexo_url'] );
+		update_post_meta( $post_id, '_atelie_lead_status', 'novo' );
+	}
+);
+
+add_action(
+	'add_meta_boxes',
+	function (): void {
+		add_meta_box(
+			'atelie_lead_dados',
+			__( 'Pedido', 'atelie-theme' ),
+			function ( WP_Post $post ): void {
+				wp_nonce_field( 'atelie_lead_save', 'atelie_lead_nonce' );
+				$contato   = get_post_meta( $post->ID, '_atelie_lead_contato', true );
+				$descricao = get_post_meta( $post->ID, '_atelie_lead_descricao', true );
+				$anexo_url = get_post_meta( $post->ID, '_atelie_lead_anexo_url', true );
+				$status    = get_post_meta( $post->ID, '_atelie_lead_status', true ) ?: 'novo';
+				?>
+			<p>
+					<strong><?php esc_html_e( 'Contato (e-mail ou WhatsApp)', 'atelie-theme' ); ?></strong><br>
+					<?php echo esc_html( $contato ); ?>
+			</p>
+			<p>
+					<strong><?php esc_html_e( 'O que a cliente quer encomendar', 'atelie-theme' ); ?></strong><br>
+					<?php echo nl2br( esc_html( $descricao ) ); ?>
+			</p>
+				<?php if ( $anexo_url !== '' ) : ?>
+				<p>
+						<strong><?php esc_html_e( 'Foto de referência', 'atelie-theme' ); ?></strong><br>
+						<a href="<?php echo esc_url( $anexo_url ); ?>" target="_blank" rel="noopener noreferrer">
+							<img src="<?php echo esc_url( $anexo_url ); ?>" alt="" style="max-width:100%; height:auto; border-radius:4px;">
+					</a>
+				</p>
+				<?php endif; ?>
+			<p>
+					<label><strong><?php esc_html_e( 'Status', 'atelie-theme' ); ?></strong></label><br>
+				<select name="atelie_lead_status">
+						<option value="novo" <?php selected( $status, 'novo' ); ?>><?php esc_html_e( 'Novo', 'atelie-theme' ); ?></option>
+						<option value="respondido" <?php selected( $status, 'respondido' ); ?>><?php esc_html_e( 'Respondido', 'atelie-theme' ); ?></option>
+				</select>
+			</p>
+				<?php
+			},
+			'atelie_pedido_orc',
+			'normal',
+			'high'
+		);
+	}
+);
+
+add_action(
+	'save_post_atelie_pedido_orc',
+	function ( int $post_id ): void {
+		if ( ! isset( $_POST['atelie_lead_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['atelie_lead_nonce'] ) ), 'atelie_lead_save' ) ) {
+			return;
+		}
+		if ( isset( $_POST['atelie_lead_status'] ) ) {
+			update_post_meta( $post_id, '_atelie_lead_status', sanitize_text_field( wp_unslash( $_POST['atelie_lead_status'] ) ) );
+		}
+	}
+);
+
+add_filter(
+	'manage_atelie_pedido_orc_posts_columns',
+	function ( array $colunas ): array {
+		$nova = array();
+		foreach ( $colunas as $chave => $rotulo ) {
+			$nova[ $chave ] = $rotulo;
+			if ( $chave === 'title' ) {
+				$nova['atelie_lead_contato'] = __( 'Contato', 'atelie-theme' );
+				$nova['atelie_lead_status']  = __( 'Status', 'atelie-theme' );
+			}
+		}
+		return $nova;
+	}
+);
+
+add_action(
+	'manage_atelie_pedido_orc_posts_custom_column',
+	function ( string $coluna, int $post_id ): void {
+		if ( $coluna === 'atelie_lead_contato' ) {
+			echo esc_html( get_post_meta( $post_id, '_atelie_lead_contato', true ) );
+			return;
+		}
+		if ( $coluna === 'atelie_lead_status' ) {
+			$status = get_post_meta( $post_id, '_atelie_lead_status', true ) ?: 'novo';
+			$rotulo = $status === 'respondido' ? __( 'Respondido', 'atelie-theme' ) : __( 'Novo', 'atelie-theme' );
+			$cor    = $status === 'respondido' ? '#6c6072' : '#b3486a';
+			printf( '<strong style="color:%s;">%s</strong>', esc_attr( $cor ), esc_html( $rotulo ) );
+		}
+	},
+	10,
+	2
+);
+
+add_action(
+	'admin_notices',
+	function (): void {
+		$screen = get_current_screen();
+		if ( ! $screen || $screen->post_type !== 'atelie_pedido_orc' || ! class_exists( 'Atelie_Ajuda_Drawer' ) ) {
+			return;
+		}
+		?>
+	<div class="notice atelie-ajuda-notice" style="display:flex; align-items:center; gap:4px; padding:10px 12px;">
+		<span><?php esc_html_e( 'Precisa de ajuda com esta tela?', 'atelie-theme' ); ?></span>
+		<?php
+		Atelie_Ajuda_Drawer::render(
+			'Pedidos de Orçamento',
+			array(
+				'Toda vez que alguém envia o formulário "Solicitar orçamento personalizado" do site, um pedido novo aparece aqui — além do e-mail que já chegava antes.',
+				'Abra o pedido pra ver o contato, o que a cliente quer encomendar e a foto de referência (se enviou uma).',
+				'Depois de responder pelo contato informado, marque o status como "Respondido" — ajuda a saber o que já foi tratado.',
+			),
+			'/orcamento-personalizado/'
+		);
+		?>
+	</div>
+		<?php
+	}
+);

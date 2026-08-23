@@ -72,7 +72,7 @@ add_action(
 add_action(
 	'init',
 	function (): void {
-		$capabilities_version = '2';
+		$capabilities_version = '3';
 
 		if ( get_option( 'atelie_vendedora_caps_version' ) === $capabilities_version ) {
 			return;
@@ -83,32 +83,65 @@ add_action(
 			'atelie_vendedora',
 			'Vendedora',
 			array(
-				'read'                        => true,
-				'upload_files'                => true,
+				'read'                              => true,
+				'upload_files'                      => true,
 				// Produtos
-				'edit_products'               => true,
-				'edit_published_products'     => true,
-				'publish_products'            => true,
-				'read_private_products'       => true,
+				'edit_products'                     => true,
+				'edit_published_products'           => true,
+				'publish_products'                  => true,
+				'read_private_products'             => true,
 				// Pedidos (inclui gerar etiqueta de frete via Melhor Envio na tela do pedido)
-				'edit_shop_orders'            => true,
-				'edit_others_shop_orders'     => true,
-				'read_private_shop_orders'    => true,
+				'edit_shop_orders'                  => true,
+				'edit_others_shop_orders'           => true,
+				'read_private_shop_orders'          => true,
 				// Portfolio/cases
-				'edit_atelie_cases'           => true,
-				'edit_published_atelie_cases' => true,
-				'publish_atelie_cases'        => true,
-				'read_private_atelie_cases'   => true,
+				'edit_atelie_cases'                 => true,
+				'edit_published_atelie_cases'       => true,
+				'publish_atelie_cases'              => true,
+				'read_private_atelie_cases'         => true,
+				// Pedidos de orcamento personalizado (acompanhar/responder e trabalho dela)
+				'edit_atelie_pedidos_orc'           => true,
+				'edit_published_atelie_pedidos_orc' => true,
+				'publish_atelie_pedidos_orc'        => true,
+				'read_private_atelie_pedidos_orc'   => true,
 			)
 		);
 
 		update_option( 'atelie_vendedora_caps_version', $capabilities_version );
 
-		// capability_type customizado (atelie_case) nao é herdado pelo Administrador
-		// automaticamente — sem isso, nem o admin consegue gerenciar o portfolio.
+		// capability_type customizado (atelie_case, atelie_pedido_orc) nao e herdado pelo
+		// Administrador automaticamente — sem isso, nem o admin consegue gerenciar essas telas.
 		$administrator = get_role( 'administrator' );
 		if ( $administrator !== null ) {
-			foreach ( array( 'edit_atelie_case', 'read_atelie_case', 'delete_atelie_case', 'edit_atelie_cases', 'edit_others_atelie_cases', 'publish_atelie_cases', 'read_private_atelie_cases', 'delete_atelie_cases', 'delete_private_atelie_cases', 'delete_published_atelie_cases', 'delete_others_atelie_cases', 'edit_private_atelie_cases', 'edit_published_atelie_cases' ) as $cap ) {
+			$caps_customizadas = array(
+				'edit_atelie_case',
+				'read_atelie_case',
+				'delete_atelie_case',
+				'edit_atelie_cases',
+				'edit_others_atelie_cases',
+				'publish_atelie_cases',
+				'read_private_atelie_cases',
+				'delete_atelie_cases',
+				'delete_private_atelie_cases',
+				'delete_published_atelie_cases',
+				'delete_others_atelie_cases',
+				'edit_private_atelie_cases',
+				'edit_published_atelie_cases',
+				'edit_atelie_pedido_orc',
+				'read_atelie_pedido_orc',
+				'delete_atelie_pedido_orc',
+				'edit_atelie_pedidos_orc',
+				'edit_others_atelie_pedidos_orc',
+				'publish_atelie_pedidos_orc',
+				'read_private_atelie_pedidos_orc',
+				'delete_atelie_pedidos_orc',
+				'delete_private_atelie_pedidos_orc',
+				'delete_published_atelie_pedidos_orc',
+				'delete_others_atelie_pedidos_orc',
+				'edit_private_atelie_pedidos_orc',
+				'edit_published_atelie_pedidos_orc',
+			);
+			foreach ( $caps_customizadas as $cap ) {
 				$administrator->add_cap( $cap );
 			}
 		}
