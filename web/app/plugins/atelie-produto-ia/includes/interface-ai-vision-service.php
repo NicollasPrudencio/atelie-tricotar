@@ -138,4 +138,19 @@ interface Atelie_Ai_Vision_Service_Interface {
 	 * @return array{ok: bool, preco_sugerido: float, faixa_min: float, faixa_max: float, justificativa: string, mensagem: string}
 	 */
 	public function sugerirPrecoVenda( string $titulo_produto, string $descricao_produto, float $custo ): array;
+
+	/**
+	 * Rascunha o texto de acompanhamento pra responder um pedido de orçamento
+	 * personalizado, a partir do que a cliente pediu — tom acolhedor,
+	 * confirmando o entendimento do pedido e pedindo detalhes que estejam
+	 * faltando (medida, cor, prazo desejado). NUNCA decide prazo de produção
+	 * nem preço sozinha (risco real: promessa direta à cliente, envolve
+	 * dinheiro) — esses dois pontos ficam marcados como "[PREENCHER]" no
+	 * rascunho, pra artesã completar com dado real (da tela "Precificação",
+	 * se for o caso) antes de enviar. Nunca sai sozinho: é sempre um rascunho
+	 * pra copiar, completar e enviar manualmente pelo contato da cliente.
+	 *
+	 * @return array{ok: bool, rascunho: string, mensagem: string}
+	 */
+	public function rascunharRespostaOrcamento( string $descricao_pedido ): array;
 }
