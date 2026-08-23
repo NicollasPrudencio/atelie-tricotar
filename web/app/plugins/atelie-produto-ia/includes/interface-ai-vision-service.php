@@ -62,4 +62,19 @@ interface Atelie_Ai_Vision_Service_Interface {
 	 * @return array{ok: bool, imagem_base64: ?string, mime_type: ?string, mensagem: string}
 	 */
 	public function editarImagem( string $imagem_path, string $prompt ): array;
+
+	/**
+	 * Rascunha o texto de acompanhamento pra responder um pedido de orçamento
+	 * personalizado, a partir do que a cliente pediu — tom acolhedor,
+	 * confirmando o entendimento do pedido e pedindo detalhes que estejam
+	 * faltando (medida, cor, prazo desejado). NUNCA decide prazo de produção
+	 * nem preço sozinha (risco real: promessa direta à cliente, envolve
+	 * dinheiro) — esses dois pontos ficam marcados como "[PREENCHER]" no
+	 * rascunho, pra artesã completar com dado real (da tela "Precificação",
+	 * se for o caso) antes de enviar. Nunca sai sozinho: é sempre um rascunho
+	 * pra copiar, completar e enviar manualmente pelo contato da cliente.
+	 *
+	 * @return array{ok: bool, rascunho: string, mensagem: string}
+	 */
+	public function rascunharRespostaOrcamento( string $descricao_pedido ): array;
 }
