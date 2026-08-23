@@ -91,4 +91,18 @@ class Atelie_Ai_Vision_Service_Mock implements Atelie_Ai_Vision_Service_Interfac
 			'descricao_sugerida' => '[MOCK] Descrição corrigida, sem mencionar a artesã.',
 		);
 	}
+
+	public function gerarAnuncio( string $titulo, string $descricao, string $tipo_objeto ): array {
+		usleep( 600000 );
+
+		return array(
+			'meta'   => array(
+				'texto_principal' => "[MOCK] Peça feita à mão, com carinho em cada detalhe — conheça \"{$titulo}\" e encontre a sua.",
+				'titulo'          => "[MOCK] {$titulo} — feito à mão",
+			),
+			'tiktok' => array(
+				'legenda' => "[MOCK] Olha que fofura ✨ \"{$titulo}\" tá esperando por você #feitoamao #artesanato",
+			),
+		);
+	}
 }
