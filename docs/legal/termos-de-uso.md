@@ -1,15 +1,14 @@
 <!--
-MINUTA — precisa de revisão de advogado/contador antes de publicar. Não é aconselhamento
-jurídico. Preencher todos os campos entre [colchetes] com os dados reais do ateliê antes de
-copiar este conteúdo para uma Página do WordPress.
+Dados reais preenchidos em 2026-08-23. AINDA ASSIM: isto não é aconselhamento jurídico e não
+passou por revisão de advogado/contador. Revisar antes do lançamento real com tráfego pago.
 -->
 
 # Termos de Uso e Condições de Compra
 
-Última atualização: [DATA]
+Última atualização: 23 de agosto de 2026
 
-Ao usar o site **[dominio.com.br]** e comprar produtos do **[NOME DO ATELIÊ]**, você concorda
-com estes termos.
+Ao usar o site **atelietricotar.com.br** e comprar produtos do **Ateliê Tricotar**, você
+concorda com estes termos.
 
 ## 1. Sobre os produtos
 
@@ -44,19 +43,19 @@ controle.
 
 ## 5. Trocas e devoluções
 
-Ver [Política de Trocas e Devoluções](trocas-e-devolucoes.md).
+Ver [Política de Trocas e Devoluções](https://atelietricotar.com.br/trocas-e-devolucoes/).
 
 ## 6. Propriedade intelectual
 
-Fotos, descrições e conteúdo do site são de propriedade do **[NOME DO ATELIÊ]**. Reprodução sem
+Fotos, descrições e conteúdo do site são de propriedade do **Ateliê Tricotar**. Reprodução sem
 autorização não é permitida.
 
 ## 7. Foro
 
-Fica eleito o foro da comarca de [CIDADE/UF] para dirimir eventuais controvérsias, com renúncia
-a qualquer outro, por mais privilegiado que seja — sem prejuízo do direito do consumidor de
-optar pelo foro de seu domicílio, conforme o Código de Defesa do Consumidor.
+Fica eleito o foro da comarca de Imbé/RS para dirimir eventuais controvérsias, com renúncia a
+qualquer outro, por mais privilegiado que seja — sem prejuízo do direito do consumidor de optar
+pelo foro de seu domicílio, conforme o Código de Defesa do Consumidor.
 
 ## 8. Contato
 
-[E-MAIL DE CONTATO]
+faleconosco@atelietricotar.com.br
