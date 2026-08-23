@@ -112,4 +112,17 @@ interface Atelie_Ai_Vision_Service_Interface {
 	 * @return array{meta_titulo: string, meta_descricao: string, alt_text: string}
 	 */
 	public function sugerirSeo( string $titulo, string $descricao, string $tipo_objeto ): array;
+
+	/**
+	 * A IA avalia a foto sozinha (iluminação, fundo, enquadramento, nitidez) e
+	 * decide a edição ideal pra conversão — sem o usuário descrever nada.
+	 * Reaproveita `editarImagem()` por baixo: primeiro diagnostica (chamada de
+	 * visão de texto, barata) e, se achar que vale a pena, gera o pedido de
+	 * edição sozinha e aplica (mesma Interactions API, mesmo bloqueio de
+	 * cota/faturamento que `editarImagem()` já tem). Se a foto já estiver boa,
+	 * não força edição nenhuma — devolve só o diagnóstico.
+	 *
+	 * @return array{ok: bool, imagem_base64: ?string, mime_type: ?string, diagnostico: string, mensagem: string}
+	 */
+	public function sugerirEdicaoImagem( string $imagem_path ): array;
 }

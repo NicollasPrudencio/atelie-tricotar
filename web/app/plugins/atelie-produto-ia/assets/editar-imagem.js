@@ -65,5 +65,69 @@ window.AtelieEditarImagem = (function () {
         containerEl.appendChild(btn);
     }
 
-    return { anexar: anexar };
+    /**
+     * Botão "IA sugere edição" — a IA avalia a foto sozinha (sem descrição do
+     * usuário) e já aplica a edição que julgar ideal, se achar que vale a
+     * pena. Sempre gera uma foto NOVA, igual ao botão "Editar com IA".
+     */
+    function anexarSugestao(containerEl, imgEl, fotoId, config, aoTrocar) {
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "atelie-btn-editar-imagem";
+        btn.textContent = "✨ IA sugere edição";
+
+        if (!config.iaDisponivel) {
+            btn.disabled = true;
+        }
+
+        var textoOriginal = btn.textContent;
+
+        btn.addEventListener("click", function () {
+            btn.disabled = true;
+            btn.textContent = "Avaliando…";
+
+            fetch(config.sugerirEdicaoImagemUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-WP-Nonce": config.nonce,
+                },
+                body: JSON.stringify({ foto_id: fotoId }),
+            })
+                .then(function (resposta) {
+                    return resposta.json().then(function (dados) {
+                        return { ok: resposta.ok, dados: dados };
+                    });
+                })
+                .then(function (resultado) {
+                    btn.disabled = !config.iaDisponivel;
+                    btn.textContent = textoOriginal;
+
+                    if (!resultado.ok) {
+                        alert((resultado.dados && resultado.dados.erro) || "Não deu pra avaliar a foto agora.");
+                        return;
+                    }
+
+                    if (!resultado.dados.editado) {
+                        alert(resultado.dados.diagnostico || "A IA achou que essa foto já está boa, não precisa editar.");
+                        return;
+                    }
+
+                    imgEl.src = resultado.dados.url;
+                    aoTrocar(resultado.dados.imagem_id);
+                    if (resultado.dados.diagnostico) {
+                        alert("Edição aplicada: " + resultado.dados.diagnostico);
+                    }
+                })
+                .catch(function () {
+                    btn.disabled = !config.iaDisponivel;
+                    btn.textContent = textoOriginal;
+                    alert("Erro de conexão. Tente de novo.");
+                });
+        });
+
+        containerEl.appendChild(btn);
+    }
+
+    return { anexar: anexar, anexarSugestao: anexarSugestao };
 })();

@@ -66,11 +66,12 @@ class Atelie_Case_Admin_Page {
 			'atelie-produto-ia-case',
 			'atelieCaseIA',
 			array(
-				'restUrl'           => esc_url_raw( rest_url( 'atelie/v1/sugerir-case' ) ),
-				'editarImagemUrl'   => esc_url_raw( rest_url( 'atelie/v1/editar-imagem' ) ),
-				'nonce'             => wp_create_nonce( 'wp_rest' ),
-				'iaDisponivel'      => Atelie_Ai_Config::esta_disponivel(),
-				'custoEdicaoImagem' => number_format( Atelie_Ai_Custo_Tracker::estimar( 'editar_imagem' ), 4, ',', '.' ),
+				'restUrl'                => esc_url_raw( rest_url( 'atelie/v1/sugerir-case' ) ),
+				'editarImagemUrl'        => esc_url_raw( rest_url( 'atelie/v1/editar-imagem' ) ),
+				'sugerirEdicaoImagemUrl' => esc_url_raw( rest_url( 'atelie/v1/sugerir-edicao-imagem' ) ),
+				'nonce'                  => wp_create_nonce( 'wp_rest' ),
+				'iaDisponivel'           => Atelie_Ai_Config::esta_disponivel(),
+				'custoEdicaoImagem'      => number_format( Atelie_Ai_Custo_Tracker::estimar( 'editar_imagem' ), 4, ',', '.' ),
 			)
 		);
 	}

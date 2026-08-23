@@ -23,6 +23,21 @@ qualquer outra coisa.
    11ª foto não é aceita — o painel avisa na hora.
 3. As fotos escolhidas aparecem em miniatura, uma ao lado da outra.
 
+Embaixo de cada miniatura aparecem dois botões extras, opcionais:
+
+- **✏️ Editar com IA** — você descreve a edição que quer (ex.: "deixe o fundo branco") e a IA
+  gera uma foto nova com a edição aplicada.
+- **✨ IA sugere edição** — a IA avalia a foto sozinha (iluminação, fundo, enquadramento) e, se
+  achar que vale a pena, já aplica a edição que julgar ideal — sem você descrever nada. Se achar
+  que a foto já está boa, ela avisa e não muda nada.
+
+Nos dois casos, a foto original nunca é sobrescrita — é sempre gerada uma foto nova, e você
+decide se troca ou ignora o resultado.
+
+> Esses dois botões dependem de um recurso da IA (edição de imagem) que ainda não foi confirmado
+> funcionando de verdade — exige faturamento ativo na conta Google usada pela chave da IA. Se
+> aparecer erro ao clicar, é provavelmente essa pendência.
+
 Se você tiver a **receita ou o padrão** usado para fazer a peça (o passo a passo da técnica),
 cole o texto no campo logo abaixo das fotos, ou anexe uma foto da receita. Não é obrigatório,
 mas ajuda bastante: a inteligência artificial usa essa informação para descrever melhor o
