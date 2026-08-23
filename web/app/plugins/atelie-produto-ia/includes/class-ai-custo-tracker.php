@@ -41,6 +41,14 @@ class Atelie_Ai_Custo_Tracker {
 			'entrada' => 400,
 			'saida'   => 220,
 		),
+		'buscar_receita'      => array(
+			'entrada' => 600,
+			'saida'   => 300,
+		),
+		'traduzir_receita'    => array(
+			'entrada' => 500,
+			'saida'   => 500,
+		),
 		'rascunhar_orcamento' => array(
 			'entrada' => 250,
 			'saida'   => 200,
