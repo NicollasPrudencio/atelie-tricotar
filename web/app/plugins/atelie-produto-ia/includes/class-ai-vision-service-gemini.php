@@ -574,6 +574,57 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 		);
 	}
 
+	public function sugerirSeo( string $titulo, string $descricao, string $tipo_objeto ): array {
+		$vazio = array(
+			'meta_titulo'    => '',
+			'meta_descricao' => '',
+			'alt_text'       => '',
+		);
+
+		if ( empty( $this->api_key ) ) {
+			return $vazio;
+		}
+
+		$prompt = $this->montar_prompt_seo( $titulo, $descricao, $tipo_objeto );
+
+		try {
+			$body = $this->chamar(
+				array(
+					'contents'         => array( array( 'parts' => array( array( 'text' => $prompt ) ) ) ),
+					'generationConfig' => array( 'responseMimeType' => 'application/json' ),
+				),
+				'sugerir_seo'
+			);
+		} catch ( Throwable $e ) {
+			return $vazio;
+		}
+
+		$texto_json = $body['candidates'][0]['content']['parts'][0]['text'] ?? null;
+		$resultado  = is_string( $texto_json ) ? json_decode( $texto_json, true ) : null;
+
+		if ( ! is_array( $resultado ) ) {
+			return $vazio;
+		}
+
+		return array(
+			'meta_titulo'    => (string) ( $resultado['meta_titulo'] ?? '' ),
+			'meta_descricao' => (string) ( $resultado['meta_descricao'] ?? '' ),
+			'alt_text'       => (string) ( $resultado['alt_text'] ?? '' ),
+		);
+	}
+
+	private function montar_prompt_seo( string $titulo, string $descricao, string $tipo_objeto ): string {
+		$objeto = $tipo_objeto === 'case' ? 'um trabalho do portfólio (vitrine, sem preço)' : 'um produto à venda';
+
+		return 'Você é especialista em SEO de e-commerce artesanal (tricô, crochê, amigurumis). '
+			. "A partir do título e descrição já publicados de {$objeto}, gere: "
+			. '(1) "meta_titulo" — título pra resultado de busca do Google, até 60 caracteres, incluindo palavra-chave natural do produto (ex.: tipo de peça + técnica), sem repetir clichês de loja; '
+			. '(2) "meta_descricao" — descrição pra resultado de busca, até 155 caracteres, que desperte clique (o que é, o que torna especial), sem clickbait; '
+			. '(3) "alt_text" — texto alternativo da foto principal, descrevendo objetivamente o que aparece na imagem pra quem usa leitor de tela ou pro Google Imagens (não é texto de venda, é descrição visual literal e curta, até 125 caracteres). '
+			. 'Responda SOMENTE um objeto JSON no formato: {"meta_titulo": "...", "meta_descricao": "...", "alt_text": "..."}.'
+			. "\n\nTítulo: {$titulo}\nDescrição: {$descricao}";
+	}
+
 	public function rascunharRespostaOrcamento( string $descricao_pedido ): array {
 		if ( empty( $this->api_key ) ) {
 			return array(
