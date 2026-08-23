@@ -125,4 +125,17 @@ interface Atelie_Ai_Vision_Service_Interface {
 	 * @return array{ok: bool, imagem_base64: ?string, mime_type: ?string, diagnostico: string, mensagem: string}
 	 */
 	public function sugerirEdicaoImagem( string $imagem_path ): array;
+
+	/**
+	 * Sugere um preço de venda a partir do custo já calculado na tela
+	 * "Precificação" (matéria-prima + hora técnica) e de referência de
+	 * mercado pra peças parecidas — NUNCA decide o preço sozinha (alto risco
+	 * se errar: dinheiro de verdade). Sempre uma sugestão com faixa e
+	 * justificativa curta, pra quem publica revisar e digitar o preço final
+	 * ela mesma; o campo de preço nunca é preenchido automaticamente por essa
+	 * chamada.
+	 *
+	 * @return array{ok: bool, preco_sugerido: float, faixa_min: float, faixa_max: float, justificativa: string, mensagem: string}
+	 */
+	public function sugerirPrecoVenda( string $titulo_produto, string $descricao_produto, float $custo ): array;
 }

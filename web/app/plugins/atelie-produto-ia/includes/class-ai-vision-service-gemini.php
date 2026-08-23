@@ -732,6 +732,60 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 		);
 	}
 
+	public function sugerirPrecoVenda( string $titulo_produto, string $descricao_produto, float $custo ): array {
+		$vazio = array(
+			'ok'             => false,
+			'preco_sugerido' => 0.0,
+			'faixa_min'      => 0.0,
+			'faixa_max'      => 0.0,
+			'justificativa'  => '',
+			'mensagem'       => '',
+		);
+
+		if ( empty( $this->api_key ) ) {
+			return array_merge( $vazio, array( 'mensagem' => 'IA não configurada.' ) );
+		}
+
+		if ( $custo <= 0 ) {
+			return array_merge( $vazio, array( 'mensagem' => 'Informe um custo maior que zero pra calcular uma sugestão.' ) );
+		}
+
+		$prompt = 'Você ajuda a dona de um ateliê de tricô, crochê e amigurumis artesanais a precificar uma peça pra venda. '
+			. "O custo já calculado (matéria-prima + hora técnica) dessa peça é R$ " . number_format( $custo, 2, '.', '' ) . '. '
+			. 'Considerando esse custo, o tipo de peça e uma referência realista de mercado pra artesanato semelhante vendido no Brasil, '
+			. 'sugira um preço de venda com margem saudável pra um ateliê pequeno (o preço final é sempre decisão de quem vende, isso é só uma sugestão de referência). '
+			. 'Responda SOMENTE um objeto JSON no formato: {"preco_sugerido": 00.00, "faixa_min": 00.00, "faixa_max": 00.00, "justificativa": "1-2 frases curtas explicando o raciocínio"} — todos os valores numéricos em reais, sem símbolo de moeda.'
+			. "\n\nTítulo da peça: {$titulo_produto}\nDescrição: {$descricao_produto}";
+
+		try {
+			$body = $this->chamar(
+				array(
+					'contents'         => array( array( 'parts' => array( array( 'text' => $prompt ) ) ) ),
+					'generationConfig' => array( 'responseMimeType' => 'application/json' ),
+				),
+				'sugerir_preco'
+			);
+		} catch ( Throwable $e ) {
+			return array_merge( $vazio, array( 'mensagem' => 'Não deu pra sugerir um preço agora: ' . $e->getMessage() ) );
+		}
+
+		$texto_json = $body['candidates'][0]['content']['parts'][0]['text'] ?? null;
+		$resultado  = is_string( $texto_json ) ? json_decode( $texto_json, true ) : null;
+
+		if ( ! is_array( $resultado ) ) {
+			return array_merge( $vazio, array( 'mensagem' => 'Resposta da IA não veio no formato esperado.' ) );
+		}
+
+		return array(
+			'ok'             => true,
+			'preco_sugerido' => (float) ( $resultado['preco_sugerido'] ?? 0 ),
+			'faixa_min'      => (float) ( $resultado['faixa_min'] ?? 0 ),
+			'faixa_max'      => (float) ( $resultado['faixa_max'] ?? 0 ),
+			'justificativa'  => (string) ( $resultado['justificativa'] ?? '' ),
+			'mensagem'       => '',
+		);
+	}
+
 	private function mime_type( string $path ): string {
 		$ext = strtolower( (string) pathinfo( $path, PATHINFO_EXTENSION ) );
 		return match ( $ext ) {

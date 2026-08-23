@@ -50,3 +50,13 @@ Na tela nativa do WooCommerce de edição de produto (aba "Dados do produto" →
 um seletor **"Puxar custo de um orçamento"** com a lista de orçamentos salvos. Escolher um e
 clicar em **"Preencher preço"** coloca o custo calculado direto no campo de preço regular — de
 novo, lembrando que esse valor ainda precisa da margem somada por cima antes de publicar.
+
+## IA sugere preço de venda
+
+Ao lado do botão de puxar custo, o botão **"✨ IA sugere preço de venda"** pede pra IA calcular
+uma sugestão de preço com margem, a partir do custo escolhido e de referência de mercado pra
+peças parecidas.
+
+A IA **nunca preenche o campo de preço sozinha** — mostra só um texto com o valor sugerido, uma
+faixa (mínimo–máximo) e uma justificativa curta. Decidir o preço final continua sendo sempre
+manual.

@@ -179,4 +179,28 @@ class Atelie_Ai_Vision_Service_Mock implements Atelie_Ai_Vision_Service_Interfac
 			'mensagem'      => '',
 		);
 	}
+
+	public function sugerirPrecoVenda( string $titulo_produto, string $descricao_produto, float $custo ): array {
+		usleep( 600000 );
+
+		if ( $custo <= 0 ) {
+			return array(
+				'ok'             => false,
+				'preco_sugerido' => 0.0,
+				'faixa_min'      => 0.0,
+				'faixa_max'      => 0.0,
+				'justificativa'  => '',
+				'mensagem'       => 'Informe um custo maior que zero pra calcular uma sugestão.',
+			);
+		}
+
+		return array(
+			'ok'             => true,
+			'preco_sugerido' => round( $custo * 2.5, 2 ),
+			'faixa_min'      => round( $custo * 2.0, 2 ),
+			'faixa_max'      => round( $custo * 3.0, 2 ),
+			'justificativa'  => '[MOCK] Margem simulada de ~2,5x sobre o custo, comum pra artesanato desse porte.',
+			'mensagem'       => '',
+		);
+	}
 }

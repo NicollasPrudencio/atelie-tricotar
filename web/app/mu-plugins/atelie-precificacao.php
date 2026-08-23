@@ -542,6 +542,10 @@ add_action(
 				<?php endforeach; ?>
 			</select>
 			<button type="button" class="button" id="atelie-orcamento-preencher"><?php esc_html_e( 'Preencher preço (custo, sem margem)', 'atelie-theme' ); ?></button>
+			<?php if ( class_exists( 'Atelie_Ai_Vision_Service_Factory' ) ) : ?>
+				<button type="button" class="button" id="atelie-orcamento-sugerir-preco">✨ <?php esc_html_e( 'IA sugere preço de venda', 'atelie-theme' ); ?></button>
+				<span id="atelie-preco-sugestao" style="display:block; margin-top:6px;"></span>
+			<?php endif; ?>
 		</p>
 	</div>
 	<script>
@@ -556,6 +560,62 @@ add_action(
 				precoField.value = custos[id].toFixed(2);
 				precoField.dispatchEvent(new Event("change"));
 			}
+		});
+
+		var btnSugerir = document.getElementById("atelie-orcamento-sugerir-preco");
+		if (!btnSugerir) { return; }
+		btnSugerir.addEventListener("click", function () {
+			var id = document.getElementById("atelie-orcamento-select").value;
+			var custo = id && custos[id] !== undefined ? custos[id] : null;
+			var saida = document.getElementById("atelie-preco-sugestao");
+			var tituloField = document.getElementById("title");
+			var descricaoField = document.querySelector("#content, #excerpt");
+
+			if (!custo) {
+				saida.textContent = "Escolha um orçamento com custo calculado primeiro.";
+				return;
+			}
+
+			var textoOriginal = btnSugerir.textContent;
+			btnSugerir.disabled = true;
+			btnSugerir.textContent = "Calculando…";
+			saida.textContent = "";
+
+			fetch(<?php echo wp_json_encode( esc_url_raw( rest_url( 'atelie/v1/sugerir-preco' ) ) ); ?>, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"X-WP-Nonce": <?php echo wp_json_encode( wp_create_nonce( 'wp_rest' ) ); ?>,
+				},
+				body: JSON.stringify({
+					titulo: tituloField ? tituloField.value : "",
+					descricao: descricaoField ? descricaoField.value : "",
+					custo: custo,
+				}),
+			})
+				.then(function (resposta) {
+					return resposta.json().then(function (dados) {
+						return { ok: resposta.ok, dados: dados };
+					});
+				})
+				.then(function (resultado) {
+					btnSugerir.disabled = false;
+					btnSugerir.textContent = textoOriginal;
+
+					if (!resultado.ok) {
+						saida.textContent = (resultado.dados && resultado.dados.erro) || "Não deu pra sugerir um preço agora.";
+						return;
+					}
+
+					var d = resultado.dados;
+					saida.textContent = "Sugestão: R$ " + d.preco_sugerido.toFixed(2)
+						+ " (faixa R$ " + d.faixa_min.toFixed(2) + " – R$ " + d.faixa_max.toFixed(2) + "). " + d.justificativa;
+				})
+				.catch(function () {
+					btnSugerir.disabled = false;
+					btnSugerir.textContent = textoOriginal;
+					saida.textContent = "Erro de conexão. Tente de novo.";
+				});
 		});
 	})();
 	</script>
