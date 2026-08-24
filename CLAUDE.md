@@ -27,9 +27,13 @@ antigo (removido, este é o repo oficial novo).
   artesã no texto, elogio exagerado, linguagem amadora, falta de gatilho de venda) e **bloqueia
   a publicação** se achar problema, sem opção de ignorar — decisão explícita do usuário, ver
   manual do painel (link na seção "Onde encontrar o resto").
-- **CI/CD**: pipeline em 2 estágios — todo push builda/testa, faz deploy automático em QA, roda
-  testes de fumaça contra QA, e só promove para produção automaticamente se tudo passar. Sem
-  aprovação manual no fluxo padrão (decisão explícita do usuário).
+- **CI/CD**: pipeline em 2 estágios — todo push em `develop` builda/testa, faz deploy automático
+  em `atelietricotar.online` (ambiente "dev"/"homolog" — mesmo lugar, os dois nomes são usados
+  no dia a dia; ver `docs/decisions/0001` e memória `project_mapa_ambientes`), roda teste de
+  fumaça (k6) contra ele, e só promove para produção (`atelietricotar.com.br`) automaticamente
+  se tudo passar. **Sem aprovação manual no fluxo padrão — decisão explícita do usuário,
+  reafirmada 2026-08-24, não relitigar sem motivo novo** (ver memória
+  `feedback_promocao_automatica_nao_relitigar`).
 - **Nota fiscal**: ateliê ainda não tem CNPJ (caminho recomendado: MEI, gratuito). Emissão
   automática de NF-e (quando fizer sentido, por venda) será via **Bling** (ERP com plugin
   oficial pro WooCommerce), não uma integração própria com Focus NFe/NFe.io como planejado
@@ -66,7 +70,9 @@ antigo (removido, este é o repo oficial novo).
 
 Bem além da Fase 0. Já construído e funcionando:
 - Ambiente de dev local via Docker, com túnel fixo do Cloudflare (`dev.atelietricotar.com.br`)
-  pra testar integrações que exigem callback público.
+  pra testar integrações que exigem callback público — **depreciado desde 2026-08-24** (decisão
+  explícita do usuário, "não estamos mais usando túnel"); não reviver sem perguntar. O ambiente
+  usado pra desenvolver/testar hoje é `atelietricotar.online` (ver `project_mapa_ambientes`).
 - Domínio `atelietricotar.com.br` conectado ao Cloudflare (DNS-only); hospedagem HostGator
   Plano M já contratada, deploy real ainda pendente.
 - Tema (`web/app/themes/atelie-theme`) com identidade visual completa (paleta pêssego/rosa/
