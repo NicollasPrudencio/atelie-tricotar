@@ -117,16 +117,22 @@ jobs:
       - name: Compactar vendor/, config/, web/ e .env
         run: tar -czf deploy.tar.gz vendor config web .env
 
-      - name: Enviar deploy.tar.gz via SCP para homolog
-        uses: appleboy/scp-action@v0.1.7
+      # appleboy/scp-action embrulha o source num tar PROPRIO antes de enviar
+      # (log mostra "tar all files into /tmp/<random>.tar.gz"), e na pratica o
+      # deploy.tar.gz nao aparecia no /tmp remoto depois (confirmado testando
+      # SCP/SSH manual com a mesma chave, que funcionou perfeito) — troca pra
+      # wlixcc/SFTP-Deploy-Action pro upload (ja provado confiavel pra
+      # arquivo/pasta especifico) e mantem o ssh-action so pra extrair.
+      - name: Enviar deploy.tar.gz via SFTP para homolog
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
         with:
-          host: ${{ secrets.SFTP_HOST }}
           username: ${{ secrets.SFTP_USER }}
-          key: ${{ secrets.SFTP_SSH_PRIVATE_KEY }}
+          server: ${{ secrets.SFTP_HOST }}
           port: ${{ secrets.SFTP_PORT }}
-          source: "deploy.tar.gz"
-          target: /tmp
-          strip_components: 0
+          ssh_private_key: ${{ secrets.SFTP_SSH_PRIVATE_KEY }}
+          local_path: "./deploy.tar.gz"
+          remote_path: /tmp
+          sftpArgs: "-o ConnectTimeout=10"
 
       - name: Extrair deploy.tar.gz no servidor via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -137,9 +143,13 @@ jobs:
           port: ${{ secrets.SFTP_PORT }}
           script: |
             set -e
+            echo "Confirmando que o tarball chegou:"
+            ls -la /tmp/deploy.tar.gz
             mkdir -p "${{ secrets.APP_REMOTE_PATH }}"
             tar -xzf /tmp/deploy.tar.gz -C "${{ secrets.APP_REMOTE_PATH }}"
             rm -f /tmp/deploy.tar.gz
+            echo "Conferindo resultado da extracao:"
+            ls -la "${{ secrets.APP_REMOTE_PATH }}"
 
   stress-test:
     needs: deploy-staging
@@ -232,16 +242,16 @@ jobs:
       - name: Compactar vendor/, config/, web/ e .env
         run: tar -czf deploy.tar.gz vendor config web .env
 
-      - name: Enviar deploy.tar.gz via SCP para producao
-        uses: appleboy/scp-action@v0.1.7
+      - name: Enviar deploy.tar.gz via SFTP para producao
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
         with:
-          host: ${{ secrets.SFTP_HOST }}
           username: ${{ secrets.SFTP_USER }}
-          key: ${{ secrets.SFTP_SSH_PRIVATE_KEY }}
+          server: ${{ secrets.SFTP_HOST }}
           port: ${{ secrets.SFTP_PORT }}
-          source: "deploy.tar.gz"
-          target: /tmp
-          strip_components: 0
+          ssh_private_key: ${{ secrets.SFTP_SSH_PRIVATE_KEY }}
+          local_path: "./deploy.tar.gz"
+          remote_path: /tmp
+          sftpArgs: "-o ConnectTimeout=10"
 
       - name: Extrair deploy.tar.gz no servidor via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -252,9 +262,13 @@ jobs:
           port: ${{ secrets.SFTP_PORT }}
           script: |
             set -e
+            echo "Confirmando que o tarball chegou:"
+            ls -la /tmp/deploy.tar.gz
             mkdir -p "${{ secrets.APP_REMOTE_PATH }}"
             tar -xzf /tmp/deploy.tar.gz -C "${{ secrets.APP_REMOTE_PATH }}"
             rm -f /tmp/deploy.tar.gz
+            echo "Conferindo resultado da extracao:"
+            ls -la "${{ secrets.APP_REMOTE_PATH }}"
 
       - name: Notificar falha de deploy
         if: failure()
