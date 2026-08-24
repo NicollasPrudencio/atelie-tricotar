@@ -107,51 +107,39 @@ jobs:
       # APP_REMOTE_PATH e a pasta-raiz PRIVADA (fora do document root) onde tudo
       # isso mora; o document root real e so um symlink pra dentro de APP_REMOTE_PATH/web
       # (configurado uma vez via SSH, nao faz parte deste pipeline).
-      - name: Deploy do vendor/ via SFTP para homolog
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
-        with:
-          username: ${{ secrets.SFTP_USER }}
-          server: ${{ secrets.SFTP_HOST }}
-          port: ${{ secrets.SFTP_PORT }}
-          ssh_private_key: ${{ secrets.SFTP_SSH_PRIVATE_KEY }}
-          local_path: "./vendor/*"
-          remote_path: ${{ secrets.APP_REMOTE_PATH }}/vendor
-          sftpArgs: "-o ConnectTimeout=10"
+      #
+      # Envia tudo como UM .tar.gz em vez de arquivo por arquivo via SFTP puro —
+      # o WordPress core sozinho tem milhares de arquivos pequenos, e SFTP
+      # transferindo um por um leva minutos. Compactar local + extrair remoto via
+      # SSH cai pra segundos. Decisao consciente: amarra o deploy ao SSH liberado
+      # nesta hospedagem especifica (ver docs/acesso-ssh-dev.md) — se um dia trocar
+      # pra host sem SSH, revisitar isso e voltar pro SFTP puro por arquivo.
+      - name: Compactar vendor/, config/, web/ e .env
+        run: tar -czf deploy.tar.gz vendor config web .env
 
-      - name: Deploy do config/ via SFTP para homolog
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+      - name: Enviar deploy.tar.gz via SCP para homolog
+        uses: appleboy/scp-action@v0.1.7
         with:
+          host: ${{ secrets.SFTP_HOST }}
           username: ${{ secrets.SFTP_USER }}
-          server: ${{ secrets.SFTP_HOST }}
+          key: ${{ secrets.SFTP_SSH_PRIVATE_KEY }}
           port: ${{ secrets.SFTP_PORT }}
-          ssh_private_key: ${{ secrets.SFTP_SSH_PRIVATE_KEY }}
-          local_path: "./config/*"
-          remote_path: ${{ secrets.APP_REMOTE_PATH }}/config
-          sftpArgs: "-o ConnectTimeout=10"
+          source: "deploy.tar.gz"
+          target: /tmp
+          strip_components: 0
 
-      - name: Deploy do site (web/) via SFTP para homolog
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+      - name: Extrair deploy.tar.gz no servidor via SSH
+        uses: appleboy/ssh-action@v1.0.3
         with:
+          host: ${{ secrets.SFTP_HOST }}
           username: ${{ secrets.SFTP_USER }}
-          server: ${{ secrets.SFTP_HOST }}
+          key: ${{ secrets.SFTP_SSH_PRIVATE_KEY }}
           port: ${{ secrets.SFTP_PORT }}
-          ssh_private_key: ${{ secrets.SFTP_SSH_PRIVATE_KEY }}
-          local_path: "./web/*"
-          remote_path: ${{ secrets.APP_REMOTE_PATH }}/web
-          sftpArgs: "-o ConnectTimeout=10"
-
-      - name: Deploy do .env via SFTP para homolog
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
-        with:
-          username: ${{ secrets.SFTP_USER }}
-          server: ${{ secrets.SFTP_HOST }}
-          port: ${{ secrets.SFTP_PORT }}
-          ssh_private_key: ${{ secrets.SFTP_SSH_PRIVATE_KEY }}
-          local_path: "./.env"
-          # Fica em APP_REMOTE_PATH direto (fora do document root, junto com vendor/config) —
-          # nunca dentro de web/, que e o document root publico.
-          remote_path: ${{ secrets.APP_REMOTE_PATH }}/.env
-          sftpArgs: "-o ConnectTimeout=10"
+          script: |
+            set -e
+            mkdir -p "${{ secrets.APP_REMOTE_PATH }}"
+            tar -xzf /tmp/deploy.tar.gz -C "${{ secrets.APP_REMOTE_PATH }}"
+            rm -f /tmp/deploy.tar.gz
 
   stress-test:
     needs: deploy-staging
@@ -237,49 +225,32 @@ jobs:
           BREVO_API_KEY=${{ secrets.BREVO_API_KEY }}
           EOF
 
-      - name: Deploy do vendor/ via SFTP para producao
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
-        with:
-          username: ${{ secrets.SFTP_USER }}
-          server: ${{ secrets.SFTP_HOST }}
-          port: ${{ secrets.SFTP_PORT }}
-          ssh_private_key: ${{ secrets.SFTP_SSH_PRIVATE_KEY }}
-          local_path: "./vendor/*"
-          remote_path: ${{ secrets.APP_REMOTE_PATH }}/vendor
-          sftpArgs: "-o ConnectTimeout=10"
+      - name: Compactar vendor/, config/, web/ e .env
+        run: tar -czf deploy.tar.gz vendor config web .env
 
-      - name: Deploy do config/ via SFTP para producao
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+      - name: Enviar deploy.tar.gz via SCP para producao
+        uses: appleboy/scp-action@v0.1.7
         with:
+          host: ${{ secrets.SFTP_HOST }}
           username: ${{ secrets.SFTP_USER }}
-          server: ${{ secrets.SFTP_HOST }}
+          key: ${{ secrets.SFTP_SSH_PRIVATE_KEY }}
           port: ${{ secrets.SFTP_PORT }}
-          ssh_private_key: ${{ secrets.SFTP_SSH_PRIVATE_KEY }}
-          local_path: "./config/*"
-          remote_path: ${{ secrets.APP_REMOTE_PATH }}/config
-          sftpArgs: "-o ConnectTimeout=10"
+          source: "deploy.tar.gz"
+          target: /tmp
+          strip_components: 0
 
-      - name: Deploy do site (web/) via SFTP para producao
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+      - name: Extrair deploy.tar.gz no servidor via SSH
+        uses: appleboy/ssh-action@v1.0.3
         with:
+          host: ${{ secrets.SFTP_HOST }}
           username: ${{ secrets.SFTP_USER }}
-          server: ${{ secrets.SFTP_HOST }}
+          key: ${{ secrets.SFTP_SSH_PRIVATE_KEY }}
           port: ${{ secrets.SFTP_PORT }}
-          ssh_private_key: ${{ secrets.SFTP_SSH_PRIVATE_KEY }}
-          local_path: "./web/*"
-          remote_path: ${{ secrets.APP_REMOTE_PATH }}/web
-          sftpArgs: "-o ConnectTimeout=10"
-
-      - name: Deploy do .env via SFTP para producao
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
-        with:
-          username: ${{ secrets.SFTP_USER }}
-          server: ${{ secrets.SFTP_HOST }}
-          port: ${{ secrets.SFTP_PORT }}
-          ssh_private_key: ${{ secrets.SFTP_SSH_PRIVATE_KEY }}
-          local_path: "./.env"
-          remote_path: ${{ secrets.APP_REMOTE_PATH }}/.env
-          sftpArgs: "-o ConnectTimeout=10"
+          script: |
+            set -e
+            mkdir -p "${{ secrets.APP_REMOTE_PATH }}"
+            tar -xzf /tmp/deploy.tar.gz -C "${{ secrets.APP_REMOTE_PATH }}"
+            rm -f /tmp/deploy.tar.gz
 
       - name: Notificar falha de deploy
         if: failure()
