@@ -160,12 +160,16 @@ jobs:
     needs: stress-test
     if: github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
+      # Push feito com o GITHUB_TOKEN automatico do Actions NUNCA dispara outro
+      # workflow (protecao proposital do GitHub contra loop infinito de workflow
+      # chamando workflow) — por isso usa um Personal Access Token proprio
+      # (PROMOTE_TOKEN, fine-grained, so Contents:Read-and-write neste repo) pra
+      # esse checkout especifico, senao deploy-production nunca dispara sozinho.
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.PROMOTE_TOKEN }}
 
       - name: Promover develop -> main (dispara o deploy de producao abaixo)
         run: git push origin HEAD:main
