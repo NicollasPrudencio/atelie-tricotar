@@ -1,15 +1,18 @@
 <!--
-MINUTA — precisa de revisão de advogado/contador antes de publicar. Não é aconselhamento
-jurídico. Ponto de atenção específico: o direito de arrependimento (CDC art. 49) e produtos sob
-encomenda/personalizados é uma área com interpretação não pacífica — o texto abaixo NÃO cria uma
-exceção para "sob encomenda", porque isso exige orientação jurídica específica antes de ser
-publicado dessa forma. Preencher os campos entre [colchetes] antes de copiar para uma Página do
-WordPress.
+Dados reais preenchidos em 2026-08-23. AINDA ASSIM: isto não é aconselhamento jurídico e não
+passou por revisão de advogado/contador. Revisar antes do lançamento real com tráfego pago.
+
+Ponto de atenção específico, NÃO publicado no corpo da página (fica só aqui, como registro
+interno): o direito de arrependimento (CDC art. 49) para produtos sob encomenda/personalizados
+é uma área com interpretação não pacífica. O texto publicado abaixo NÃO cria nenhuma exceção
+pra "sob encomenda" — aplica o prazo padrão de 7 dias pra tudo, postura conservadora escolhida
+de propósito até ter orientação jurídica específica. Não presumir uma exceção sem consultar um
+advogado antes de mudar isso.
 -->
 
 # Trocas e Devoluções
 
-Última atualização: [DATA]
+Última atualização: 23 de agosto de 2026
 
 ## Direito de arrependimento (compra online)
 
@@ -18,32 +21,28 @@ partir do recebimento do produto, para desistir da compra sem precisar justifica
 artigo 49 do Código de Defesa do Consumidor. Nesse caso, devolvemos o valor pago, incluindo o
 frete de envio original.
 
-Para exercer esse direito, entre em contato em [E-MAIL DE CONTATO] dentro do prazo, informando o
-número do pedido. O produto deve ser devolvido sem sinais de uso.
-
-*Atenção interna: produtos sob encomenda/personalizados podem ter tratamento diferente aqui —
-**confirmar com um advogado** antes de publicar uma regra específica para esse caso; não
-presumir uma exceção sem orientação jurídica.*
+Para exercer esse direito, entre em contato em faleconosco@atelietricotar.com.br dentro do
+prazo, informando o número do pedido. O produto deve ser devolvido sem sinais de uso.
 
 ## Produto com defeito
 
 Se o produto chegar com defeito ou não corresponder ao anunciado, você tem até **90 dias**
 (produtos duráveis) a partir do recebimento para solicitar reparo, troca ou devolução do valor,
-conforme o Código de Defesa do Consumidor. Entre em contato em [E-MAIL DE CONTATO] com fotos do
-problema.
+conforme o Código de Defesa do Consumidor. Entre em contato em
+faleconosco@atelietricotar.com.br com fotos do problema.
 
 ## Como funciona a devolução
 
-1. Contato em [E-MAIL DE CONTATO] com número do pedido e motivo.
+1. Contato em faleconosco@atelietricotar.com.br com número do pedido e motivo.
 2. Combinamos o envio de volta (frete por nossa conta em caso de defeito).
 3. Reembolso processado pelo Mercado Pago assim que recebemos e conferimos o produto.
 
 ## Peças únicas e sob encomenda
 
 Peças feitas sob encomenda têm prazo de produção informado no pedido — isso não altera seus
-direitos de garantia contra defeito, mas pode ter tratamento próprio quanto ao arrependimento
-antes do início da produção (ver nota acima).
+direitos de garantia contra defeito, e o mesmo prazo de arrependimento de 7 dias acima também
+se aplica a elas.
 
 ## Contato
 
-[E-MAIL DE CONTATO]
+faleconosco@atelietricotar.com.br
