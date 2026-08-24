@@ -101,6 +101,34 @@ jobs:
           BREVO_API_KEY=${{ secrets.BREVO_API_KEY }}
           EOF
 
+      # Bedrock exige vendor/ e config/ como IRMAOS de web/ (wp-config.php faz
+      # require dirname(__DIR__) . '/vendor/autoload.php' e '/config/application.php')
+      # — sem esses dois, o site cai com erro fatal assim que o PHP tenta subir.
+      # APP_REMOTE_PATH e a pasta-raiz PRIVADA (fora do document root) onde tudo
+      # isso mora; o document root real e so um symlink pra dentro de APP_REMOTE_PATH/web
+      # (configurado uma vez via SSH, nao faz parte deste pipeline).
+      - name: Deploy do vendor/ via SFTP para homolog
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          username: ${{ secrets.SFTP_USER }}
+          server: ${{ secrets.SFTP_HOST }}
+          port: ${{ secrets.SFTP_PORT }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          local_path: "./vendor/*"
+          remote_path: ${{ secrets.APP_REMOTE_PATH }}/vendor
+          sftpArgs: "-o ConnectTimeout=10"
+
+      - name: Deploy do config/ via SFTP para homolog
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          username: ${{ secrets.SFTP_USER }}
+          server: ${{ secrets.SFTP_HOST }}
+          port: ${{ secrets.SFTP_PORT }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          local_path: "./config/*"
+          remote_path: ${{ secrets.APP_REMOTE_PATH }}/config
+          sftpArgs: "-o ConnectTimeout=10"
+
       - name: Deploy do site (web/) via SFTP para homolog
         uses: wlixcc/SFTP-Deploy-Action@v1.2.6
         with:
@@ -109,7 +137,7 @@ jobs:
           port: ${{ secrets.SFTP_PORT }}
           password: ${{ secrets.SFTP_PASSWORD }}
           local_path: "./web/*"
-          remote_path: ${{ secrets.WEB_REMOTE_PATH }}
+          remote_path: ${{ secrets.APP_REMOTE_PATH }}/web
           sftpArgs: "-o ConnectTimeout=10"
 
       - name: Deploy do .env via SFTP para homolog
@@ -120,11 +148,9 @@ jobs:
           port: ${{ secrets.SFTP_PORT }}
           password: ${{ secrets.SFTP_PASSWORD }}
           local_path: "./.env"
-          # Precisa ficar FORA do document root (web/ -> public_html). Confirmar no cPanel se a conta
-          # de SFTP usada aqui enxerga um nivel acima do document root; se nao enxergar, mudar este
-          # secret para apontar para dentro do WEB_REMOTE_PATH e confiar no .htaccess do Bedrock
-          # (deny from all em dotfiles) como protecao.
-          remote_path: ${{ secrets.ENV_REMOTE_PATH }}
+          # Fica em APP_REMOTE_PATH direto (fora do document root, junto com vendor/config) —
+          # nunca dentro de web/, que e o document root publico.
+          remote_path: ${{ secrets.APP_REMOTE_PATH }}/.env
           sftpArgs: "-o ConnectTimeout=10"
 
   stress-test:
@@ -211,6 +237,28 @@ jobs:
           BREVO_API_KEY=${{ secrets.BREVO_API_KEY }}
           EOF
 
+      - name: Deploy do vendor/ via SFTP para producao
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          username: ${{ secrets.SFTP_USER }}
+          server: ${{ secrets.SFTP_HOST }}
+          port: ${{ secrets.SFTP_PORT }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          local_path: "./vendor/*"
+          remote_path: ${{ secrets.APP_REMOTE_PATH }}/vendor
+          sftpArgs: "-o ConnectTimeout=10"
+
+      - name: Deploy do config/ via SFTP para producao
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          username: ${{ secrets.SFTP_USER }}
+          server: ${{ secrets.SFTP_HOST }}
+          port: ${{ secrets.SFTP_PORT }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          local_path: "./config/*"
+          remote_path: ${{ secrets.APP_REMOTE_PATH }}/config
+          sftpArgs: "-o ConnectTimeout=10"
+
       - name: Deploy do site (web/) via SFTP para producao
         uses: wlixcc/SFTP-Deploy-Action@v1.2.6
         with:
@@ -219,7 +267,7 @@ jobs:
           port: ${{ secrets.SFTP_PORT }}
           password: ${{ secrets.SFTP_PASSWORD }}
           local_path: "./web/*"
-          remote_path: ${{ secrets.WEB_REMOTE_PATH }}
+          remote_path: ${{ secrets.APP_REMOTE_PATH }}/web
           sftpArgs: "-o ConnectTimeout=10"
 
       - name: Deploy do .env via SFTP para producao
@@ -230,7 +278,7 @@ jobs:
           port: ${{ secrets.SFTP_PORT }}
           password: ${{ secrets.SFTP_PASSWORD }}
           local_path: "./.env"
-          remote_path: ${{ secrets.ENV_REMOTE_PATH }}
+          remote_path: ${{ secrets.APP_REMOTE_PATH }}/.env
           sftpArgs: "-o ConnectTimeout=10"
 
       - name: Notificar falha de deploy
