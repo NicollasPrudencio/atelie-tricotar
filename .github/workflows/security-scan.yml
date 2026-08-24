@@ -5,8 +5,11 @@ name: Security Scan (WPScan)
 # desatualizados/vulneraveis) — nao e usado pelo runtime do site, so por este workflow.
 #
 # Precisa do secret WPSCAN_API_TOKEN (conta gratuita em https://wpscan.com/register,
-# ~25 requisicoes/dia no free tier — sobra pra 1 scan semanal). Sem o secret configurado,
-# o job falha na autenticacao — configurar em Settings > Secrets and variables > Actions.
+# ~25 requisicoes/dia no free tier — mesmo token tambem usado pelo mu-plugin
+# atelie-seguranca-cve.php, que faz verificacao diaria direto no WordPress de cada
+# ambiente; esse workflow aqui e um scan semanal mais completo (--enumerate vc,vp,vt),
+# complementar, nao substitui o outro). Sem o secret configurado, o job falha na
+# autenticacao — configurar em Settings > Secrets and variables > Actions.
 
 on:
   schedule:
@@ -16,24 +19,27 @@ on:
 jobs:
   wpscan:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ambiente:
+          - { nome: homolog, url: "https://atelietricotar.online" }
+          - { nome: producao, url: "https://atelietricotar.com.br" }
     steps:
-      - name: Rodar WPScan
+      - name: Rodar WPScan (${{ matrix.ambiente.nome }})
         run: |
           docker run --rm wpscanteam/wpscan \
-            --url "https://atelietricotar.online" \
+            --url "${{ matrix.ambiente.url }}" \
             --api-token "${{ secrets.WPSCAN_API_TOKEN }}" \
             --enumerate vc,vp,vt \
             --format json \
             --no-banner \
             --random-user-agent > wpscan-resultado.json
-        # TODO: trocar a URL pro dominio de producao quando o deploy real acontecer
-        # (ver CLAUDE.md, "Pendente geral").
 
       - name: Guardar resultado bruto
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: wpscan-resultado
+          name: wpscan-resultado-${{ matrix.ambiente.nome }}
           path: wpscan-resultado.json
           retention-days: 90
 
