@@ -155,3 +155,18 @@ Bem além da Fase 0. Já construído e funcionando:
   construídos): busca de imagem na web (precisa decisão de fonte/licença — risco de direito
   autoral), e-mail via Brevo (integração nova do zero) e curadoria de reviews (sem reviews reais
   ainda) — ver memória `project_futuros_pontos_ia`.
+- **Produção no ar** (2026-08-24): pipeline de deploy automático corrigido (dois bugs reais —
+  `appleboy/scp-action` não entregava o arquivo no servidor apesar de reportar sucesso, e o
+  secret `APP_REMOTE_PATH` corrompido duas vezes por conversão de caminho do git-bash/PowerShell
+  no Windows, ambos mascarados porque homolog continuava servindo conteúdo antigo colocado
+  manualmente) — confirmado ponta a ponta via SSH direto no servidor, não só pelo status
+  reportado pela Action. WordPress instalado em produção (`nico7638_atelie_prod`), configuração
+  completa (tema, moeda BRL, slugs em português, zona de frete "Brasil", páginas legais)
+  replicada de homolog via `wp db export`/`import` + `search-replace` de domínio — bootstrap
+  único, nunca mais repetir isso depois que produção tiver dados reais (ver memória
+  `feedback_nunca_clonar_banco_para_prod`). Pedidos e produtos de teste que vieram no dump foram
+  removidos; produção começa com histórico limpo. Login admin de produção criado
+  (`admin@atelietricotar.com.br`). Credencial de produção do Mercado Pago sincroniza sozinha do
+  `.env` (mu-plugin `atelie-integracoes-sync.php` já existia pra isso). Observabilidade de
+  produção (uptime, k6 agendado, alerta de pedido/webhook falho, Sentry) planejada e aprovada em
+  espírito, mas adiada pro pós-lançamento — ver memória `project_observabilidade_pendente`.
