@@ -113,7 +113,7 @@ jobs:
           username: ${{ secrets.SFTP_USER }}
           server: ${{ secrets.SFTP_HOST }}
           port: ${{ secrets.SFTP_PORT }}
-          password: ${{ secrets.SFTP_PASSWORD }}
+          ssh_private_key: ${{ secrets.SFTP_SSH_PRIVATE_KEY }}
           local_path: "./vendor/*"
           remote_path: ${{ secrets.APP_REMOTE_PATH }}/vendor
           sftpArgs: "-o ConnectTimeout=10"
@@ -124,7 +124,7 @@ jobs:
           username: ${{ secrets.SFTP_USER }}
           server: ${{ secrets.SFTP_HOST }}
           port: ${{ secrets.SFTP_PORT }}
-          password: ${{ secrets.SFTP_PASSWORD }}
+          ssh_private_key: ${{ secrets.SFTP_SSH_PRIVATE_KEY }}
           local_path: "./config/*"
           remote_path: ${{ secrets.APP_REMOTE_PATH }}/config
           sftpArgs: "-o ConnectTimeout=10"
@@ -135,7 +135,7 @@ jobs:
           username: ${{ secrets.SFTP_USER }}
           server: ${{ secrets.SFTP_HOST }}
           port: ${{ secrets.SFTP_PORT }}
-          password: ${{ secrets.SFTP_PASSWORD }}
+          ssh_private_key: ${{ secrets.SFTP_SSH_PRIVATE_KEY }}
           local_path: "./web/*"
           remote_path: ${{ secrets.APP_REMOTE_PATH }}/web
           sftpArgs: "-o ConnectTimeout=10"
@@ -146,7 +146,7 @@ jobs:
           username: ${{ secrets.SFTP_USER }}
           server: ${{ secrets.SFTP_HOST }}
           port: ${{ secrets.SFTP_PORT }}
-          password: ${{ secrets.SFTP_PASSWORD }}
+          ssh_private_key: ${{ secrets.SFTP_SSH_PRIVATE_KEY }}
           local_path: "./.env"
           # Fica em APP_REMOTE_PATH direto (fora do document root, junto com vendor/config) —
           # nunca dentro de web/, que e o document root publico.
@@ -243,7 +243,7 @@ jobs:
           username: ${{ secrets.SFTP_USER }}
           server: ${{ secrets.SFTP_HOST }}
           port: ${{ secrets.SFTP_PORT }}
-          password: ${{ secrets.SFTP_PASSWORD }}
+          ssh_private_key: ${{ secrets.SFTP_SSH_PRIVATE_KEY }}
           local_path: "./vendor/*"
           remote_path: ${{ secrets.APP_REMOTE_PATH }}/vendor
           sftpArgs: "-o ConnectTimeout=10"
@@ -254,7 +254,7 @@ jobs:
           username: ${{ secrets.SFTP_USER }}
           server: ${{ secrets.SFTP_HOST }}
           port: ${{ secrets.SFTP_PORT }}
-          password: ${{ secrets.SFTP_PASSWORD }}
+          ssh_private_key: ${{ secrets.SFTP_SSH_PRIVATE_KEY }}
           local_path: "./config/*"
           remote_path: ${{ secrets.APP_REMOTE_PATH }}/config
           sftpArgs: "-o ConnectTimeout=10"
@@ -265,7 +265,7 @@ jobs:
           username: ${{ secrets.SFTP_USER }}
           server: ${{ secrets.SFTP_HOST }}
           port: ${{ secrets.SFTP_PORT }}
-          password: ${{ secrets.SFTP_PASSWORD }}
+          ssh_private_key: ${{ secrets.SFTP_SSH_PRIVATE_KEY }}
           local_path: "./web/*"
           remote_path: ${{ secrets.APP_REMOTE_PATH }}/web
           sftpArgs: "-o ConnectTimeout=10"
@@ -276,7 +276,7 @@ jobs:
           username: ${{ secrets.SFTP_USER }}
           server: ${{ secrets.SFTP_HOST }}
           port: ${{ secrets.SFTP_PORT }}
-          password: ${{ secrets.SFTP_PASSWORD }}
+          ssh_private_key: ${{ secrets.SFTP_SSH_PRIVATE_KEY }}
           local_path: "./.env"
           remote_path: ${{ secrets.APP_REMOTE_PATH }}/.env
           sftpArgs: "-o ConnectTimeout=10"
