@@ -35,10 +35,13 @@ antigo (removido, este é o repo oficial novo).
   oficial pro WooCommerce), não uma integração própria com Focus NFe/NFe.io como planejado
   originalmente — decisão explícita do usuário 2026-08-20, ver `docs/decisions/0001`. Isso
   significa **sem token nem lógica no nosso código** pra isso — configuração fica 100% no
-  painel do Bling. Pré-requisito ainda pendente: capturar CPF/CNPJ do comprador no checkout (o
-  checkout em blocos do WooCommerce não é compatível com o plugin `woocommerce-extra-checkout-
-  fields-for-brazil` instalado pro Melhor Envio — precisa de um campo customizado via API de
-  blocos do próprio WooCommerce).
+  painel do Bling. Pré-requisito já resolvido: campo de CPF no checkout em blocos do WooCommerce
+  (`web/app/mu-plugins/atelie-checkout-campos-br.php`), com validação de dígito verificador,
+  salvo nas mesmas chaves de meta (`_billing_cpf`, `_billing_persontype`) que o Melhor Envio e o
+  Bling esperam — o plugin `woocommerce-extra-checkout-fields-for-brazil` não era compatível com
+  checkout em blocos, por isso um campo próprio via API de blocos do WooCommerce. Ainda falta:
+  o ateliê de fato abrir o MEI e criar a conta no Bling — sem isso, a emissão de NF-e não tem
+  como funcionar mesmo com o campo pronto.
 
 ## Onde encontrar o resto
 
