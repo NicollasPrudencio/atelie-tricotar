@@ -1,12 +1,17 @@
 <?php
 /**
  * Plugin Name: Atelie - Sincronizacao de credenciais (.env -> plugins)
- * Description: Mercado Pago e Melhor Envio guardam as proprias credenciais no banco (nao leem .env sozinhos). Essa ponte sincroniza a partir do .env pra nao depender de digitar chave manualmente em cada ambiente (dev/staging/producao) toda vez que o site for recriado.
- * Version: 0.1.0
+ * Description: Mercado Pago, Melhor Envio e o endereco da loja guardam os proprios valores no
+ * banco (nao leem .env sozinhos). Essa ponte sincroniza a partir do .env pra nao depender de
+ * digitar isso manualmente em cada ambiente (dev/staging/producao) toda vez que o site for
+ * recriado — foi exatamente essa lacuna que deixou o endereco da loja em branco na primeira
+ * instalacao de producao (2026-08-24).
+ * Version: 0.2.0
  *
  * Nomes de option confirmados lendo o codigo dos proprios plugins:
  * - Mercado Pago: web/app/plugins/woocommerce-mercadopago/src/Hooks/Options.php (COMMON_CONFIGS)
  * - Melhor Envio: web/app/plugins/melhor-envio-cotacao/Models/Token.php
+ * - Endereco da loja: options nativas do WooCommerce (Ajustes > Geral).
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -59,6 +64,19 @@ add_action(
 			} else {
 				update_option( 'wpmelhorenvio_token', $me_token );
 			}
+		}
+
+		// --- Endereco da loja (origem do calculo de frete) ---
+		$loja_endereco = env( 'STORE_ADDRESS' );
+		$loja_cidade   = env( 'STORE_CITY' );
+		$loja_estado   = env( 'STORE_STATE' );
+		$loja_cep      = env( 'STORE_POSTCODE' );
+
+		if ( ! empty( $loja_endereco ) && ! empty( $loja_cidade ) && ! empty( $loja_estado ) && ! empty( $loja_cep ) ) {
+			update_option( 'woocommerce_store_address', $loja_endereco );
+			update_option( 'woocommerce_store_city', $loja_cidade );
+			update_option( 'woocommerce_store_postcode', $loja_cep );
+			update_option( 'woocommerce_default_country', 'BR:' . $loja_estado );
 		}
 	},
 	20
