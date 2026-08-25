@@ -6,7 +6,7 @@
  * conhecida sem correcao na versao atual, usando a base do WPScan. Se achar algo: e-mail
  * chamativo pra admin@ (detalhe tecnico) e negocio@ (aviso simples, "e sobre seguranca") duas
  * vezes por dia enquanto nao for corrigido, e aviso fixo no painel visivel pra qualquer usuario
- * logado — nao so administrador, pra a Vendedora tambem avisar se o admin nao ver.
+ * logado — nao so administrador, pra a Artesã tambem avisar se o admin nao ver.
  * Version: 0.1.0
  */
 
@@ -237,7 +237,7 @@ function atelie_cve_enviar_emails( array $achados ): void {
 
 /**
  * Aviso fixo no painel — sem checar capability nenhuma de proposito, pra QUALQUER usuario
- * logado ver (inclusive a Vendedora), que pode avisar o administrador se ele mesmo nao tiver
+ * logado ver (inclusive a Artesã), que pode avisar o administrador se ele mesmo nao tiver
  * visto o e-mail.
  */
 add_action(

@@ -152,7 +152,7 @@ add_action(
 				'show_ui'         => true,
 				'menu_icon'       => 'dashicons-format-chat',
 				// Mesmo padrao do atelie_case: capability_type proprio + map_meta_cap, capabilities
-				// derivadas concedidas explicitamente pra Vendedora e Administrador em
+				// derivadas concedidas explicitamente pra Artesã e Administrador em
 				// atelie-bootstrap.php — "acompanhar pedidos" e trabalho dela, nao so do admin.
 				'capability_type' => array( 'atelie_pedido_orc', 'atelie_pedidos_orc' ),
 				'map_meta_cap'    => true,

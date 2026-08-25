@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Atelie - Precificacao
- * Description: Ferramenta interna de custo (materia-prima + hora tecnica), com media de horas por historico e integracao com o preco do produto. NAO e visivel para o papel Vendedora nem para o cliente.
+ * Description: Ferramenta interna de custo (materia-prima + hora tecnica), com media de horas por historico e integracao com o preco do produto. NAO e visivel para o papel Artesã nem para o cliente.
  * Version: 0.1.0
  * Requires Plugins: woocommerce
  *

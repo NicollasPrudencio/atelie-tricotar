@@ -125,14 +125,19 @@ add_action(
 );
 
 /**
- * Papel "Vendedora" — acesso restrito a produto/pedido, sem acesso a
- * plugins, temas, configuracoes de pagamento ou usuarios.
+ * Papel "Artesã" — acesso restrito a produto/pedido, sem acesso a
+ * plugins, temas, configuracoes de pagamento ou usuarios. Chamado de "Vendedora"
+ * originalmente no codigo (slug/opcao mantidos por compatibilidade — trocar so o
+ * slug tocaria em varios arquivos sem ganho real, ja que ninguem le o slug, so o
+ * nome exibido no painel), renomeado pra "Artesã" em 2026-08-25 porque reflete
+ * melhor quem de fato usa essa conta (a propria artesa que produz e publica, nao
+ * uma vendedora separada).
  * Ver plano do projeto, secao "Papeis e permissoes no painel".
  */
 add_action(
 	'init',
 	function (): void {
-		$capabilities_version = '3';
+		$capabilities_version = '4';
 
 		if ( get_option( 'atelie_vendedora_caps_version' ) === $capabilities_version ) {
 			return;
@@ -141,7 +146,7 @@ add_action(
 		remove_role( 'atelie_vendedora' );
 		add_role(
 			'atelie_vendedora',
-			'Vendedora',
+			'Artesã',
 			array(
 				'read'                              => true,
 				'upload_files'                      => true,
