@@ -2,11 +2,12 @@
 /**
  * Plugin Name: Atelie - Sincronizacao de credenciais (.env -> plugins)
  * Description: Mercado Pago, Melhor Envio e o endereco da loja guardam os proprios valores no
- * banco (nao leem .env sozinhos). Essa ponte sincroniza a partir do .env pra nao depender de
- * digitar isso manualmente em cada ambiente (dev/staging/producao) toda vez que o site for
- * recriado — foi exatamente essa lacuna que deixou o endereco da loja em branco na primeira
- * instalacao de producao (2026-08-24).
- * Version: 0.2.0
+ * banco (nao leem .env sozinhos). Essa ponte SEMEIA a partir do .env na primeira vez (ambiente
+ * novo nasce ja configurado), mas nunca mais sobrescreve depois que o valor existir — se uma
+ * pessoa real trocar algo pelo painel (ex.: via wizard de configuracao ou tela nativa do
+ * plugin), esse valor fica valendo pra sempre, sem risco do proximo deploy pisar em cima.
+ * Ver memoria de projeto sobre esse comportamento (2026-08-25).
+ * Version: 0.3.0
  *
  * Nomes de option confirmados lendo o codigo dos proprios plugins:
  * - Mercado Pago: web/app/plugins/woocommerce-mercadopago/src/Hooks/Options.php (COMMON_CONFIGS)
@@ -20,6 +21,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use function Env\env;
 
+/**
+ * So grava se a option ainda nao tiver valor — semeia ambiente novo, nunca pisa em
+ * cima de algo que uma pessoa real ja configurou depois.
+ */
+function atelie_sync_semear_opcao( string $nome, string $valor ): void {
+	$atual = get_option( $nome, '' );
+	if ( $atual === '' || $atual === false ) {
+		update_option( $nome, $valor );
+	}
+}
+
 add_action(
 	'init',
 	function (): void {
@@ -30,23 +42,25 @@ add_action(
 
 		if ( ! empty( $mp_public_key ) && ! empty( $mp_access_token ) ) {
 			if ( $mp_sandbox ) {
-				update_option( '_mp_public_key_test', $mp_public_key );
-				update_option( '_mp_access_token_test', $mp_access_token );
+				atelie_sync_semear_opcao( '_mp_public_key_test', $mp_public_key );
+				atelie_sync_semear_opcao( '_mp_access_token_test', $mp_access_token );
 			} else {
-				update_option( '_mp_public_key_prod', $mp_public_key );
-				update_option( '_mp_access_token_prod', $mp_access_token );
+				atelie_sync_semear_opcao( '_mp_public_key_prod', $mp_public_key );
+				atelie_sync_semear_opcao( '_mp_access_token_prod', $mp_access_token );
 			}
 
-			// Ter credencial nao é suficiente — cada metodo de pagamento do Mercado
+			// Ter credencial nao e suficiente — cada metodo de pagamento do Mercado
 			// Pago precisa ser habilitado individualmente, senao o checkout mostra
 			// "nenhum metodo de pagamento disponivel" mesmo com tudo configurado.
+			// So mexe se a option nunca existiu (settings genuinamente novo) — se
+			// uma pessoa desligou um metodo de proposito depois, isso fica valendo.
 			foreach ( array( 'woo-mercado-pago-basic', 'woo-mercado-pago-pix', 'woo-mercado-pago-custom', 'woo-mercado-pago-ticket' ) as $gateway_id ) {
 				$option_name = 'woocommerce_' . $gateway_id . '_settings';
 				$settings    = get_option( $option_name, array() );
 				if ( ! is_array( $settings ) ) {
 					$settings = array();
 				}
-				if ( ( $settings['enabled'] ?? '' ) !== 'yes' ) {
+				if ( ! isset( $settings['enabled'] ) ) {
 					$settings['enabled'] = 'yes';
 					update_option( $option_name, $settings );
 				}
@@ -58,11 +72,11 @@ add_action(
 		$me_sandbox = filter_var( env( 'MELHORENVIO_SANDBOX' ), FILTER_VALIDATE_BOOLEAN );
 
 		if ( ! empty( $me_token ) ) {
-			update_option( 'wpmelhorenvio_token_environment', $me_sandbox ? 'sandbox' : 'production' );
+			atelie_sync_semear_opcao( 'wpmelhorenvio_token_environment', $me_sandbox ? 'sandbox' : 'production' );
 			if ( $me_sandbox ) {
-				update_option( 'wpmelhorenvio_token_sandbox', $me_token );
+				atelie_sync_semear_opcao( 'wpmelhorenvio_token_sandbox', $me_token );
 			} else {
-				update_option( 'wpmelhorenvio_token', $me_token );
+				atelie_sync_semear_opcao( 'wpmelhorenvio_token', $me_token );
 			}
 		}
 
@@ -73,10 +87,10 @@ add_action(
 		$loja_cep      = env( 'STORE_POSTCODE' );
 
 		if ( ! empty( $loja_endereco ) && ! empty( $loja_cidade ) && ! empty( $loja_estado ) && ! empty( $loja_cep ) ) {
-			update_option( 'woocommerce_store_address', $loja_endereco );
-			update_option( 'woocommerce_store_city', $loja_cidade );
-			update_option( 'woocommerce_store_postcode', $loja_cep );
-			update_option( 'woocommerce_default_country', 'BR:' . $loja_estado );
+			atelie_sync_semear_opcao( 'woocommerce_store_address', $loja_endereco );
+			atelie_sync_semear_opcao( 'woocommerce_store_city', $loja_cidade );
+			atelie_sync_semear_opcao( 'woocommerce_store_postcode', $loja_cep );
+			atelie_sync_semear_opcao( 'woocommerce_default_country', 'BR:' . $loja_estado );
 		}
 	},
 	20

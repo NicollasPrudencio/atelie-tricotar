@@ -32,6 +32,7 @@ require_once __DIR__ . '/includes/class-drive-admin-page.php';
 require_once __DIR__ . '/includes/class-ads-admin-page.php';
 require_once __DIR__ . '/includes/class-receita-admin-page.php';
 require_once __DIR__ . '/includes/class-seo-admin-page.php';
+require_once __DIR__ . '/includes/class-wizard-config-page.php';
 
 register_activation_hook( __FILE__, array( 'Atelie_Ai_Custo_Tracker', 'garantir_tabela' ) );
 
@@ -54,6 +55,7 @@ add_action(
 		( new Atelie_Ads_Admin_Page() )->registrar();
 		( new Atelie_Receita_Admin_Page() )->registrar();
 		( new Atelie_Seo_Admin_Page() )->registrar();
+		( new Atelie_Wizard_Config_Page() )->registrar();
 	}
 );
 
