@@ -141,7 +141,7 @@ jobs:
           sftpArgs: "-o ConnectTimeout=10"
 
       - name: Extrair deploy.tar.gz no servidor via SSH
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.SFTP_HOST }}
           username: ${{ secrets.SFTP_USER }}
@@ -266,7 +266,7 @@ jobs:
           sftpArgs: "-o ConnectTimeout=10"
 
       - name: Extrair deploy.tar.gz no servidor via SSH
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.SFTP_HOST }}
           username: ${{ secrets.SFTP_USER }}
