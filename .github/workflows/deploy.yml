@@ -17,7 +17,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -54,7 +54,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: staging
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -163,7 +163,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: staging # sem isso, secrets.WP_HOME nao pega o valor configurado no environment staging
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Teste de stress/fumaca contra homolog (k6)
         uses: grafana/k6-action@v0.3.1
@@ -182,7 +182,7 @@ jobs:
       # chamando workflow) — por isso usa um Personal Access Token proprio
       # (PROMOTE_TOKEN, fine-grained, so Contents:Read-and-write neste repo) pra
       # esse checkout especifico, senao deploy-production nunca dispara sozinho.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           token: ${{ secrets.PROMOTE_TOKEN }}
@@ -196,7 +196,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
