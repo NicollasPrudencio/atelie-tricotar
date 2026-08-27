@@ -42,6 +42,14 @@ add_action(
  *   ainda sem MFA configurado, a conta trava de vez — so um admin consegue
  *   destravar (botao nativo "Unlock user and reset the grace period" na
  *   tela de perfil do usuario).
+ * - 'enable_email'/'enable_totp': sem isso, o plugin cobra a pessoa pra
+ *   configurar 2FA mas a secao de configuracao em si nunca aparece (bug
+ *   real encontrado em 2026-08-25 — Methods::get_enabled_methods() so
+ *   renderiza a tela se pelo menos um metodo estiver habilitado, e isso
+ *   nunca tinha sido configurado; ninguem conseguia sair da tela de
+ *   bloqueio). E-mail (mais simples, sem precisar de app) e app
+ *   autenticador (TOTP, mais seguro) — as duas opcoes ficam disponiveis,
+ *   quem configurar escolhe.
  */
 add_action(
 	'init',
@@ -53,6 +61,8 @@ add_action(
 			'grace-period'                     => '24',
 			'grace-period-denominator'         => 'hours',
 			'grace-policy-after-expire-action' => 'manual-block',
+			'enable_email'                     => 'enable_email',
+			'enable_totp'                      => 'enable_totp',
 		);
 
 		$precisa_atualizar = false;
