@@ -80,8 +80,10 @@ add_filter(
 		}
 
 		$mapa = array(
-			'before %s'       => 'antes de %s',
-			'no grace period' => 'sem prazo de carência',
+			'before %s'         => 'antes de %s',
+			'no grace period'   => 'sem prazo de carência',
+			'Configure 2FA now' => 'Configurar 2FA agora',
+			"I'll do it later"  => 'Vou fazer isso depois',
 		);
 
 		return $mapa[ $original ] ?? $traduzido;
