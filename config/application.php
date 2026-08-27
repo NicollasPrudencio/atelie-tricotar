@@ -73,6 +73,17 @@ Config::define( 'LOGGED_IN_SALT', env( 'LOGGED_IN_SALT' ) );
 Config::define( 'NONCE_SALT', env( 'NONCE_SALT' ) );
 
 /**
+ * O plugin WP 2FA tenta escrever essa constante sozinho dentro do wp-config.php na
+ * primeira vez que precisa dela (criptografia da chave TOTP) — funciona no WordPress
+ * padrao, mas o wp-config.php do Bedrock nao tem a estrutura tradicional que ele espera
+ * editar, entao a escrita falha em silencio e a constante nunca fica definida. Bug real
+ * encontrado em 2026-08-27: sem isso, TODO clique em "Configurar 2FA agora" dava erro
+ * fatal (WP2FA\Core\wp_salt(): Return value must be of type string, null returned),
+ * travando qualquer pessoa (admin ou artesa) que tentasse configurar o 2FA de verdade.
+ */
+Config::define( 'WP2FA_ENCRYPT_KEY', env( 'WP2FA_ENCRYPT_KEY' ) );
+
+/**
  * Chave de criptografia do plugin WP 2FA. Definida aqui via env de proposito
  * — sem isso o plugin escreve o valor direto no wp-config.php (versionado em
  * git) na hora de ativar. Gerar um valor novo por ambiente, nunca reaproveitar.
