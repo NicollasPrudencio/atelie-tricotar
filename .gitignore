@@ -22,6 +22,7 @@
 !/web/app/mu-plugins/atelie-checkout-campos-br.php
 !/web/app/mu-plugins/atelie-nota-fiscal.php
 !/web/app/mu-plugins/atelie-seguranca-cve.php
+!/web/app/mu-plugins/atelie-traducao-2fa.php
 !/web/app/mu-plugins/assets
 /web/app/themes/*
 !/web/app/themes/atelie-theme
