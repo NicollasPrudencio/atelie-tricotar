@@ -176,3 +176,32 @@ Bem além da Fase 0. Já construído e funcionando:
   `.env` (mu-plugin `atelie-integracoes-sync.php` já existia pra isso). Observabilidade de
   produção (uptime, k6 agendado, alerta de pedido/webhook falho, Sentry) planejada e aprovada em
   espírito, mas adiada pro pós-lançamento — ver memória `project_observabilidade_pendente`.
+- **Segurança e endereço da loja** (2026-08-24/25): verificação diária de CVE no ar
+  (`atelie-seguranca-cve.php`, base do WPScan, e-mail 2x/dia + aviso no painel enquanto
+  pendente) — ao testar de verdade achou uma vulnerabilidade real em produção (WooCommerce
+  9.9.7, 2 CVEs sem correção), corrigida na hora (10.9.4). Smoke test do pipeline
+  (`tests/stress/homolog.js`) deixou de só checar página carregando — agora testa carrinho +
+  cálculo de frete de verdade via WooCommerce Store API a cada deploy. Endereço da loja
+  (`STORE_ADDRESS`/`CITY`/`STATE`/`POSTCODE`) passou a sincronizar automático do secret, mesmo
+  padrão do Mercado Pago/Melhor Envio.
+- **Nota fiscal — fluxo manual, não Bling** (2026-08-24): MEI não é obrigado a emitir NF-e em
+  venda pra pessoa física em 2026 (só a partir de 2027, LC 214/2025) — Bling/Focus NFe custam
+  mensalidade que não compensa pro volume esperado. Construído em vez disso:
+  `atelie-nota-fiscal.php` — checkbox opcional no checkout, coluna na lista de pedidos marcando
+  quem pediu, artesã sobe número + arquivo (emitido manualmente no portal gratuito da Sefaz) no
+  próprio pedido, e-mail automático pra cliente quando emitida.
+- **Revisão jurídica/LGPD sem advogado** (2026-08-24): MEI pequeno, sem profissional contratado —
+  revisão feita por IA com base em legislação pública (CDC, LGPD, resoluções ANPD), corrigiu uma
+  inconsistência real (política de privacidade afirmava usar Conversions API do Meta, nunca
+  implementada) direto na página publicada. Ver memória `project_revisao_juridica_pendente`.
+- **Papéis do painel e wizard de configuração** (2026-08-25): papel "Vendedora" (criado, nunca
+  usado) renomeado pra "Artesã" — reflete melhor quem de fato usa a conta. Nova tela
+  "Configuração Inicial" (`class-wizard-config-page.php`, dentro de `atelie-produto-ia`): wizard
+  guiado que só aparece no menu enquanto faltar configurar chave da IA, Meta Pixel ou GA4 —
+  explica onde buscar cada valor, valida antes de avançar (teste de conexão real pra IA;
+  checagem de formato pra Pixel/GA4). Mercado Pago, Melhor Envio, WPScan e endereço da loja
+  ficam de fora de propósito — continuam nascendo configurados via secret no deploy, não são
+  passo de wizard. Isso expôs e corrigiu um bug real: `atelie-integracoes-sync.php` sincronizava
+  do `.env` toda vez que uma página carregava, o que sobrescreveria qualquer valor que uma
+  pessoa configurasse depois pelo painel — agora só semeia se a option estiver vazia, nunca mais
+  pisa em cima de configuração real.
