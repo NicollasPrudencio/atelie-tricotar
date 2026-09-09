@@ -21,7 +21,7 @@
         "wpackagist-plugin/complianz-gdpr": "*",
         "wpackagist-plugin/melhor-envio-cotacao": "*",
         "wpackagist-plugin/shortpixel-image-optimiser": "*",
-        "wpackagist-plugin/woocommerce": "^10.0",
+        "wpackagist-plugin/woocommerce": "^11.1",
         "wpackagist-plugin/woocommerce-extra-checkout-fields-for-brazil": "*",
         "wpackagist-plugin/woocommerce-google-adwords-conversion-tracking-tag": "*",
         "wpackagist-plugin/woocommerce-mercadopago": "*",
