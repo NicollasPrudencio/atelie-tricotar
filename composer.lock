@@ -1060,15 +1060,15 @@
         },
         {
             "name": "wpackagist-plugin/complianz-gdpr",
-            "version": "7.5.3.1",
+            "version": "7.5.5",
             "source": {
                 "type": "svn",
                 "url": "https://plugins.svn.wordpress.org/complianz-gdpr/",
-                "reference": "tags/7.5.3.1"
+                "reference": "tags/7.5.5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://downloads.wordpress.org/plugin/complianz-gdpr.7.5.3.1.zip"
+                "url": "https://downloads.wordpress.org/plugin/complianz-gdpr.7.5.5.zip"
             },
             "require": {
                 "composer/installers": "^1.0 || ^2.0"
