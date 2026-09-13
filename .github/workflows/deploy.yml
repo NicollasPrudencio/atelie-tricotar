@@ -157,8 +157,8 @@ jobs:
             rm -f /tmp/deploy.tar.gz
             echo "Conferindo resultado da extracao:"
             ls -la "${{ secrets.APP_REMOTE_PATH }}"
-            echo "Atualizando traducoes pt_BR (nao bloqueia o deploy se falhar):"
-            cd "${{ secrets.APP_REMOTE_PATH }}" && wp language plugin update --all --path=web/wp && wp language core update --path=web/wp || echo "aviso: atualizacao de traducao falhou, seguindo mesmo assim"
+            echo "Instalando/atualizando traducoes pt_BR (nao bloqueia o deploy se falhar):"
+            cd "${{ secrets.APP_REMOTE_PATH }}" && wp language plugin install --all pt_BR --path=web/wp && wp language core update --path=web/wp || echo "aviso: atualizacao de traducao falhou, seguindo mesmo assim"
 
   stress-test:
     needs: deploy-staging
@@ -285,8 +285,8 @@ jobs:
             rm -f /tmp/deploy.tar.gz
             echo "Conferindo resultado da extracao:"
             ls -la "${{ secrets.APP_REMOTE_PATH }}"
-            echo "Atualizando traducoes pt_BR (nao bloqueia o deploy se falhar):"
-            cd "${{ secrets.APP_REMOTE_PATH }}" && wp language plugin update --all --path=web/wp && wp language core update --path=web/wp || echo "aviso: atualizacao de traducao falhou, seguindo mesmo assim"
+            echo "Instalando/atualizando traducoes pt_BR (nao bloqueia o deploy se falhar):"
+            cd "${{ secrets.APP_REMOTE_PATH }}" && wp language plugin install --all pt_BR --path=web/wp && wp language core update --path=web/wp || echo "aviso: atualizacao de traducao falhou, seguindo mesmo assim"
 
       - name: Notificar falha de deploy
         if: failure()
