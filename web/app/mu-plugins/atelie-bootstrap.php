@@ -147,7 +147,7 @@ add_action(
 add_action(
 	'init',
 	function (): void {
-		$capabilities_version = '4';
+		$capabilities_version = '5';
 
 		if ( get_option( 'atelie_vendedora_caps_version' ) === $capabilities_version ) {
 			return;
@@ -160,6 +160,14 @@ add_action(
 			array(
 				'read'                              => true,
 				'upload_files'                      => true,
+				// Sem isso o WooCommerce redireciona QUALQUER acesso ao wp-admin de volta pra
+				// "Minha conta" (WC_Admin::prevent_admin_access() so libera com edit_posts,
+				// manage_woocommerce ou view_admin_dashboard — nenhuma das capacidades acima
+				// conta, sao especificas de produto/pedido). Achado em 2026-09-14 com o primeiro
+				// login real de uma artesa: nenhuma das 4 conseguia abrir tela nenhuma do painel.
+				// view_admin_dashboard e a capacidade nativa do WP pra "pode ver o wp-admin" sem
+				// destravar menus nativos tipo Posts/Paginas (que continuam presos a edit_posts).
+				'view_admin_dashboard'              => true,
 				// Produtos
 				'edit_products'                     => true,
 				'edit_published_products'           => true,
