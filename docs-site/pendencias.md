@@ -19,9 +19,9 @@ Você **não precisa esperar tudo terminar** para começar a revisar — pode ir
 ficaram prontos enquanto o resto ainda processa em segundo plano, e pode até sair da tela e
 voltar depois: o progresso continua sozinho.
 
-Clique em **"Revisar"** em cada item pronto — isso abre a tela normal de edição do produto (a
-mesma de [Cadastrar produto novo](/novo-produto/)), onde você confirma o preço, a
-disponibilidade, o peso e publica.
+Clique em **"Revisar"** em cada item pronto — isso abre a mesma tela simplificada de
+[Cadastrar produto novo](/novo-produto/), já preenchida com o que a IA sugeriu (título,
+descrição, categoria, fotos), pra você confirmar o preço, a disponibilidade, o peso e salvar.
 
 ## Se algo parecer travado em "Processando"
 

@@ -471,7 +471,7 @@ class Atelie_Rest_Controller {
 				'titulo'     => get_the_title( $item->ID ),
 				'status'     => get_post_meta( $item->ID, '_atelie_lote_status', true ) ?: 'processando',
 				'thumbnail'  => get_the_post_thumbnail_url( $item->ID, 'thumbnail' ),
-				'editar_url' => get_edit_post_link( $item->ID, 'raw' ),
+				'editar_url' => Atelie_Lote_Admin_Pages::url_revisar( $item->ID ),
 			);
 		}
 

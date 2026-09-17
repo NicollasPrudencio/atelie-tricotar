@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Atelie_Admin_Page {
 
-	private const SLUG        = 'atelie-novo-produto';
+	public const SLUG         = 'atelie-novo-produto';
 	public const LIMITE_FOTOS = 10;
 
 	public function registrar(): void {
@@ -56,7 +56,7 @@ class Atelie_Admin_Page {
 			'atelie-produto-ia-admin',
 			plugins_url( 'assets/admin.js', dirname( __DIR__ ) . '/atelie-produto-ia.php' ),
 			array( 'jquery', 'atelie-produto-ia-editar-imagem' ),
-			'0.2.1',
+			'0.3.0',
 			true
 		);
 
@@ -81,13 +81,69 @@ class Atelie_Admin_Page {
 				'nonce'                  => wp_create_nonce( 'wp_rest' ),
 				'iaDisponivel'           => Atelie_Ai_Config::esta_disponivel(),
 				'custoEdicaoImagem'      => number_format( Atelie_Ai_Custo_Tracker::estimar( 'editar_imagem' ), 4, ',', '.' ),
+				'edicaoFotos'            => $this->fotos_do_produto_em_edicao(),
 			)
 		);
+	}
+
+	/**
+	 * Fotos já anexadas do produto sendo editado (?produto=ID na URL), no
+	 * formato que o JS usa pra semear o estado interno (AtelieNovoProduto.
+	 * adicionarFotosExternas) — sem isso, adicionar mais fotos depois de abrir
+	 * o modo edição sobrescreveria a lista com só as novas, perdendo as que já
+	 * existiam no produto.
+	 *
+	 * @return array<int, array{id: int, url: string}>
+	 */
+	private function fotos_do_produto_em_edicao(): array {
+		$produto_id = isset( $_GET['produto'] ) ? absint( $_GET['produto'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- leitura de navegacao, nao muda estado.
+		if ( $produto_id === 0 || get_post_type( $produto_id ) !== 'product' || ! current_user_can( 'edit_post', $produto_id ) ) {
+			return array();
+		}
+
+		$fotos = array();
+		foreach ( $this->ids_fotos_do_produto( $produto_id ) as $foto_id ) {
+			$imagem = wp_get_attachment_image_src( $foto_id, 'thumbnail' );
+			if ( $imagem ) {
+				$fotos[] = array(
+					'id'  => $foto_id,
+					'url' => $imagem[0],
+				);
+			}
+		}
+
+		return $fotos;
+	}
+
+	/**
+	 * @return int[]
+	 */
+	private function ids_fotos_do_produto( int $produto_id ): array {
+		$ids          = array();
+		$thumbnail_id = get_post_thumbnail_id( $produto_id );
+		if ( $thumbnail_id ) {
+			$ids[] = (int) $thumbnail_id;
+		}
+
+		$galeria = get_post_meta( $produto_id, '_product_image_gallery', true );
+		if ( is_string( $galeria ) && $galeria !== '' ) {
+			foreach ( explode( ',', $galeria ) as $id_galeria ) {
+				$id_galeria = absint( $id_galeria );
+				if ( $id_galeria > 0 ) {
+					$ids[] = $id_galeria;
+				}
+			}
+		}
+
+		return $ids;
 	}
 
 	public function renderizar(): void {
 		if ( isset( $_GET['publicado'] ) ) {
 			echo '<div class="notice notice-success is-dismissible"><p>Produto publicado! Já está visível no site.</p></div>';
+		}
+		if ( isset( $_GET['atualizado'] ) ) {
+			echo '<div class="notice notice-success is-dismissible"><p>Produto atualizado! As mudanças já estão no ar.</p></div>';
 		}
 		if ( isset( $_GET['erro'] ) && $_GET['erro'] === 'limite-fotos' ) {
 			echo '<div class="notice notice-error is-dismissible"><p>Máximo de 10 fotos por produto — remova algumas e tente de novo.</p></div>';
@@ -112,6 +168,22 @@ class Atelie_Admin_Page {
 		$dados   = $bloqueio['dados'] ?? array();
 		$revisao = $bloqueio['revisao'] ?? null;
 
+		// Modo edição: veio de "Revisar" nas Pendências (?produto=ID), ou é um
+		// reload depois de um bloqueio de revisão que já estava em modo edição
+		// (o produto_id sobrevive dentro dos dados guardados no transient).
+		$produto_id_edicao = isset( $_GET['produto'] ) ? absint( $_GET['produto'] ) : 0;
+		if ( $produto_id_edicao === 0 && ! empty( $dados['produto_id'] ) ) {
+			$produto_id_edicao = absint( $dados['produto_id'] );
+		}
+		$modo_edicao = $produto_id_edicao > 0
+			&& get_post_type( $produto_id_edicao ) === 'product'
+			&& current_user_can( 'edit_post', $produto_id_edicao );
+
+		if ( $modo_edicao && $bloqueio === null ) {
+			$dados                = $this->carregar_dados_produto( $produto_id_edicao );
+			$dados['produto_id']  = $produto_id_edicao;
+		}
+
 		$status = Atelie_Ai_Config::obter_status();
 		if ( $status['verificado_em'] === 0 ) {
 			// Primeira vez que a tela roda desde a instalação/reset — testa na hora
@@ -125,13 +197,17 @@ class Atelie_Admin_Page {
 		// Quando a revisão bloqueou a publicação: se a IA deu uma correção, já pré-preenche
 		// com ela (vira o novo "baseline confiável" — se publicar sem mexer, não revisa de
 		// novo); senão, mantém o que a pessoa tinha digitado, pra não perder o trabalho.
-		$titulo_valor                = $revisao['titulo_sugerido'] ?? ( $dados['titulo'] ?? '' );
-		$descricao_valor             = $revisao['descricao_sugerida'] ?? ( $dados['descricao'] ?? '' );
-		$titulo_ia_original_valor    = $revisao['titulo_sugerido'] ?? '';
-		$descricao_ia_original_valor = $revisao['descricao_sugerida'] ?? '';
+		$titulo_valor    = $revisao['titulo_sugerido'] ?? ( $dados['titulo'] ?? '' );
+		$descricao_valor = $revisao['descricao_sugerida'] ?? ( $dados['descricao'] ?? '' );
+		// Em modo edição, sem bloqueio de revisão, o baseline é o texto atual do
+		// produto — se a artesã não mexer em título/descrição, publica direto sem
+		// passar pela revisão de novo (mesma lógica de "aceitou a sugestão da IA
+		// sem mudar nada" do fluxo de criação, ver Atelie_Revisao_Vendas::precisa_revisar()).
+		$titulo_ia_original_valor    = $revisao['titulo_sugerido'] ?? ( $modo_edicao ? $titulo_valor : '' );
+		$descricao_ia_original_valor = $revisao['descricao_sugerida'] ?? ( $modo_edicao ? $descricao_valor : '' );
 		?>
 		<div class="wrap atelie-novo-produto">
-			<h1>Novo Produto 
+			<h1><?php echo $modo_edicao ? 'Editar Produto' : 'Novo Produto'; ?>
 			<?php
 			Atelie_Ajuda_Drawer::render(
 				'Novo Produto',
@@ -157,7 +233,7 @@ class Atelie_Admin_Page {
 					<button type="button" class="button" id="atelie-btn-escolher-fotos">Escolher fotos</button>
 					<span class="atelie-dica-limite">(até 10 fotos)</span>
 
-					<?php if ( $drive_conectado ) : ?>
+					<?php if ( ! $modo_edicao && $drive_conectado ) : ?>
 						<span class="atelie-lote-drive-import">
 							ou, pra criar vários produtos de uma vez organizados em pastas,
 							<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="atelie-lote-drive-import-form">
@@ -180,7 +256,7 @@ class Atelie_Admin_Page {
 								</form>)
 							<?php endif; ?>
 						</span>
-					<?php elseif ( current_user_can( 'edit_products' ) ) : ?>
+					<?php elseif ( ! $modo_edicao && current_user_can( 'edit_products' ) ) : ?>
 						<span class="atelie-lote-drive-import">
 							ou, pra criar vários produtos de uma vez organizados em pastas,
 							<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
@@ -192,37 +268,40 @@ class Atelie_Admin_Page {
 					<?php endif; ?>
 				</p>
 
-				<p class="atelie-receita-linha">
-					<label for="atelie-receita-texto">Tem a receita/padrão dessa peça? (opcional — cole o texto ou anexe uma foto)</label>
-				</p>
-				<textarea id="atelie-receita-texto" rows="3" placeholder="Cole aqui o texto da receita, se tiver..."></textarea>
-				<button type="button" class="button" id="atelie-btn-escolher-receita-imagem">Ou anexar foto da receita</button>
-				<span id="atelie-receita-imagem-nome"></span>
+				<?php // Sempre renderizado (mesmo em modo edição) — o admin.js busca esses elementos por ID sem checar null; só escondemos visualmente, pra não quebrar o script. ?>
+				<div <?php echo $modo_edicao ? 'style="display:none;"' : ''; ?>>
+					<p class="atelie-receita-linha">
+						<label for="atelie-receita-texto">Tem a receita/padrão dessa peça? (opcional — cole o texto ou anexe uma foto)</label>
+					</p>
+					<textarea id="atelie-receita-texto" rows="3" placeholder="Cole aqui o texto da receita, se tiver..."></textarea>
+					<button type="button" class="button" id="atelie-btn-escolher-receita-imagem">Ou anexar foto da receita</button>
+					<span id="atelie-receita-imagem-nome"></span>
 
-				<p>
-					<span class="atelie-tooltip" <?php echo $ia_disponivel ? '' : Atelie_Ai_Config::atributo_tooltip_indisponivel( $status ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- ja escapa com esc_attr() internamente. ?>>
-						<button type="button" class="button button-primary button-hero" id="atelie-btn-sugerir" disabled>
-							✨ Sugerir
+					<p>
+						<span class="atelie-tooltip" <?php echo $ia_disponivel ? '' : Atelie_Ai_Config::atributo_tooltip_indisponivel( $status ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- ja escapa com esc_attr() internamente. ?>>
+							<button type="button" class="button button-primary button-hero" id="atelie-btn-sugerir" disabled>
+								✨ Sugerir
+							</button>
+						</span>
+						<button type="button" class="button button-hero" id="atelie-btn-manual">
+							Preencher manualmente
 						</button>
-					</span>
-					<button type="button" class="button button-hero" id="atelie-btn-manual">
-						Preencher manualmente
-					</button>
-					<span id="atelie-analisando" style="display:none;">Analisando…</span>
-					<?php if ( $ia_disponivel ) : ?>
-						<span class="atelie-custo-estimado">~R$ <?php echo esc_html( number_format( $custo_estimado_sugestao, 4, ',', '.' ) ); ?> nesta chamada</span>
-					<?php endif; ?>
-				</p>
-				<?php if ( ! $ia_disponivel ) : ?>
-					<p class="atelie-status atelie-status-erro atelie-status-inline">
-						⚠️ IA indisponível no momento — <?php echo esc_html( $status['mensagem'] ); ?>
-						<?php if ( current_user_can( 'manage_options' ) ) : ?>
-							<a href="<?php echo esc_url( admin_url( 'admin.php?page=atelie-config-ia' ) ); ?>">Configurar agora</a>
-						<?php else : ?>
-							Avise o administrador do site.
+						<span id="atelie-analisando" style="display:none;">Analisando…</span>
+						<?php if ( $ia_disponivel ) : ?>
+							<span class="atelie-custo-estimado">~R$ <?php echo esc_html( number_format( $custo_estimado_sugestao, 4, ',', '.' ) ); ?> nesta chamada</span>
 						<?php endif; ?>
 					</p>
-				<?php endif; ?>
+					<?php if ( ! $ia_disponivel ) : ?>
+						<p class="atelie-status atelie-status-erro atelie-status-inline">
+							⚠️ IA indisponível no momento — <?php echo esc_html( $status['mensagem'] ); ?>
+							<?php if ( current_user_can( 'manage_options' ) ) : ?>
+								<a href="<?php echo esc_url( admin_url( 'admin.php?page=atelie-config-ia' ) ); ?>">Configurar agora</a>
+							<?php else : ?>
+								Avise o administrador do site.
+							<?php endif; ?>
+						</p>
+					<?php endif; ?>
+				</div>
 			</div>
 
 			<?php if ( $revisao !== null ) : ?>
@@ -243,9 +322,10 @@ class Atelie_Admin_Page {
 				</div>
 			<?php endif; ?>
 
-			<form id="atelie-form-produto" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="<?php echo $bloqueio !== null ? '' : 'display:none;'; ?>">
+			<form id="atelie-form-produto" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="<?php echo ( $bloqueio !== null || $modo_edicao ) ? '' : 'display:none;'; ?>">
 				<input type="hidden" name="action" value="atelie_publicar_produto">
 				<?php wp_nonce_field( 'atelie_publicar_produto', 'atelie_publicar_nonce' ); ?>
+				<input type="hidden" name="produto_id" id="atelie-input-produto-id" value="<?php echo esc_attr( $modo_edicao ? (string) $produto_id_edicao : '' ); ?>">
 				<input type="hidden" name="fotos_ids" id="atelie-input-fotos-ids" value="<?php echo esc_attr( $dados['fotos_ids'] ?? '' ); ?>">
 				<input type="hidden" name="titulo_ia_original" id="atelie-titulo-ia-original" value="<?php echo esc_attr( $titulo_ia_original_valor ); ?>">
 				<input type="hidden" name="descricao_ia_original" id="atelie-descricao-ia-original" value="<?php echo esc_attr( $descricao_ia_original_valor ); ?>">
@@ -307,13 +387,43 @@ class Atelie_Admin_Page {
 					</p>
 
 					<p>
-						<button type="submit" class="button button-primary button-hero">Publicar</button>
-						<button type="button" class="button" id="atelie-btn-recomecar">Recomeçar</button>
+						<button type="submit" class="button button-primary button-hero"><?php echo $modo_edicao ? 'Salvar alterações' : 'Publicar'; ?></button>
+						<button type="button" class="button" id="atelie-btn-recomecar"><?php echo $modo_edicao ? 'Desfazer alterações' : 'Recomeçar'; ?></button>
 					</p>
 				</div>
 			</form>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Carrega os dados de um produto já existente no mesmo formato usado
+	 * pelo formulário (ver $dados_formulario em publicar_produto()), pra
+	 * pré-preencher a tela "2. Revisar produto" em modo edição.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function carregar_dados_produto( int $produto_id ): array {
+		$produto_post   = get_post( $produto_id );
+		$categoria_nome = '';
+		$termos         = get_the_terms( $produto_id, 'product_cat' );
+		if ( is_array( $termos ) && ! empty( $termos ) ) {
+			$categoria_nome = $termos[0]->name;
+		}
+
+		return array(
+			'titulo'          => $produto_post ? $produto_post->post_title : '',
+			'descricao'       => $produto_post ? $produto_post->post_content : '',
+			'categoria'       => $categoria_nome,
+			'preco'           => get_post_meta( $produto_id, '_regular_price', true ),
+			'disponibilidade' => get_post_meta( $produto_id, '_atelie_disponibilidade', true ) ?: 'sob_encomenda',
+			'prazo_producao'  => get_post_meta( $produto_id, '_atelie_prazo_producao', true ),
+			'peso'            => get_post_meta( $produto_id, '_weight', true ),
+			'comprimento'     => get_post_meta( $produto_id, '_length', true ),
+			'largura'         => get_post_meta( $produto_id, '_width', true ),
+			'altura'          => get_post_meta( $produto_id, '_height', true ),
+			'fotos_ids'       => implode( ',', $this->ids_fotos_do_produto( $produto_id ) ),
+		);
 	}
 
 	public function publicar_produto(): void {
@@ -325,18 +435,28 @@ class Atelie_Admin_Page {
 			wp_die( 'Ação não permitida.' );
 		}
 
+		$produto_id_edicao = isset( $_POST['produto_id'] ) ? absint( $_POST['produto_id'] ) : 0;
+		$modo_edicao       = $produto_id_edicao > 0
+			&& get_post_type( $produto_id_edicao ) === 'product'
+			&& current_user_can( 'edit_post', $produto_id_edicao );
+
+		$pagina_volta = admin_url( 'edit.php?post_type=product&page=' . self::SLUG );
+		if ( $modo_edicao ) {
+			$pagina_volta = add_query_arg( 'produto', $produto_id_edicao, $pagina_volta );
+		}
+
 		$titulo = isset( $_POST['titulo'] ) ? sanitize_text_field( wp_unslash( $_POST['titulo'] ) ) : '';
 		$preco  = isset( $_POST['preco'] ) ? str_replace( ',', '.', sanitize_text_field( wp_unslash( $_POST['preco'] ) ) ) : '';
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- cada item ja passa por absint() logo abaixo, o sniff nao reconhece o padrao explode()+array_map().
 		$fotos_ids = isset( $_POST['fotos_ids'] ) ? array_filter( array_map( 'absint', explode( ',', (string) wp_unslash( $_POST['fotos_ids'] ) ) ) ) : array();
 
 		if ( $titulo === '' || ! is_numeric( $preco ) || empty( $fotos_ids ) ) {
-			wp_safe_redirect( add_query_arg( 'erro', '1', admin_url( 'edit.php?post_type=product&page=' . self::SLUG ) ) );
+			wp_safe_redirect( add_query_arg( 'erro', '1', $pagina_volta ) );
 			exit;
 		}
 
 		if ( count( $fotos_ids ) > self::LIMITE_FOTOS ) {
-			wp_safe_redirect( add_query_arg( 'erro', 'limite-fotos', admin_url( 'edit.php?post_type=product&page=' . self::SLUG ) ) );
+			wp_safe_redirect( add_query_arg( 'erro', 'limite-fotos', $pagina_volta ) );
 			exit;
 		}
 
@@ -363,6 +483,7 @@ class Atelie_Admin_Page {
 			'largura'         => $largura,
 			'altura'          => $altura,
 			'fotos_ids'       => implode( ',', $fotos_ids ),
+			'produto_id'      => $modo_edicao ? $produto_id_edicao : 0,
 		);
 
 		/**
@@ -379,26 +500,42 @@ class Atelie_Admin_Page {
 					'produto',
 					$dados_formulario,
 					$revisao,
-					admin_url( 'edit.php?post_type=product&page=' . self::SLUG )
+					$pagina_volta
 				);
 			}
 		}
 
-		$produto_id = wp_insert_post(
-			array(
-				'post_type'    => 'product',
-				'post_title'   => $titulo,
-				'post_content' => $descricao,
-				'post_status'  => 'publish',
-			)
-		);
+		if ( $modo_edicao ) {
+			$produto_id = $produto_id_edicao;
+			$atualizado = wp_update_post(
+				array(
+					'ID'           => $produto_id,
+					'post_title'   => $titulo,
+					'post_content' => $descricao,
+				),
+				true
+			);
+			if ( is_wp_error( $atualizado ) ) {
+				wp_safe_redirect( add_query_arg( 'erro', '1', $pagina_volta ) );
+				exit;
+			}
+		} else {
+			$produto_id = wp_insert_post(
+				array(
+					'post_type'    => 'product',
+					'post_title'   => $titulo,
+					'post_content' => $descricao,
+					'post_status'  => 'publish',
+				)
+			);
 
-		if ( is_wp_error( $produto_id ) || ! $produto_id ) {
-			wp_safe_redirect( add_query_arg( 'erro', '1', admin_url( 'edit.php?post_type=product&page=' . self::SLUG ) ) );
-			exit;
+			if ( is_wp_error( $produto_id ) || ! $produto_id ) {
+				wp_safe_redirect( add_query_arg( 'erro', '1', $pagina_volta ) );
+				exit;
+			}
+
+			wp_set_object_terms( $produto_id, 'simple', 'product_type' );
 		}
-
-		wp_set_object_terms( $produto_id, 'simple', 'product_type' );
 
 		if ( $categoria_nome !== '' ) {
 			$termo = term_exists( $categoria_nome, 'product_cat' );
@@ -433,9 +570,14 @@ class Atelie_Admin_Page {
 		set_post_thumbnail( $produto_id, $fotos_ids[0] );
 		if ( count( $fotos_ids ) > 1 ) {
 			update_post_meta( $produto_id, '_product_image_gallery', implode( ',', array_slice( $fotos_ids, 1 ) ) );
+		} else {
+			// Em modo edição, o produto pode ter tido mais fotos antes — sem isso, a
+			// galeria antiga ficaria "presa" mesmo depois de reduzir pra 1 foto só.
+			delete_post_meta( $produto_id, '_product_image_gallery' );
 		}
 
-		wp_safe_redirect( add_query_arg( 'publicado', '1', admin_url( 'edit.php?post_type=product&page=' . self::SLUG ) ) );
+		$parametro_sucesso = $modo_edicao ? 'atualizado' : 'publicado';
+		wp_safe_redirect( add_query_arg( $parametro_sucesso, '1', admin_url( 'edit.php?post_type=product&page=' . self::SLUG ) ) );
 		exit;
 	}
 }

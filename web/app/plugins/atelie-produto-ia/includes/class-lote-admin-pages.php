@@ -17,6 +17,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Atelie_Lote_Admin_Pages {
 
+	/**
+	 * URL de "Revisar" de um item pronto — vai pra tela simplificada "Novo
+	 * Produto" em modo edição (?produto=ID), não pro editor nativo do
+	 * WooCommerce. Usada tanto no card da tela Pendências quanto no
+	 * indicador da barra de admin; a REST (class-rest-controller.php,
+	 * lote_status()) monta a mesma URL pro polling em JS.
+	 */
+	public static function url_revisar( int $produto_id ): string {
+		return add_query_arg(
+			'produto',
+			$produto_id,
+			admin_url( 'edit.php?post_type=product&page=' . Atelie_Admin_Page::SLUG )
+		);
+	}
+
 	public function registrar(): void {
 		add_action( 'admin_menu', array( $this, 'adicionar_menus' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'carregar_assets' ) );
@@ -66,7 +81,7 @@ class Atelie_Lote_Admin_Pages {
 					'id'     => 'atelie-pendencia-' . $item->ID,
 					'parent' => 'atelie-pendencias',
 					'title'  => esc_html( get_the_title( $item->ID ) ) . ' — ' . ( $rotulos[ $status ] ?? $status ),
-					'href'   => $status === 'pronto' ? get_edit_post_link( $item->ID, 'raw' ) : admin_url( 'edit.php?post_type=product&page=atelie-revisar-lote' ),
+					'href'   => $status === 'pronto' ? self::url_revisar( $item->ID ) : admin_url( 'edit.php?post_type=product&page=atelie-revisar-lote' ),
 				)
 			);
 		}
@@ -260,7 +275,7 @@ class Atelie_Lote_Admin_Pages {
 
 						<div class="atelie-lote-card-acao">
 						<?php if ( $status === 'pronto' || $status === 'revisado' ) : ?>
-							<p><a class="button" href="<?php echo esc_url( get_edit_post_link( $item->ID ) ); ?>">Revisar</a></p>
+							<p><a class="button" href="<?php echo esc_url( self::url_revisar( $item->ID ) ); ?>">Revisar</a></p>
 						<?php elseif ( $status === 'erro' ) : ?>
 							<p>
 								<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">

@@ -195,6 +195,14 @@
         dispSelect.addEventListener("change", sincronizarPrazo);
         sincronizarPrazo();
 
+        // Modo edição (tela aberta com ?produto=ID, vinda do "Revisar" das Pendências):
+        // semeia o estado interno de fotos com o que o produto já tem, senão a próxima
+        // foto escolhida em "Escolher fotos" substituiria a lista em vez de completá-la.
+        if (atelieProdutoIA.edicaoFotos && atelieProdutoIA.edicaoFotos.length) {
+            window.AtelieNovoProduto.adicionarFotosExternas(atelieProdutoIA.edicaoFotos);
+            inputFotosIds.value = fotosIds.join(",");
+        }
+
         atualizarBotaoSugerir();
     });
 })();
