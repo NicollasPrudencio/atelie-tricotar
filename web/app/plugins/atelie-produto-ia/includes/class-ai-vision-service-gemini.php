@@ -915,9 +915,8 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 
 		$editor = wp_get_image_editor( $imagem_path );
 		if ( is_wp_error( $editor ) ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- leitura de arquivo local (upload do WP), nao URL remota.
 			return array(
-				'data'      => base64_encode( (string) file_get_contents( $imagem_path ) ),
+				'data'      => $this->ler_arquivo_local_base64( $imagem_path ),
 				'mime_type' => $mime_original,
 			);
 		}
@@ -925,9 +924,8 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 		$tamanho = $editor->get_size();
 		if ( is_array( $tamanho ) && max( (int) $tamanho['width'], (int) $tamanho['height'] ) <= $lado_maximo ) {
 			// Ja e pequena o suficiente, nao precisa redimensionar.
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 			return array(
-				'data'      => base64_encode( (string) file_get_contents( $imagem_path ) ),
+				'data'      => $this->ler_arquivo_local_base64( $imagem_path ),
 				'mime_type' => $mime_original,
 			);
 		}
@@ -938,25 +936,41 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 		$salvo = $editor->save( $temp, $mime_original );
 
 		if ( is_wp_error( $salvo ) || ! isset( $salvo['path'] ) || ! is_readable( $salvo['path'] ) ) {
-			if ( file_exists( $temp ) ) {
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink.unlink_unlink -- limpeza de arquivo temporario proprio (wp_tempnam), nao input externo.
-				unlink( $temp );
-			}
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			$this->apagar_arquivo_local( $temp );
 			return array(
-				'data'      => base64_encode( (string) file_get_contents( $imagem_path ) ),
+				'data'      => $this->ler_arquivo_local_base64( $imagem_path ),
 				'mime_type' => $mime_original,
 			);
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- leitura de arquivo temporario proprio, nao URL remota.
-		$dados = base64_encode( (string) file_get_contents( $salvo['path'] ) );
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink.unlink_unlink -- limpeza de arquivo temporario proprio.
-		unlink( $salvo['path'] );
+		$dados = $this->ler_arquivo_local_base64( $salvo['path'] );
+		$this->apagar_arquivo_local( $salvo['path'] );
 
 		return array(
 			'data'      => $dados,
 			'mime_type' => (string) ( $salvo['mime-type'] ?? $mime_original ),
 		);
+	}
+
+	/**
+	 * Le e codifica em base64 um arquivo LOCAL (upload do WP ou temporario
+	 * proprio, nunca URL remota) — helper pra nao repetir o phpcs:ignore em
+	 * cada chamada.
+	 */
+	private function ler_arquivo_local_base64( string $path ): string {
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- leitura de arquivo local (upload do WP ou temporario proprio), nao URL remota.
+		return base64_encode( (string) file_get_contents( $path ) );
+	}
+
+	/**
+	 * Apaga um arquivo temporario proprio (wp_tempnam ou WP_Image_Editor::save)
+	 * — helper pra nao repetir o phpcs:ignore em cada chamada.
+	 */
+	private function apagar_arquivo_local( string $path ): void {
+		if ( ! file_exists( $path ) ) {
+			return;
+		}
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- limpeza de arquivo temporario proprio, nao input externo.
+		unlink( $path );
 	}
 }
