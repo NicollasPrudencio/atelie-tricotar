@@ -259,30 +259,44 @@ add_filter(
 );
 
 /**
- * Com HPOS ativo (pedidos numa tabela propria, nao mais em wp_posts), o
- * map_meta_cap PADRAO do WordPress pra 'edit_shop_order'/'read_shop_order'
- * chama get_post($id) por baixo pra decidir a permissao — que retorna null
- * pra qualquer pedido (HPOS nao esta em wp_posts), fazendo a checagem falhar
- * SEMPRE, pra qualquer papel. A tela de detalhe do pedido
- * (Orders\PageController::check_edit_permission) so libera mesmo assim se a
- * pessoa tiver `manage_woocommerce` como alternativa — o Administrador passa
- * por essa segunda porta, a Artesã nao tem manage_woocommerce de proposito e
- * fica bloqueada. Achado em 2026-09-17: Artesã com edit_others_shop_orders
- * (capacidade "no plural", a certa) ainda assim nao conseguia abrir NENHUM
- * pedido especifico. Corrige substituindo o meta-cap "no singular" pela
- * capacidade "no plural" equivalente, sem depender de get_post().
+ * Com HPOS ativo (pedidos numa tabela propria, nao mais em wp_posts), abrir
+ * UM pedido especifico falhava a checagem de permissao pra qualquer papel
+ * sem manage_woocommerce — mesmo com edit_others_shop_orders (a capacidade
+ * "certa"). Investigado ao vivo com um filtro de debug: current_user_can()
+ * NAO chama map_meta_cap() com o cap "no singular" (`edit_shop_order`) como
+ * seria de esperar — o WordPress ja traduz isso internamente pro cap
+ * GENERICO `edit_post` (mesmo usado por posts/paginas normais) antes de
+ * qualquer filtro rodar. Daí a logica padrao chama get_post($id), que sob
+ * HPOS acha um post "placeholder" de compatibilidade (post_type
+ * shop_order_placehold, sem relacao com as capacidades reais do pedido) em
+ * vez de null como eu esperava — usar isso como sinal de "e post normal,
+ * nao mexe" estava errado e continuava bloqueando. A tela de pedido do
+ * WooCommerce (Orders\PageController::check_edit_permission) so libera
+ * mesmo assim porque tem um fallback alternativo via manage_woocommerce,
+ * que o Administrador tem e a Artesã nao (de proposito).
+ *
+ * Corrige interceptando o cap GENERICO (edit_post/read_post/delete_post) e
+ * confirmando com wc_get_order() — que funciona com HPOS e e a fonte da
+ * verdade real sobre "isso e um pedido de verdade", ao contrario do post
+ * placeholder — antes de substituir a checagem pela capacidade "no plural"
+ * equivalente. Pra qualquer ID que wc_get_order() nao reconheça como
+ * pedido (posts/paginas normais), o filtro nao mexe em nada.
  */
 add_filter(
 	'map_meta_cap',
-	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- assinatura fixa do hook map_meta_cap, exige os 4 parametros mesmo sem usar os 2 ultimos.
-	function ( array $caps, string $cap, int $usuario_id, array $args ): array {
+	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- assinatura fixa do hook map_meta_cap, exige os 4 parametros mesmo sem usar o 3o.
+	function ( array $caps, string $cap, int $_usuario_id, array $args ): array {
 		$mapa = array(
-			'edit_shop_order'   => 'edit_others_shop_orders',
-			'read_shop_order'   => 'read_private_shop_orders',
-			'delete_shop_order' => 'delete_others_shop_orders',
+			'edit_post'   => 'edit_others_shop_orders',
+			'read_post'   => 'read_private_shop_orders',
+			'delete_post' => 'delete_others_shop_orders',
 		);
 
-		if ( ! isset( $mapa[ $cap ] ) ) {
+		if ( ! isset( $mapa[ $cap ] ) || empty( $args[0] ) || ! function_exists( 'wc_get_order' ) ) {
+			return $caps;
+		}
+
+		if ( ! wc_get_order( $args[0] ) ) {
 			return $caps;
 		}
 
