@@ -180,8 +180,8 @@ class Atelie_Admin_Page {
 			&& current_user_can( 'edit_post', $produto_id_edicao );
 
 		if ( $modo_edicao && $bloqueio === null ) {
-			$dados                = $this->carregar_dados_produto( $produto_id_edicao );
-			$dados['produto_id']  = $produto_id_edicao;
+			$dados               = $this->carregar_dados_produto( $produto_id_edicao );
+			$dados['produto_id'] = $produto_id_edicao;
 		}
 
 		$status = Atelie_Ai_Config::obter_status();
