@@ -259,6 +259,39 @@ add_filter(
 );
 
 /**
+ * Com HPOS ativo (pedidos numa tabela propria, nao mais em wp_posts), o
+ * map_meta_cap PADRAO do WordPress pra 'edit_shop_order'/'read_shop_order'
+ * chama get_post($id) por baixo pra decidir a permissao — que retorna null
+ * pra qualquer pedido (HPOS nao esta em wp_posts), fazendo a checagem falhar
+ * SEMPRE, pra qualquer papel. A tela de detalhe do pedido
+ * (Orders\PageController::check_edit_permission) so libera mesmo assim se a
+ * pessoa tiver `manage_woocommerce` como alternativa — o Administrador passa
+ * por essa segunda porta, a Artesã nao tem manage_woocommerce de proposito e
+ * fica bloqueada. Achado em 2026-09-17: Artesã com edit_others_shop_orders
+ * (capacidade "no plural", a certa) ainda assim nao conseguia abrir NENHUM
+ * pedido especifico. Corrige substituindo o meta-cap "no singular" pela
+ * capacidade "no plural" equivalente, sem depender de get_post().
+ */
+add_filter(
+	'map_meta_cap',
+	function ( array $caps, string $cap, int $usuario_id, array $args ): array {
+		$mapa = array(
+			'edit_shop_order'   => 'edit_others_shop_orders',
+			'read_shop_order'   => 'read_private_shop_orders',
+			'delete_shop_order' => 'delete_others_shop_orders',
+		);
+
+		if ( ! isset( $mapa[ $cap ] ) ) {
+			return $caps;
+		}
+
+		return array( $mapa[ $cap ] );
+	},
+	10,
+	4
+);
+
+/**
  * Campos de disponibilidade e prazo de producao — a maioria dos produtos do
  * ateliê é feita sob encomenda. Ver plano, secao "Disponibilidade — pronta
  * entrega vs. sob encomenda". Fica no admin nativo do WooCommerce ate a
