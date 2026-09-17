@@ -274,7 +274,7 @@ add_filter(
  */
 add_filter(
 	'map_meta_cap',
-	function ( array $caps, string $cap, int $usuario_id, array $args ): array {
+	function ( array $caps, string $cap, int $_usuario_id, array $_args ): array {
 		$mapa = array(
 			'edit_shop_order'   => 'edit_others_shop_orders',
 			'read_shop_order'   => 'read_private_shop_orders',
