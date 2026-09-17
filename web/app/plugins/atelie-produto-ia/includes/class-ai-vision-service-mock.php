@@ -27,6 +27,25 @@ class Atelie_Ai_Vision_Service_Mock implements Atelie_Ai_Vision_Service_Interfac
 		);
 	}
 
+	public function agruparFotos( array $imagens_paths ): array {
+		usleep( 600000 );
+
+		// [MOCK] cada foto vira o proprio grupo — nao tem como "adivinhar" agrupamento
+		// sem chamar a API de verdade, e juntar fotos errado por engano no mock seria
+		// pior pra testar o fluxo do que so nao agrupar nada.
+		$grupos = array();
+		foreach ( array_keys( $imagens_paths ) as $indice ) {
+			$grupos[] = array( $indice );
+		}
+
+		return array(
+			'ok'       => true,
+			'grupos'   => $grupos,
+			'custo'    => 0.0,
+			'mensagem' => '[MOCK] Agrupamento simulado — cada foto ficou no seu próprio grupo.',
+		);
+	}
+
 	public function sugerirCase( array $imagens_paths, ?string $relato = null ): array {
 		usleep( 600000 );
 

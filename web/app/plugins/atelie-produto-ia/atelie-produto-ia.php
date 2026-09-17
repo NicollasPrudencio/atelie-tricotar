@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Atelie - Criar Produto com IA
  * Description: Painel simplificado de criacao de produto com autofill por IA de visao. Ver plano do projeto, secao "Plugin custom Criar Produto com IA".
- * Version: 0.4.0
+ * Version: 0.5.0
  * Requires Plugins: woocommerce
  *
  * Fluxo individual, criacao em massa (upload direto) e importacao do Google
@@ -25,6 +25,7 @@ require_once __DIR__ . '/includes/class-admin-page.php';
 require_once __DIR__ . '/includes/class-case-admin-page.php';
 require_once __DIR__ . '/includes/class-lote-controller.php';
 require_once __DIR__ . '/includes/class-lote-admin-pages.php';
+require_once __DIR__ . '/includes/class-massa-admin-page.php';
 require_once __DIR__ . '/includes/class-settings-page.php';
 require_once __DIR__ . '/includes/class-drive-config.php';
 require_once __DIR__ . '/includes/class-google-drive-service.php';
@@ -50,6 +51,7 @@ add_action(
 		( new Atelie_Case_Admin_Page() )->registrar();
 		( new Atelie_Lote_Controller() )->registrar();
 		( new Atelie_Lote_Admin_Pages() )->registrar();
+		( new Atelie_Massa_Admin_Page() )->registrar();
 		( new Atelie_Settings_Page() )->registrar();
 		( new Atelie_Drive_Admin_Page() )->registrar();
 		( new Atelie_Ads_Admin_Page() )->registrar();

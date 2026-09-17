@@ -73,6 +73,15 @@ class Atelie_Ai_Custo_Tracker {
 			'entrada' => 264,
 			'saida'   => 1290,
 		),
+		// Estimativa de partida pra um lote medio (~15 fotos) na tela "Criar em
+		// Massa" — token de entrada escala com a quantidade de fotos enviadas
+		// na MESMA chamada, entao a media real (apos a primeira chamada) tende
+		// a variar bem mais que as outras operacoes, que sao sempre 1 chamada
+		// por item.
+		'agrupar_fotos'       => array(
+			'entrada' => 4000,
+			'saida'   => 300,
+		),
 	);
 
 	public static function nome_tabela(): string {

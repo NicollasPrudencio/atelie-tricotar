@@ -16,6 +16,7 @@ class Atelie_Rest_Controller {
 
 	private const LIMITE_DIARIO_PADRAO     = 100;
 	private const LIMITE_FOTOS_POR_PRODUTO = 10;
+	private const LIMITE_FOTOS_AGRUPAMENTO = 30;
 
 	public function registrar(): void {
 		add_action(
@@ -114,6 +115,32 @@ class Atelie_Rest_Controller {
 						'permission_callback' => array( $this, 'usuario_pode_criar_produto' ),
 						'args'                => array(
 							'fotos' => array( 'required' => true ),
+						),
+					)
+				);
+
+				register_rest_route(
+					'atelie/v1',
+					'/agrupar-fotos-massa',
+					array(
+						'methods'             => 'POST',
+						'callback'            => array( $this, 'agrupar_fotos_massa' ),
+						'permission_callback' => array( $this, 'usuario_pode_criar_produto' ),
+						'args'                => array(
+							'fotos_ids' => array( 'required' => true ),
+						),
+					)
+				);
+
+				register_rest_route(
+					'atelie/v1',
+					'/lote-status',
+					array(
+						'methods'             => 'GET',
+						'callback'            => array( $this, 'lote_status' ),
+						'permission_callback' => array( $this, 'usuario_pode_criar_produto' ),
+						'args'                => array(
+							'lote' => array( 'required' => false ),
 						),
 					)
 				);
@@ -298,6 +325,157 @@ class Atelie_Rest_Controller {
 		}
 
 		return new WP_REST_Response( array( 'fotos' => $resultado ), 200 );
+	}
+
+	/**
+	 * Tela "Criar em Massa" — recebe fotos soltas escolhidas direto na
+	 * Biblioteca de Mídia (sem organização por pasta) e pede pra IA
+	 * identificar quais mostram o mesmo produto. Limite de fotos por chamada
+	 * é baixo de propósito: mandar centenas de fotos de uma vez pra IA fica
+	 * caro e lento, e se um produto tiver fotos espalhadas em duas chamadas
+	 * diferentes a IA nunca vai conseguir juntar — melhor a pessoa rodar de
+	 * novo pro proximo lote de fotos do que arriscar isso silenciosamente.
+	 */
+	public function agrupar_fotos_massa( WP_REST_Request $request ): WP_REST_Response {
+		$fotos_ids = array_map( 'absint', (array) $request->get_param( 'fotos_ids' ) );
+		$fotos_ids = array_values( array_filter( $fotos_ids ) );
+
+		if ( empty( $fotos_ids ) ) {
+			return new WP_REST_Response( array( 'erro' => 'Selecione pelo menos uma foto.' ), 400 );
+		}
+
+		if ( count( $fotos_ids ) > self::LIMITE_FOTOS_AGRUPAMENTO ) {
+			return new WP_REST_Response(
+				array( 'erro' => 'Máximo de ' . self::LIMITE_FOTOS_AGRUPAMENTO . ' fotos por vez — selecione menos fotos e rode de novo pro restante.' ),
+				400
+			);
+		}
+
+		if ( ! $this->dentro_do_limite_diario() ) {
+			return new WP_REST_Response( array( 'erro' => 'Limite diário de chamadas de IA atingido. Tente de novo amanhã.' ), 429 );
+		}
+
+		// Mantem fotos_ids_validos alinhado 1:1 com os caminhos que realmente
+		// foram enviados — e o que permite traduzir os INDICES que a IA devolve
+		// de volta pros IDs reais de anexo.
+		$fotos_ids_validos = array();
+		$caminhos          = array();
+		foreach ( $fotos_ids as $id ) {
+			$caminho = $this->caminho_para_ia( $id );
+			if ( $caminho ) {
+				$fotos_ids_validos[] = $id;
+				$caminhos[]          = $caminho;
+			}
+		}
+
+		if ( empty( $caminhos ) ) {
+			return new WP_REST_Response( array( 'erro' => 'Nenhuma das fotos selecionadas está disponível.' ), 400 );
+		}
+
+		if ( function_exists( 'set_time_limit' ) ) {
+			set_time_limit( 60 );
+		}
+
+		try {
+			$servico   = Atelie_Ai_Vision_Service_Factory::criar();
+			$resultado = $servico->agruparFotos( $caminhos );
+		} catch ( Throwable $e ) {
+			$this->registrar_log( 'erro (agrupar fotos): ' . $e->getMessage() );
+			return new WP_REST_Response( array( 'erro' => 'Não foi possível agrupar as fotos agora.' ), 502 );
+		}
+
+		if ( ! $resultado['ok'] ) {
+			$this->registrar_log( 'erro (agrupar fotos): ' . $resultado['mensagem'] );
+			return new WP_REST_Response(
+				array(
+					'erro'  => $resultado['mensagem'],
+					'custo' => $resultado['custo'],
+				),
+				502
+			);
+		}
+
+		// Traduz indice (posicao no array enviado) de volta pro ID real do anexo.
+		$grupos_com_ids = array();
+		foreach ( $resultado['grupos'] as $grupo ) {
+			$ids_do_grupo = array();
+			foreach ( $grupo as $indice ) {
+				if ( isset( $fotos_ids_validos[ $indice ] ) ) {
+					$id             = $fotos_ids_validos[ $indice ];
+					$ids_do_grupo[] = array(
+						'id'  => $id,
+						'url' => wp_get_attachment_image_url( $id, 'thumbnail' ),
+					);
+				}
+			}
+			if ( ! empty( $ids_do_grupo ) ) {
+				$grupos_com_ids[] = $ids_do_grupo;
+			}
+		}
+
+		$this->incrementar_contador_diario();
+		$this->registrar_log( 'ok (agrupar fotos), ' . count( $caminhos ) . ' imagem(ns) em ' . count( $grupos_com_ids ) . ' grupo(s)' );
+
+		return new WP_REST_Response(
+			array(
+				'grupos' => $grupos_com_ids,
+				'custo'  => $resultado['custo'],
+			),
+			200
+		);
+	}
+
+	/**
+	 * Status ao vivo dos itens de um lote (ou de tudo que estiver pendente,
+	 * sem parametro) — usado pela tela "Pendencias" pra atualizar sozinha
+	 * sem precisar de recarregar a pagina inteira. Tambem "cutuca" itens
+	 * atrasados, igual a visita normal a tela (ver
+	 * Atelie_Lote_Controller::cutucar_pendentes).
+	 */
+	public function lote_status( WP_REST_Request $request ): WP_REST_Response {
+		$lote_id = $request->get_param( 'lote' );
+		$lote_id = is_string( $lote_id ) ? sanitize_text_field( $lote_id ) : '';
+
+		$meta_query = array(
+			array(
+				'key'     => '_atelie_lote_status',
+				'value'   => 'revisado',
+				'compare' => '!=',
+			),
+		);
+		if ( $lote_id !== '' ) {
+			$meta_query[] = array(
+				'key'     => '_atelie_lote_id',
+				'value'   => $lote_id,
+				'compare' => '=',
+			);
+		}
+
+		$itens = get_posts(
+			array(
+				'post_type'   => 'product',
+				'post_status' => array( 'draft', 'publish' ),
+				'numberposts' => -1,
+				'meta_query'  => $meta_query,
+				'orderby'     => 'ID',
+				'order'       => $lote_id !== '' ? 'ASC' : 'DESC',
+			)
+		);
+
+		( new Atelie_Lote_Controller() )->cutucar_pendentes( wp_list_pluck( $itens, 'ID' ) );
+
+		$resposta = array();
+		foreach ( $itens as $item ) {
+			$resposta[] = array(
+				'id'         => $item->ID,
+				'titulo'     => get_the_title( $item->ID ),
+				'status'     => get_post_meta( $item->ID, '_atelie_lote_status', true ) ?: 'processando',
+				'thumbnail'  => get_the_post_thumbnail_url( $item->ID, 'thumbnail' ),
+				'editar_url' => get_edit_post_link( $item->ID, 'raw' ),
+			);
+		}
+
+		return new WP_REST_Response( array( 'itens' => $resposta ), 200 );
 	}
 
 	public function editar_imagem( WP_REST_Request $request ): WP_REST_Response {

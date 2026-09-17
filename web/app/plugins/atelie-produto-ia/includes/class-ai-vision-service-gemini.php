@@ -77,6 +77,131 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 		);
 	}
 
+	/**
+	 * Recebe um monte de fotos soltas (upload direto na Biblioteca de Mídia,
+	 * sem organização por pasta) e pede pra IA identificar quais são do MESMO
+	 * produto (ângulos diferentes de uma peça só) — usado pela tela "Criar em
+	 * Massa". Devolve os grupos como ÍNDICES (posição 0 a N-1, mesma ordem de
+	 * `$imagens_paths`), não IDs de anexo — quem chama (Atelie_Rest_Controller)
+	 * converte de volta pros IDs reais, já que essa classe não sabe de
+	 * Biblioteca de Mídia.
+	 *
+	 * @param array<int, string> $imagens_paths
+	 *
+	 * @return array{ok: bool, grupos: array<int, array<int, int>>, custo: float, mensagem: string}
+	 */
+	public function agruparFotos( array $imagens_paths ): array {
+		if ( empty( $this->api_key ) ) {
+			return array(
+				'ok'       => false,
+				'grupos'   => array(),
+				'custo'    => 0.0,
+				'mensagem' => 'IA não configurada.',
+			);
+		}
+
+		$parts   = array( array( 'text' => $this->montar_prompt_agrupamento( count( $imagens_paths ) ) ) );
+		$indices = array();
+
+		foreach ( $imagens_paths as $indice => $path ) {
+			if ( ! is_readable( $path ) ) {
+				continue;
+			}
+			$parts[]   = array( 'text' => "Foto {$indice}:" );
+			$parts[]   = array(
+				'inline_data' => array(
+					'mime_type' => $this->mime_type( $path ),
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents, WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- leitura de arquivo local (upload do WP), nao URL remota; base64 aqui e formato exigido pela API, nao ofuscacao.
+					'data'      => base64_encode( (string) file_get_contents( $path ) ),
+				),
+			);
+			$indices[] = $indice;
+		}
+
+		if ( empty( $indices ) ) {
+			return array(
+				'ok'       => false,
+				'grupos'   => array(),
+				'custo'    => 0.0,
+				'mensagem' => 'Nenhuma foto legível pra agrupar.',
+			);
+		}
+
+		try {
+			$body = $this->chamar(
+				array(
+					'contents'         => array( array( 'parts' => $parts ) ),
+					'generationConfig' => array( 'responseMimeType' => 'application/json' ),
+				),
+				'agrupar_fotos',
+				45
+			);
+		} catch ( Throwable $e ) {
+			return array(
+				'ok'       => false,
+				'grupos'   => array(),
+				'custo'    => 0.0,
+				'mensagem' => $e->getMessage(),
+			);
+		}
+
+		$custo = Atelie_Ai_Custo_Tracker::calcular_custo(
+			(int) ( $body['usageMetadata']['promptTokenCount'] ?? 0 ),
+			(int) ( $body['usageMetadata']['candidatesTokenCount'] ?? 0 )
+		);
+
+		$texto_json = $body['candidates'][0]['content']['parts'][0]['text'] ?? null;
+		$resultado  = is_string( $texto_json ) ? json_decode( $texto_json, true ) : null;
+
+		if ( ! is_array( $resultado ) || ! isset( $resultado['grupos'] ) || ! is_array( $resultado['grupos'] ) ) {
+			return array(
+				'ok'       => false,
+				'grupos'   => array(),
+				'custo'    => $custo,
+				'mensagem' => 'Resposta da IA não veio no formato esperado.',
+			);
+		}
+
+		// Valida os indices contra o que foi realmente enviado (a IA pode alucinar
+		// um numero fora do intervalo ou repetir foto em dois grupos) — indice
+		// repetido fica so no PRIMEIRO grupo em que aparece, indice invalido e
+		// descartado. Qualquer foto que sobrar sem grupo (IA esqueceu dela) vira
+		// grupo proprio no final, pra nenhuma foto selecionada sumir.
+		$validos      = array_flip( $indices );
+		$ja_agrupados = array();
+		$grupos       = array();
+
+		foreach ( $resultado['grupos'] as $grupo ) {
+			if ( ! is_array( $grupo ) ) {
+				continue;
+			}
+			$grupo_valido = array();
+			foreach ( $grupo as $indice ) {
+				$indice = (int) $indice;
+				if ( isset( $validos[ $indice ] ) && ! isset( $ja_agrupados[ $indice ] ) ) {
+					$grupo_valido[]           = $indice;
+					$ja_agrupados[ $indice ] = true;
+				}
+			}
+			if ( ! empty( $grupo_valido ) ) {
+				$grupos[] = $grupo_valido;
+			}
+		}
+
+		foreach ( $indices as $indice ) {
+			if ( ! isset( $ja_agrupados[ $indice ] ) ) {
+				$grupos[] = array( $indice );
+			}
+		}
+
+		return array(
+			'ok'       => true,
+			'grupos'   => $grupos,
+			'custo'    => $custo,
+			'mensagem' => 'Agrupado com sucesso.',
+		);
+	}
+
 	public function avaliarTexto( string $titulo, string $descricao, string $tipo_objeto ): array {
 		if ( empty( $this->api_key ) ) {
 			return array(
@@ -397,6 +522,19 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 		}
 
 		return $prompt;
+	}
+
+	private function montar_prompt_agrupamento( int $total_fotos ): string {
+		return 'Você recebeu ' . $total_fotos . ' fotos de peças artesanais de tricô, crochê ou amigurumi, '
+			. 'identificadas por "Foto 0" até "Foto ' . ( $total_fotos - 1 ) . '", na mesma ordem em que aparecem '
+			. 'a seguir. Algumas fotos são ângulos ou enquadramentos diferentes de UMA MESMA peça física; outras '
+			. 'são de peças completamente diferentes. Sua tarefa: agrupar as fotos que mostram a mesma peça. '
+			. 'Cada foto deve aparecer em exatamente um grupo — se uma foto for de uma peça sozinha, sem outra '
+			. 'foto dela, ela forma um grupo com só ela mesma. Na dúvida entre juntar ou separar duas fotos, '
+			. 'prefira separar (menos arriscado errar juntando peças diferentes do que separar fotos da mesma '
+			. 'peça — quem revisa corrige facilmente juntando depois). '
+			. 'Responda SOMENTE um objeto JSON no formato: {"grupos": [[0,1,2],[3],[4,5]]}, onde cada número é o '
+			. 'índice da foto (0 a ' . ( $total_fotos - 1 ) . ').';
 	}
 
 	private function montar_prompt_case( ?string $relato ): string {

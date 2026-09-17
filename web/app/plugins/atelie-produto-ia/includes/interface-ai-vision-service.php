@@ -23,6 +23,20 @@ interface Atelie_Ai_Vision_Service_Interface {
 	public function analisar( array $imagens_paths, ?string $receita_texto = null ): array;
 
 	/**
+	 * Recebe fotos soltas (sem organizacao por pasta, upload direto na
+	 * Biblioteca de Midia) e identifica quais mostram a MESMA peca fisica —
+	 * usado pela tela "Criar em Massa". Devolve os grupos como INDICES
+	 * (posicao 0 a N-1 dentro de $imagens_paths, mesma ordem), nao IDs de
+	 * anexo — essa camada nao sabe de Biblioteca de Midia, quem chama
+	 * traduz de volta.
+	 *
+	 * @param array<int, string> $imagens_paths
+	 *
+	 * @return array{ok: bool, grupos: array<int, array<int, int>>, custo: float, mensagem: string}
+	 */
+	public function agruparFotos( array $imagens_paths ): array;
+
+	/**
 	 * Chamada minima (sem imagem, sem custo relevante) so pra confirmar que a
 	 * chave/assinatura configurada esta realmente funcionando agora — usado
 	 * pela tela de configuracao e pela verificacao automatica diaria.

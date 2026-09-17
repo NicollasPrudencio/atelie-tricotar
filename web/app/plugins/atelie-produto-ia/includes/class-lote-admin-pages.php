@@ -23,13 +23,111 @@ class Atelie_Lote_Admin_Pages {
 		add_action( 'admin_post_atelie_marcar_revisado', array( $this, 'marcar_revisado' ) );
 		add_action( 'admin_post_atelie_reprocessar_item', array( $this, 'reprocessar_item' ) );
 		add_action( 'add_meta_boxes', array( $this, 'meta_box_revisado' ) );
+		add_action( 'admin_bar_menu', array( $this, 'adicionar_admin_bar' ), 100 );
+	}
+
+	/**
+	 * Indicador minimalista na barra preta do topo (visivel em QUALQUER tela
+	 * do wp-admin, nao so na tela Pendencias) — pedido explicito do usuario,
+	 * estilo indicador de atividade em nuvem (GCP e afins): fica ali rodando
+	 * enquanto a pessoa navega noutra coisa, e ao clicar abre um resumo
+	 * rapido sem precisar sair da tela em que estava.
+	 */
+	public function adicionar_admin_bar( WP_Admin_Bar $admin_bar ): void {
+		if ( ! current_user_can( 'edit_products' ) || ! is_admin() ) {
+			return;
+		}
+
+		$itens = $this->listar_pendentes( 6 );
+		$total = $this->contar_pendentes();
+
+		if ( $total === 0 ) {
+			return;
+		}
+
+		$rotulos = array(
+			'processando' => '⏳ Processando',
+			'pronto'      => '✨ Pronto pra revisão',
+			'erro'        => '⚠️ Erro',
+		);
+
+		$admin_bar->add_node(
+			array(
+				'id'    => 'atelie-pendencias',
+				'title' => '⏳ ' . (int) $total . ' pendente' . ( $total > 1 ? 's' : '' ),
+				'href'  => admin_url( 'edit.php?post_type=product&page=atelie-revisar-lote' ),
+			)
+		);
+
+		foreach ( $itens as $item ) {
+			$status = get_post_meta( $item->ID, '_atelie_lote_status', true ) ?: 'processando';
+			$admin_bar->add_node(
+				array(
+					'id'     => 'atelie-pendencia-' . $item->ID,
+					'parent' => 'atelie-pendencias',
+					'title'  => esc_html( get_the_title( $item->ID ) ) . ' — ' . ( $rotulos[ $status ] ?? $status ),
+					'href'   => $status === 'pronto' ? get_edit_post_link( $item->ID, 'raw' ) : admin_url( 'edit.php?post_type=product&page=atelie-revisar-lote' ),
+				)
+			);
+		}
+
+		if ( $total > count( $itens ) ) {
+			$admin_bar->add_node(
+				array(
+					'id'     => 'atelie-pendencia-ver-todas',
+					'parent' => 'atelie-pendencias',
+					'title'  => 'Ver todas as ' . (int) $total . ' pendências →',
+					'href'   => admin_url( 'edit.php?post_type=product&page=atelie-revisar-lote' ),
+				)
+			);
+		}
+	}
+
+	/**
+	 * Produtos de lote ainda nao revisados — fonte unica usada tanto pro
+	 * numero ao lado do item de menu quanto pro resumo no admin bar, pra dar
+	 * pra "ver" que tem pendencia de qualquer tela do painel, sem precisar
+	 * estar parado na tela Pendencias esperando (pedido explicito do
+	 * usuario). $limite = -1 traz todos (so pra contar); um numero positivo
+	 * traz so os N mais recentes (pro resumo do admin bar, que nao precisa
+	 * de todos).
+	 *
+	 * @return array<int, WP_Post>
+	 */
+	private function listar_pendentes( int $limite = -1 ): array {
+		return get_posts(
+			array(
+				'post_type'   => 'product',
+				'post_status' => array( 'draft', 'publish' ),
+				'numberposts' => $limite,
+				'orderby'     => 'ID',
+				'order'       => 'DESC',
+				'meta_query'  => array(
+					array(
+						'key'     => '_atelie_lote_status',
+						'value'   => 'revisado',
+						'compare' => '!=',
+					),
+				),
+			)
+		);
+	}
+
+	private function contar_pendentes(): int {
+		return count( $this->listar_pendentes( -1 ) );
 	}
 
 	public function adicionar_menus(): void {
+		$pendentes = $this->contar_pendentes();
+		$rotulo    = 'Pendências';
+		if ( $pendentes > 0 ) {
+			$rotulo .= ' <span class="awaiting-mod count-' . (int) $pendentes . '"><span class="pending-count">' . (int) $pendentes . '</span></span>';
+		}
+
 		add_submenu_page(
 			'edit.php?post_type=product',
 			'Pendências',
-			'Pendências',
+			$rotulo,
 			'edit_products',
 			'atelie-revisar-lote',
 			array( $this, 'renderizar_revisao' )
@@ -44,7 +142,25 @@ class Atelie_Lote_Admin_Pages {
 			'atelie-produto-ia-admin',
 			plugins_url( 'assets/admin.css', dirname( __DIR__ ) . '/atelie-produto-ia.php' ),
 			array(),
-			'0.2.0'
+			'0.4.0'
+		);
+
+		wp_enqueue_script(
+			'atelie-produto-ia-pendencias',
+			plugins_url( 'assets/pendencias.js', dirname( __DIR__ ) . '/atelie-produto-ia.php' ),
+			array(),
+			'0.1.0',
+			true
+		);
+
+		wp_localize_script(
+			'atelie-produto-ia-pendencias',
+			'atelieLoteStatus',
+			array(
+				'statusUrl' => esc_url_raw( rest_url( 'atelie/v1/lote-status' ) ),
+				'nonce'     => wp_create_nonce( 'wp_rest' ),
+				'lote'      => isset( $_GET['lote'] ) ? sanitize_text_field( wp_unslash( $_GET['lote'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- so leitura pra montar a URL de status, mesmo padrao ja usado em renderizar_revisao().
+			)
 		);
 	}
 
@@ -119,24 +235,30 @@ class Atelie_Lote_Admin_Pages {
 			);
 			?>
 				</h1>
-			<p><button type="button" class="button" onclick="location.reload();">Atualizar status</button></p>
+			<p><button type="button" class="button" onclick="location.reload();">Atualizar status</button> <span id="atelie-lote-polling-aviso" class="description"></span></p>
 
 			<?php if ( empty( $itens ) ) : ?>
 				<p>Nada pendente no momento — tudo revisado. 🎉</p>
+			<?php else : ?>
+				<div class="atelie-lote-progresso" id="atelie-lote-progresso">
+					<div class="atelie-lote-progresso-barra"><div class="atelie-lote-progresso-barra-preenchida" id="atelie-lote-progresso-barra" style="width:0%;"></div></div>
+					<p class="atelie-lote-progresso-texto" id="atelie-lote-progresso-texto">Verificando…</p>
+				</div>
 			<?php endif; ?>
 
-			<div class="atelie-lote-grid">
+			<div class="atelie-lote-grid" id="atelie-lote-grid" data-lote="<?php echo esc_attr( $lote_id ); ?>">
 				<?php
 				foreach ( $itens as $item ) :
 					// Recarrega o status: cutucar_pendentes() pode ter mudado ele agora mesmo.
 					$status = get_post_meta( $item->ID, '_atelie_lote_status', true ) ?: 'processando';
 					$rotulo = $rotulos[ $status ] ?? $status;
 					?>
-					<div class="atelie-lote-card">
-						<?php echo get_the_post_thumbnail( $item->ID, 'thumbnail' ); ?>
-						<strong><?php echo esc_html( get_the_title( $item->ID ) ); ?></strong>
+					<div class="atelie-lote-card" id="atelie-lote-item-<?php echo esc_attr( $item->ID ); ?>" data-item-id="<?php echo esc_attr( $item->ID ); ?>" data-status="<?php echo esc_attr( $status ); ?>">
+						<div class="atelie-lote-card-thumb"><?php echo get_the_post_thumbnail( $item->ID, 'thumbnail' ); ?></div>
+						<strong class="atelie-lote-card-titulo"><?php echo esc_html( get_the_title( $item->ID ) ); ?></strong>
 						<span class="atelie-chip atelie-chip-<?php echo esc_attr( $status ); ?>"><?php echo esc_html( $rotulo ); ?></span>
 
+						<div class="atelie-lote-card-acao">
 						<?php if ( $status === 'pronto' || $status === 'revisado' ) : ?>
 							<p><a class="button" href="<?php echo esc_url( get_edit_post_link( $item->ID ) ); ?>">Revisar</a></p>
 						<?php elseif ( $status === 'erro' ) : ?>
@@ -149,8 +271,9 @@ class Atelie_Lote_Admin_Pages {
 								</form>
 							</p>
 						<?php else : ?>
-							<p><em>Aguardando…</em></p>
+							<p><em class="atelie-lote-subtarefa">Aguardando…</em></p>
 						<?php endif; ?>
+						</div>
 					</div>
 				<?php endforeach; ?>
 			</div>
