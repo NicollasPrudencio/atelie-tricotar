@@ -13,12 +13,16 @@ um acervo antigo de fotos que ainda não está no site.
 O botão pra importar fica na própria tela **"Produtos" → "Novo Produto"**, ao lado do botão
 "Escolher fotos": **"Escolher do Google Drive"**.
 
+> Suas peças já estão soltas, sem organizar em pasta? Veja
+> [Criar em Massa](/novo-produto/criar-em-massa/) — outro jeito de cadastrar vários produtos de
+> uma vez, direto da Biblioteca de Mídia, sem precisar do Google Drive.
+
 ## Primeira vez, conectando o Google Drive
 
-Essa etapa só precisa ser feita **uma vez**, e só quem administra o site consegue fazer — em
-"Novo Produto", em vez do botão de escolher, aparece um botão **"Conectar Google Drive"** (se
-você é Vendedora e não vê essa opção, avise o administrador). Depois de conectado uma vez, fica
-valendo pra sempre, sem precisar repetir.
+Essa etapa só precisa ser feita **uma vez** — em "Novo Produto", em vez do botão de escolher,
+aparece um botão **"Conectar Google Drive"**. Qualquer Artesã pode conectar (não precisa ser
+administrador). Depois de conectado uma vez, fica valendo pra sempre, sem precisar repetir — a
+menos que alguém desconecte sem querer, aí é só clicar em "Conectar Google Drive" de novo.
 
 ## Como importar, depois de conectado
 

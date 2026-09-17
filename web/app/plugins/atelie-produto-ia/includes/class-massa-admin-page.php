@@ -94,7 +94,7 @@ class Atelie_Massa_Admin_Page {
 					'Depois de confirmar, os produtos entram na tela "Pendências" igual a uma importação do Drive — a IA preenche título, descrição e categoria de cada um em segundo plano.',
 					'Limite de ' . self::LIMITE_FOTOS . ' fotos por vez (mandar fotos demais de uma vez fica caro e lento) — pra mais fotos, rode de novo pro próximo grupo.',
 				),
-				'/novo-produto/'
+				'/novo-produto/criar-em-massa/'
 			);
 			?>
 			</h1>

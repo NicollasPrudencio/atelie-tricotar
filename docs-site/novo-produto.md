@@ -9,7 +9,9 @@ has_children: true
 
 Menu **"Produtos" → "Novo Produto"**. Essa tela sempre cria **um produto só** por vez — para
 cadastrar vários produtos diferentes de uma vez, veja
-[Importar vários produtos do Google Drive](/novo-produto/importar-drive/).
+[Importar vários produtos do Google Drive](/novo-produto/importar-drive/) (fotos organizadas em
+pasta) ou [Criar em Massa](/novo-produto/criar-em-massa/) (fotos soltas, direto da Biblioteca de
+Mídia).
 
 ## Passo 1 — Anexar as fotos
 
@@ -34,9 +36,9 @@ Embaixo de cada miniatura aparecem dois botões extras, opcionais:
 Nos dois casos, a foto original nunca é sobrescrita — é sempre gerada uma foto nova, e você
 decide se troca ou ignora o resultado.
 
-> Esses dois botões dependem de um recurso da IA (edição de imagem) que ainda não foi confirmado
-> funcionando de verdade — exige faturamento ativo na conta Google usada pela chave da IA. Se
-> aparecer erro ao clicar, é provavelmente essa pendência.
+> Esses dois botões dependem de um recurso da IA (edição de imagem) que exige faturamento ativo
+> na conta Google usada pela chave da IA — se aparecer erro ao clicar, é provavelmente isso
+> (avise o administrador do site).
 
 Se você tiver a **receita ou o padrão** usado para fazer a peça (o passo a passo da técnica),
 cole o texto no campo logo abaixo das fotos, ou anexe uma foto da receita. Não é obrigatório,
