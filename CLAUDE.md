@@ -90,10 +90,14 @@ Bem além da Fase 0. Já construído e funcionando:
   faturamento ativo numa conta Google).
 - Plugin `atelie-faturamento`: receita vs. custos (IA, taxa Mercado Pago, frete, despesas
   manuais) e lucro líquido, por período.
-- Importação do Google Drive implementada (autorização OAuth fixa na conta do desenvolvedor,
-  não da artesã — decisão explícita; ela só compartilha a pasta), com modal próprio de seleção
-  (pastas e/ou fotos soltas, não o Picker oficial do Google — não dava pra customizar o
-  suficiente pra usuário leigo). Testado ponta a ponta no ambiente dev.
+- Importação do Google Drive implementada, com modal próprio de seleção (pastas e/ou fotos
+  soltas, não o Picker oficial do Google — não dava pra customizar o suficiente pra usuário
+  leigo). Testado ponta a ponta no ambiente dev. Decisão original era autorização OAuth fixa na
+  conta do desenvolvedor (artesã só compartilha a pasta) — revista em 2026-09-17: conectar/
+  desconectar viraram `edit_products` (qualquer artesã), não mais `manage_options` (só admin),
+  porque travar a importação em lote esperando o admin ficar disponível tornava a feature
+  pouco útil no dia a dia. Só existe uma conexão por vez (não é por usuário) — quem reconectar
+  deve avisar as outras artesãs qual e-mail usar pra compartilhar pasta.
 - Tela "Pendências" (cross-lote, força reprocessamento de itens atrasados só de ser visitada —
   "cutucar_pendentes()") + cron real do cPanel no ambiente dev (`DISABLE_WP_CRON=true` no `.env`
   do servidor, WP-Cron pseudo-cron não é confiável nesse host).

@@ -180,7 +180,7 @@ class Atelie_Admin_Page {
 								</form>)
 							<?php endif; ?>
 						</span>
-					<?php elseif ( current_user_can( 'manage_options' ) ) : ?>
+					<?php elseif ( current_user_can( 'edit_products' ) ) : ?>
 						<span class="atelie-lote-drive-import">
 							ou, pra criar vários produtos de uma vez organizados em pastas,
 							<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
@@ -188,10 +188,6 @@ class Atelie_Admin_Page {
 								<?php wp_nonce_field( 'atelie_drive_conectar', 'atelie_drive_conectar_nonce' ); ?>
 								<button type="submit" class="button">Conectar Google Drive</button>
 							</form>
-						</span>
-					<?php else : ?>
-						<span class="atelie-lote-drive-import">
-							(a importação de várias fotos de uma vez por pasta está desconectada do Google Drive no momento — avise o administrador do site pra reconectar)
 						</span>
 					<?php endif; ?>
 				</p>

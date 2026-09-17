@@ -1,17 +1,22 @@
 <?php
 /**
- * Conexao com o Google Drive (autorizacao OAuth em si e so administrador —
- * conectar/reconectar exige manage_options) e importacao de fotos de uma
- * pasta compartilhada. Desconectar e edit_products (2026-09-17, pedido
- * explicito do usuario) — quem usa o painel no dia a dia tambem pode
- * desconectar se precisar, sem depender do administrador pra isso; só
- * reconectar (fluxo OAuth) continua admin-only. Sem tela propria — a IU fica
- * embutida em "Novo Produto" (class-admin-page.php), do lado do upload
- * direto, como o unico jeito de criar VARIOS produtos de uma vez (organizado
- * em pastas — decisao explicita do usuario: sem upload solto de fotos sem
- * organizacao nenhuma, isso vira caos). Convencao: cada subpasta dentro da
- * pasta compartilhada vira um produto candidato, entregue pro pipeline de
- * lote (Atelie_Lote_Controller::criar_lote_de_grupos).
+ * Conexao com o Google Drive e importacao de fotos de uma pasta
+ * compartilhada. Conectar/reconectar (fluxo OAuth) e desconectar sao
+ * edit_products (2026-09-17, pedido explicito do usuario — pela utilidade da
+ * feature, quem usa o painel no dia a dia precisa poder fazer isso sozinha,
+ * nao so o administrador). A ideia original era autorizacao fixa na conta do
+ * desenvolvedor (ela so compartilharia a pasta), mas na pratica trava a
+ * artesa toda vez que a conexao cai e o admin nao esta disponivel na hora —
+ * revisto pra deixar qualquer uma reconectar. Cada reconexao substitui a
+ * conta conectada globalmente (uma so por vez, nao por usuario) — quem
+ * reconectar deve usar uma conta cujo e-mail as outras artesas conhecam pra
+ * compartilhar pasta. Sem tela propria — a IU fica embutida em "Novo
+ * Produto" (class-admin-page.php), do lado do upload direto, como o unico
+ * jeito de criar VARIOS produtos de uma vez (organizado em pastas — decisao
+ * explicita do usuario: sem upload solto de fotos sem organizacao nenhuma,
+ * isso vira caos). Convencao: cada subpasta dentro da pasta compartilhada
+ * vira um produto candidato, entregue pro pipeline de lote
+ * (Atelie_Lote_Controller::criar_lote_de_grupos).
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -47,7 +52,7 @@ class Atelie_Drive_Admin_Page {
 
 	public function iniciar_conexao(): void {
 		if (
-			! current_user_can( 'manage_options' )
+			! current_user_can( 'edit_products' )
 			|| ! isset( $_POST['atelie_drive_conectar_nonce'] )
 			|| ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['atelie_drive_conectar_nonce'] ) ), 'atelie_drive_conectar' )
 		) {
@@ -66,7 +71,7 @@ class Atelie_Drive_Admin_Page {
 	}
 
 	public function oauth_callback(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! current_user_can( 'edit_products' ) ) {
 			wp_die( 'Ação não permitida.' );
 		}
 
