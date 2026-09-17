@@ -175,6 +175,7 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 				'ok'            => false,
 				'imagem_base64' => null,
 				'mime_type'     => null,
+				'custo'         => 0.0,
 				'mensagem'      => 'IA não configurada.',
 			);
 		}
@@ -184,6 +185,7 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 				'ok'            => false,
 				'imagem_base64' => null,
 				'mime_type'     => null,
+				'custo'         => 0.0,
 				'mensagem'      => 'Foto não encontrada no servidor.',
 			);
 		}
@@ -232,6 +234,7 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 				'ok'            => false,
 				'imagem_base64' => null,
 				'mime_type'     => null,
+				'custo'         => 0.0,
 				'mensagem'      => 'Falha de conexão: ' . $response->get_error_message(),
 			);
 		}
@@ -246,6 +249,7 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 				'ok'            => false,
 				'imagem_base64' => null,
 				'mime_type'     => null,
+				'custo'         => 0.0,
 				'mensagem'      => $mensagem,
 			);
 		}
@@ -269,16 +273,18 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 				'ok'            => false,
 				'imagem_base64' => null,
 				'mime_type'     => null,
+				'custo'         => 0.0,
 				'mensagem'      => 'Resposta da IA não trouxe imagem no formato esperado — revisar o parsing contra a documentação atual da Interactions API.',
 			);
 		}
 
-		Atelie_Ai_Custo_Tracker::registrar_fixo( 'editar_imagem', Atelie_Ai_Custo_Tracker::custo_por_imagem() );
+		$custo = Atelie_Ai_Custo_Tracker::registrar_fixo( 'editar_imagem', Atelie_Ai_Custo_Tracker::custo_por_imagem() );
 
 		return array(
 			'ok'            => true,
 			'imagem_base64' => $dados_base64,
 			'mime_type'     => (string) $mime_saida,
+			'custo'         => $custo,
 			'mensagem'      => 'Imagem editada com sucesso.',
 		);
 	}
@@ -638,6 +644,7 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 			'imagem_base64' => null,
 			'mime_type'     => null,
 			'diagnostico'   => '',
+			'custo'         => 0.0,
 			'mensagem'      => '',
 		);
 
@@ -652,7 +659,15 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 		$diagnostico = $this->diagnosticar_foto( $imagem_path );
 
 		if ( ! $diagnostico['ok'] ) {
-			return array_merge( $vazio, array( 'mensagem' => $diagnostico['mensagem'] ) );
+			// Mesmo diagnostico tendo falhado, pode ter custo (chamar() so registra
+			// o custo DEPOIS de uma resposta HTTP 200 — ver diagnosticar_foto()).
+			return array_merge(
+				$vazio,
+				array(
+					'custo'    => $diagnostico['custo'],
+					'mensagem' => $diagnostico['mensagem'],
+				)
+			);
 		}
 
 		if ( $diagnostico['prompt_edicao'] === '' ) {
@@ -661,6 +676,8 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 				'imagem_base64' => null,
 				'mime_type'     => null,
 				'diagnostico'   => $diagnostico['diagnostico'],
+				// So o custo do diagnostico — nao editou, entao editarImagem() nunca rodou.
+				'custo'         => $diagnostico['custo'],
 				'mensagem'      => '',
 			);
 		}
@@ -672,12 +689,14 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 			'imagem_base64' => $edicao['imagem_base64'],
 			'mime_type'     => $edicao['mime_type'],
 			'diagnostico'   => $diagnostico['diagnostico'],
+			// Soma diagnostico + edicao — as duas chamadas realmente aconteceram.
+			'custo'         => $diagnostico['custo'] + $edicao['custo'],
 			'mensagem'      => $edicao['mensagem'],
 		);
 	}
 
 	/**
-	 * @return array{ok: bool, diagnostico: string, prompt_edicao: string, mensagem: string}
+	 * @return array{ok: bool, diagnostico: string, prompt_edicao: string, custo: float, mensagem: string}
 	 */
 	private function diagnosticar_foto( string $imagem_path ): array {
 		$prompt = 'Você é fotógrafo de produto especialista em maximizar conversão em venda de e-commerce artesanal '
@@ -715,9 +734,17 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 				'ok'            => false,
 				'diagnostico'   => '',
 				'prompt_edicao' => '',
+				'custo'         => 0.0,
 				'mensagem'      => 'Não deu pra avaliar a foto agora: ' . $e->getMessage(),
 			);
 		}
+
+		// O custo ja foi registrado dentro de chamar() — recalculado aqui so pra devolver
+		// pra quem chamou mostrar (chamar() so devolve o corpo da resposta, nao o custo).
+		$custo = Atelie_Ai_Custo_Tracker::calcular_custo(
+			(int) ( $body['usageMetadata']['promptTokenCount'] ?? 0 ),
+			(int) ( $body['usageMetadata']['candidatesTokenCount'] ?? 0 )
+		);
 
 		$texto_json = $body['candidates'][0]['content']['parts'][0]['text'] ?? null;
 		$dados      = is_string( $texto_json ) ? json_decode( $texto_json, true ) : null;
@@ -727,6 +754,7 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 				'ok'            => false,
 				'diagnostico'   => '',
 				'prompt_edicao' => '',
+				'custo'         => $custo,
 				'mensagem'      => 'Resposta da IA não veio no formato esperado.',
 			);
 		}
@@ -735,6 +763,7 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 			'ok'            => true,
 			'diagnostico'   => (string) ( $dados['diagnostico'] ?? '' ),
 			'prompt_edicao' => (string) ( $dados['prompt_edicao'] ?? '' ),
+			'custo'         => $custo,
 			'mensagem'      => '',
 		);
 	}

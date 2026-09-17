@@ -41,14 +41,14 @@ class Atelie_Admin_Page {
 			'atelie-produto-ia-admin',
 			plugins_url( 'assets/admin.css', dirname( __DIR__ ) . '/atelie-produto-ia.php' ),
 			array(),
-			'0.2.0'
+			'0.3.0'
 		);
 
 		wp_enqueue_script(
 			'atelie-produto-ia-editar-imagem',
 			plugins_url( 'assets/editar-imagem.js', dirname( __DIR__ ) . '/atelie-produto-ia.php' ),
 			array(),
-			'0.1.0',
+			'0.2.0',
 			true
 		);
 

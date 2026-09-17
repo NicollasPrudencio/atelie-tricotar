@@ -48,6 +48,7 @@ class Atelie_Ai_Vision_Service_Mock implements Atelie_Ai_Vision_Service_Interfac
 				'ok'            => false,
 				'imagem_base64' => null,
 				'mime_type'     => null,
+				'custo'         => 0.0,
 				'mensagem'      => 'Foto não encontrada.',
 			);
 		}
@@ -59,6 +60,7 @@ class Atelie_Ai_Vision_Service_Mock implements Atelie_Ai_Vision_Service_Interfac
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- leitura de arquivo local (upload do WP), nao URL remota.
 			'imagem_base64' => base64_encode( (string) file_get_contents( $imagem_path ) ),
 			'mime_type'     => 'image/jpeg',
+			'custo'         => 0.0,
 			'mensagem'      => '[MOCK] Imagem "editada" (modo simulado, imagem não foi alterada de verdade).',
 		);
 	}
@@ -164,6 +166,7 @@ class Atelie_Ai_Vision_Service_Mock implements Atelie_Ai_Vision_Service_Interfac
 				'imagem_base64' => null,
 				'mime_type'     => null,
 				'diagnostico'   => '',
+				'custo'         => 0.0,
 				'mensagem'      => 'Foto não encontrada.',
 			);
 		}
@@ -176,6 +179,7 @@ class Atelie_Ai_Vision_Service_Mock implements Atelie_Ai_Vision_Service_Interfac
 			'imagem_base64' => base64_encode( (string) file_get_contents( $imagem_path ) ),
 			'mime_type'     => 'image/jpeg',
 			'diagnostico'   => '[MOCK] Fundo um pouco escuro e enquadramento apertado — deixei o fundo mais claro (imagem não foi alterada de verdade, modo simulado).',
+			'custo'         => 0.0,
 			'mensagem'      => '',
 		);
 	}

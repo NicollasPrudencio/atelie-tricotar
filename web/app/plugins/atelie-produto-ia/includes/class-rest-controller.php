@@ -342,6 +342,7 @@ class Atelie_Rest_Controller {
 			array(
 				'imagem_id' => $novo_id,
 				'url'       => wp_get_attachment_image_url( $novo_id, 'thumbnail' ),
+				'custo'     => $resultado['custo'],
 			),
 			200
 		);
@@ -412,7 +413,15 @@ class Atelie_Rest_Controller {
 
 		if ( ! $resultado['ok'] ) {
 			$this->registrar_log( 'erro (sugerir edição imagem): ' . $resultado['mensagem'] );
-			return new WP_REST_Response( array( 'erro' => $resultado['mensagem'] ), 502 );
+			// custo pode ser > 0 mesmo em erro (ex.: diagnostico rodou e cobrou, so a
+			// edicao seguinte falhou) — devolvido pra artesa nao ficar sem saber.
+			return new WP_REST_Response(
+				array(
+					'erro'  => $resultado['mensagem'],
+					'custo' => $resultado['custo'],
+				),
+				502
+			);
 		}
 
 		if ( $resultado['imagem_base64'] === null ) {
@@ -421,6 +430,7 @@ class Atelie_Rest_Controller {
 				array(
 					'editado'     => false,
 					'diagnostico' => $resultado['diagnostico'],
+					'custo'       => $resultado['custo'],
 				),
 				200
 			);
@@ -440,6 +450,7 @@ class Atelie_Rest_Controller {
 				'imagem_id'   => $novo_id,
 				'url'         => wp_get_attachment_image_url( $novo_id, 'thumbnail' ),
 				'diagnostico' => $resultado['diagnostico'],
+				'custo'       => $resultado['custo'],
 			),
 			200
 		);

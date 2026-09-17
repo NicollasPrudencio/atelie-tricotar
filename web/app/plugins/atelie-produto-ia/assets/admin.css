@@ -80,6 +80,18 @@
     text-decoration: none;
 }
 
+/* Sobrescreve o .atelie-custo-estimado padrao (pensado pro botao "Sugerir", numa linha
+   larga) — aqui e uma coluna estreita ao lado de cada miniatura, entao vira texto
+   pequeno abaixo do botao em vez de inline com margem lateral grande. */
+.atelie-novo-produto .atelie-foto-item .atelie-custo-estimado {
+    display: block;
+    margin-left: 0;
+    font-size: 0.62rem;
+    max-width: 64px;
+    text-align: center;
+    line-height: 1.2;
+}
+
 .atelie-novo-produto .atelie-receita-linha {
     margin-top: 1rem;
     margin-bottom: 0.25rem;

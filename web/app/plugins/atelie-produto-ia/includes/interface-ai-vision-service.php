@@ -59,7 +59,7 @@ interface Atelie_Ai_Vision_Service_Interface {
 	 * fundo branco"). Sempre gera uma imagem NOVA — nunca sobrescreve o
 	 * arquivo original, quem usa o painel decide se troca ou descarta.
 	 *
-	 * @return array{ok: bool, imagem_base64: ?string, mime_type: ?string, mensagem: string}
+	 * @return array{ok: bool, imagem_base64: ?string, mime_type: ?string, custo: float, mensagem: string}
 	 */
 	public function editarImagem( string $imagem_path, string $prompt ): array;
 
@@ -122,7 +122,7 @@ interface Atelie_Ai_Vision_Service_Interface {
 	 * cota/faturamento que `editarImagem()` já tem). Se a foto já estiver boa,
 	 * não força edição nenhuma — devolve só o diagnóstico.
 	 *
-	 * @return array{ok: bool, imagem_base64: ?string, mime_type: ?string, diagnostico: string, mensagem: string}
+	 * @return array{ok: bool, imagem_base64: ?string, mime_type: ?string, diagnostico: string, custo: float, mensagem: string}
 	 */
 	public function sugerirEdicaoImagem( string $imagem_path ): array;
 
