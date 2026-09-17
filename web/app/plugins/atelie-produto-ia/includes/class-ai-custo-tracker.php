@@ -13,11 +13,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Atelie_Ai_Custo_Tracker {
 
-	private const VERSAO_SCHEMA       = '1';
-	private const OPCAO_VERSAO_SCHEMA = 'atelie_ai_gastos_schema_versao';
-	private const OPCAO_TABELA_PRECOS = 'atelie_ai_tabela_precos';
-	private const OPCAO_LIMITE_AVISO  = 'atelie_ai_limite_aviso_mensal';
-	private const OPCAO_CUSTO_IMAGEM  = 'atelie_ai_custo_por_imagem';
+	private const VERSAO_SCHEMA              = '1';
+	private const OPCAO_VERSAO_SCHEMA        = 'atelie_ai_gastos_schema_versao';
+	private const OPCAO_TABELA_PRECOS        = 'atelie_ai_tabela_precos';
+	private const OPCAO_TABELA_PRECOS_IMAGEM = 'atelie_ai_tabela_precos_imagem';
+	private const OPCAO_LIMITE_AVISO         = 'atelie_ai_limite_aviso_mensal';
 
 	/**
 	 * Estimativas de token usadas quando ainda nao ha historico real pra
@@ -64,6 +64,14 @@ class Atelie_Ai_Custo_Tracker {
 		'rascunhar_orcamento' => array(
 			'entrada' => 250,
 			'saida'   => 200,
+		),
+		// So usado ANTES da primeira chamada real de editar_imagem existir no
+		// historico — depois disso a media real assume (ver estimar()). Valores
+		// batem com uma chamada real de teste em 2026-09-17 (usage.total_input_tokens
+		// / usage.total_output_tokens da Interactions API).
+		'editar_imagem'       => array(
+			'entrada' => 264,
+			'saida'   => 1290,
 		),
 	);
 
@@ -137,8 +145,53 @@ class Atelie_Ai_Custo_Tracker {
 		);
 	}
 
+	/**
+	 * Preço dos tokens da "Interactions API" (edição/geração de imagem) —
+	 * SEPARADO da tabela de texto acima, porque token de imagem de saída e
+	 * cobrado numa faixa bem mais cara que token de texto. Valores de partida
+	 * (R$) convertidos do preço de lançamento publicado do Gemini 2.5 Flash
+	 * Image (~US$0,30/1M entrada, ~US$30/1M saida, dolar ~5,50) — CONFERIR
+	 * contra o preco atual em ai.google.dev/gemini-api/docs/pricing e contra
+	 * a fatura real do Google Cloud, e ajustar aqui na tela "Configurar IA"
+	 * assim que o numero real for confirmado.
+	 *
+	 * @return array{entrada_por_1m: float, saida_por_1m: float}
+	 */
+	public static function tabela_precos_imagem(): array {
+		$salvo = get_option( self::OPCAO_TABELA_PRECOS_IMAGEM, null );
+		if ( is_array( $salvo ) && isset( $salvo['entrada_por_1m'], $salvo['saida_por_1m'] ) ) {
+			return array(
+				'entrada_por_1m' => (float) $salvo['entrada_por_1m'],
+				'saida_por_1m'   => (float) $salvo['saida_por_1m'],
+			);
+		}
+
+		return array(
+			'entrada_por_1m' => 1.65,
+			'saida_por_1m'   => 165.00,
+		);
+	}
+
+	public static function salvar_tabela_precos_imagem( float $entrada_por_1m, float $saida_por_1m ): void {
+		update_option(
+			self::OPCAO_TABELA_PRECOS_IMAGEM,
+			array(
+				'entrada_por_1m' => $entrada_por_1m,
+				'saida_por_1m'   => $saida_por_1m,
+			),
+			false
+		);
+	}
+
 	public static function calcular_custo( int $tokens_entrada, int $tokens_saida ): float {
 		$precos = self::tabela_precos();
+
+		return ( $tokens_entrada / 1_000_000 * $precos['entrada_por_1m'] )
+			+ ( $tokens_saida / 1_000_000 * $precos['saida_por_1m'] );
+	}
+
+	public static function calcular_custo_imagem( int $tokens_entrada, int $tokens_saida ): float {
+		$precos = self::tabela_precos_imagem();
 
 		return ( $tokens_entrada / 1_000_000 * $precos['entrada_por_1m'] )
 			+ ( $tokens_saida / 1_000_000 * $precos['saida_por_1m'] );
@@ -149,12 +202,12 @@ class Atelie_Ai_Custo_Tracker {
 	}
 
 	/**
-	 * Pra operações cobradas por unidade (ex.: edição de imagem, preço fixo
-	 * por imagem gerada), não por token — geração de imagem normalmente nem
-	 * devolve contagem de token comparável à de texto.
+	 * Mesmo que registrar(), mas usando a tabela de preço de IMAGEM — pra
+	 * chamadas da Interactions API (editar_imagem), cujos tokens de saida sao
+	 * imagem, nao texto, e custam numa faixa de preço bem diferente.
 	 */
-	public static function registrar_fixo( string $operacao, float $custo ): float {
-		return self::gravar_linha( $operacao, 0, 0, $custo );
+	public static function registrar_imagem( string $operacao, int $tokens_entrada, int $tokens_saida ): float {
+		return self::gravar_linha( $operacao, $tokens_entrada, $tokens_saida, self::calcular_custo_imagem( $tokens_entrada, $tokens_saida ) );
 	}
 
 	private static function gravar_linha( string $operacao, int $tokens_entrada, int $tokens_saida, float $custo ): float {
@@ -178,31 +231,14 @@ class Atelie_Ai_Custo_Tracker {
 		return $custo;
 	}
 
-	public static function custo_por_imagem(): float {
-		$salvo = get_option( self::OPCAO_CUSTO_IMAGEM, null );
-		if ( $salvo !== null && $salvo !== '' ) {
-			return (float) $salvo;
-		}
-
-		// Estimativa de partida (R$) — sem chamada real bem-sucedida ainda pra
-		// calibrar (ver Atelie_Ai_Vision_Service_Gemini::editarImagem). Ajustar
-		// na tela "Configurar IA" assim que o custo real for confirmado.
-		return 0.15;
-	}
-
-	public static function salvar_custo_por_imagem( float $custo ): void {
-		update_option( self::OPCAO_CUSTO_IMAGEM, $custo, false );
-	}
-
 	/**
 	 * Estimativa da PRÓXIMA chamada dessa operação — média das últimas 20
 	 * chamadas reais, ou o chute padrão se ainda não rodou nenhuma vez.
+	 * editar_imagem usa a tabela de preço de IMAGEM (calcular_custo_imagem),
+	 * as demais operações usam a de texto (calcular_custo) — mesma média de
+	 * tokens reais nos dois casos, só muda qual tabela de preço converte pra R$.
 	 */
 	public static function estimar( string $operacao ): float {
-		if ( $operacao === 'editar_imagem' ) {
-			return self::custo_por_imagem();
-		}
-
 		self::garantir_tabela();
 
 		global $wpdb;
@@ -221,7 +257,12 @@ class Atelie_Ai_Custo_Tracker {
 		// phpcs:enable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		if ( $media !== null && $media->media_entrada !== null ) {
-			return self::calcular_custo( (int) round( (float) $media->media_entrada ), (int) round( (float) $media->media_saida ) );
+			$tokens_entrada = (int) round( (float) $media->media_entrada );
+			$tokens_saida   = (int) round( (float) $media->media_saida );
+
+			return $operacao === 'editar_imagem'
+				? self::calcular_custo_imagem( $tokens_entrada, $tokens_saida )
+				: self::calcular_custo( $tokens_entrada, $tokens_saida );
 		}
 
 		$padrao = self::TOKENS_PADRAO_POR_OPERACAO[ $operacao ] ?? array(
@@ -229,7 +270,9 @@ class Atelie_Ai_Custo_Tracker {
 			'saida'   => 150,
 		);
 
-		return self::calcular_custo( $padrao['entrada'], $padrao['saida'] );
+		return $operacao === 'editar_imagem'
+			? self::calcular_custo_imagem( $padrao['entrada'], $padrao['saida'] )
+			: self::calcular_custo( $padrao['entrada'], $padrao['saida'] );
 	}
 
 	public static function gasto_mes_atual(): float {

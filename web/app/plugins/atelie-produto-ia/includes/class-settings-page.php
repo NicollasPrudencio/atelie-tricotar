@@ -120,7 +120,7 @@ class Atelie_Settings_Page {
 		$gasto_mes     = Atelie_Ai_Custo_Tracker::gasto_mes_atual();
 		$limite        = Atelie_Ai_Custo_Tracker::limite_aviso();
 		$precos        = Atelie_Ai_Custo_Tracker::tabela_precos();
-		$custo_imagem  = Atelie_Ai_Custo_Tracker::custo_por_imagem();
+		$precos_imagem = Atelie_Ai_Custo_Tracker::tabela_precos_imagem();
 		$historico     = Atelie_Ai_Custo_Tracker::historico_recente( 10 );
 		$passou_limite = Atelie_Ai_Custo_Tracker::deve_avisar();
 		?>
@@ -171,9 +171,14 @@ class Atelie_Settings_Page {
 				<p class="description">Confira o preço atual em <a href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noopener noreferrer">ai.google.dev/gemini-api/docs/pricing</a> e ajuste aqui — a estimativa só é boa se o preço estiver atualizado.</p>
 
 				<p>
-					<label for="atelie-custo-imagem">Preço por imagem editada (R$, aproximado)</label><br>
-					<input type="text" name="custo_imagem" id="atelie-custo-imagem" value="<?php echo esc_attr( number_format( $custo_imagem, 2, ',', '.' ) ); ?>" style="width:120px;">
-					<br><span class="description">Edição/geração de imagem é cobrada por unidade, não por token — e exige faturamento ativo na conta do Google (não está disponível no nível gratuito).</span>
+					<label for="atelie-custo-imagem-entrada">Preço por 1 milhão de tokens de entrada — edição de imagem (R$, aproximado)</label><br>
+					<input type="text" name="preco_entrada_imagem" id="atelie-custo-imagem-entrada" value="<?php echo esc_attr( number_format( $precos_imagem['entrada_por_1m'], 2, ',', '.' ) ); ?>" style="width:120px;">
+				</p>
+
+				<p>
+					<label for="atelie-custo-imagem-saida">Preço por 1 milhão de tokens de saída — edição de imagem (R$, aproximado)</label><br>
+					<input type="text" name="preco_saida_imagem" id="atelie-custo-imagem-saida" value="<?php echo esc_attr( number_format( $precos_imagem['saida_por_1m'], 2, ',', '.' ) ); ?>" style="width:120px;">
+					<br><span class="description">Separado do preço de texto acima porque token de <strong>saída de imagem</strong> (a foto gerada em si) custa numa faixa bem mais cara — confira o preço real em <a href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noopener noreferrer">ai.google.dev/gemini-api/docs/pricing</a> (modelo de edição de imagem) ou na fatura real do Google Cloud, e ajuste aqui. Exige faturamento ativo na conta do Google (não está disponível no nível gratuito).</span>
 				</p>
 
 				<p>
@@ -227,14 +232,15 @@ class Atelie_Settings_Page {
 			wp_die( 'Ação não permitida.' );
 		}
 
-		$limite        = isset( $_POST['limite_aviso'] ) ? (float) str_replace( ',', '.', sanitize_text_field( wp_unslash( $_POST['limite_aviso'] ) ) ) : 0.0;
-		$preco_entrada = isset( $_POST['preco_entrada'] ) ? (float) str_replace( ',', '.', sanitize_text_field( wp_unslash( $_POST['preco_entrada'] ) ) ) : 0.0;
-		$preco_saida   = isset( $_POST['preco_saida'] ) ? (float) str_replace( ',', '.', sanitize_text_field( wp_unslash( $_POST['preco_saida'] ) ) ) : 0.0;
-		$custo_imagem  = isset( $_POST['custo_imagem'] ) ? (float) str_replace( ',', '.', sanitize_text_field( wp_unslash( $_POST['custo_imagem'] ) ) ) : 0.0;
+		$limite               = isset( $_POST['limite_aviso'] ) ? (float) str_replace( ',', '.', sanitize_text_field( wp_unslash( $_POST['limite_aviso'] ) ) ) : 0.0;
+		$preco_entrada        = isset( $_POST['preco_entrada'] ) ? (float) str_replace( ',', '.', sanitize_text_field( wp_unslash( $_POST['preco_entrada'] ) ) ) : 0.0;
+		$preco_saida          = isset( $_POST['preco_saida'] ) ? (float) str_replace( ',', '.', sanitize_text_field( wp_unslash( $_POST['preco_saida'] ) ) ) : 0.0;
+		$preco_entrada_imagem = isset( $_POST['preco_entrada_imagem'] ) ? (float) str_replace( ',', '.', sanitize_text_field( wp_unslash( $_POST['preco_entrada_imagem'] ) ) ) : 0.0;
+		$preco_saida_imagem   = isset( $_POST['preco_saida_imagem'] ) ? (float) str_replace( ',', '.', sanitize_text_field( wp_unslash( $_POST['preco_saida_imagem'] ) ) ) : 0.0;
 
 		Atelie_Ai_Custo_Tracker::salvar_limite_aviso( max( 0.0, $limite ) );
 		Atelie_Ai_Custo_Tracker::salvar_tabela_precos( max( 0.0, $preco_entrada ), max( 0.0, $preco_saida ) );
-		Atelie_Ai_Custo_Tracker::salvar_custo_por_imagem( max( 0.0, $custo_imagem ) );
+		Atelie_Ai_Custo_Tracker::salvar_tabela_precos_imagem( max( 0.0, $preco_entrada_imagem ), max( 0.0, $preco_saida_imagem ) );
 
 		wp_safe_redirect( add_query_arg( 'salvo', '1', admin_url( 'admin.php?page=' . self::SLUG ) ) );
 		exit;

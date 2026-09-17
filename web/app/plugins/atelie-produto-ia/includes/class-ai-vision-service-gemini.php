@@ -190,7 +190,8 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 			);
 		}
 
-		$mime_entrada = $this->mime_type( $imagem_path );
+		$mime_entrada  = $this->mime_type( $imagem_path );
+		$imagem_pronta = $this->preparar_imagem_para_ia( $imagem_path );
 
 		/**
 		 * Endpoint diferente do resto da classe (/v1beta/interactions, não
@@ -219,9 +220,8 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 							),
 							array(
 								'type'      => 'image',
-								'mime_type' => $mime_entrada,
-								// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- leitura de arquivo local (upload do WP), nao URL remota.
-								'data'      => base64_encode( (string) file_get_contents( $imagem_path ) ),
+								'mime_type' => $imagem_pronta['mime_type'],
+								'data'      => $imagem_pronta['data'],
 							),
 						),
 					)
@@ -254,6 +254,13 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 			);
 		}
 
+		// Tokens REAIS que a propria API devolve (usage.total_input_tokens /
+		// total_output_tokens) — usados pra registrar o custo de verdade, nao um
+		// valor fixo chutado. Registrado mesmo se o parsing da imagem falhar
+		// logo abaixo: a chamada ja consumiu tokens reais de qualquer jeito.
+		$tokens_entrada_reais = (int) ( $body['usage']['total_input_tokens'] ?? 0 );
+		$tokens_saida_reais   = (int) ( $body['usage']['total_output_tokens'] ?? 0 );
+
 		// A resposta real vem em steps[].content[], podendo ter itens de texto
 		// misturados com o de imagem — procura o primeiro item type=image.
 		$dados_base64 = null;
@@ -269,16 +276,17 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 		}
 
 		if ( $dados_base64 === null || $dados_base64 === '' ) {
+			$custo_mesmo_sem_imagem = Atelie_Ai_Custo_Tracker::registrar_imagem( 'editar_imagem', $tokens_entrada_reais, $tokens_saida_reais );
 			return array(
 				'ok'            => false,
 				'imagem_base64' => null,
 				'mime_type'     => null,
-				'custo'         => 0.0,
+				'custo'         => $custo_mesmo_sem_imagem,
 				'mensagem'      => 'Resposta da IA não trouxe imagem no formato esperado — revisar o parsing contra a documentação atual da Interactions API.',
 			);
 		}
 
-		$custo = Atelie_Ai_Custo_Tracker::registrar_fixo( 'editar_imagem', Atelie_Ai_Custo_Tracker::custo_por_imagem() );
+		$custo = Atelie_Ai_Custo_Tracker::registrar_imagem( 'editar_imagem', $tokens_entrada_reais, $tokens_saida_reais );
 
 		return array(
 			'ok'            => true,
@@ -707,6 +715,8 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 			. '(ex.: "deixe o fundo branco e aumente um pouco o brilho"). Se a foto já estiver boa o suficiente, não sugira edição nenhuma. '
 			. 'Responda SOMENTE um objeto JSON no formato: {"diagnostico": "resumo curto do que avaliou na foto", "prompt_edicao": "pedido de edição, ou string vazia se a foto já está boa"}.';
 
+		$imagem_pronta = $this->preparar_imagem_para_ia( $imagem_path );
+
 		try {
 			$body = $this->chamar(
 				array(
@@ -716,9 +726,8 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 								array( 'text' => $prompt ),
 								array(
 									'inline_data' => array(
-										'mime_type' => $this->mime_type( $imagem_path ),
-										// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents, WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- leitura de arquivo local (upload do WP), nao URL remota; base64 aqui e formato exigido pela API, nao ofuscacao.
-										'data'      => base64_encode( (string) file_get_contents( $imagem_path ) ),
+										'mime_type' => $imagem_pronta['mime_type'],
+										'data'      => $imagem_pronta['data'],
 									),
 								),
 							),
@@ -887,5 +896,67 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 			'gif' => 'image/gif',
 			default => 'image/jpeg',
 		};
+	}
+
+	/**
+	 * Reduz a foto ANTES de mandar pra IA (nunca mexe no arquivo original salvo
+	 * no produto) — fotos de celular costumam vir bem maiores do que a IA
+	 * precisa pra editar/avaliar direito, e o custo de entrada da API escala
+	 * com o tamanho da imagem (mais "tiles" de visão = mais tokens). Achado
+	 * em 2026-09-18 depois de um salto real de custo ao testar edicao de
+	 * imagem. Se o redimensionamento falhar por qualquer motivo (biblioteca
+	 * indisponivel, arquivo corrompido), cai pro arquivo original sem erro —
+	 * mais caro, mas nunca quebra a funcionalidade por causa disso.
+	 *
+	 * @return array{data: string, mime_type: string}
+	 */
+	private function preparar_imagem_para_ia( string $imagem_path, int $lado_maximo = 1536 ): array {
+		$mime_original = $this->mime_type( $imagem_path );
+
+		$editor = wp_get_image_editor( $imagem_path );
+		if ( is_wp_error( $editor ) ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- leitura de arquivo local (upload do WP), nao URL remota.
+			return array(
+				'data'      => base64_encode( (string) file_get_contents( $imagem_path ) ),
+				'mime_type' => $mime_original,
+			);
+		}
+
+		$tamanho = $editor->get_size();
+		if ( is_array( $tamanho ) && max( (int) $tamanho['width'], (int) $tamanho['height'] ) <= $lado_maximo ) {
+			// Ja e pequena o suficiente, nao precisa redimensionar.
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			return array(
+				'data'      => base64_encode( (string) file_get_contents( $imagem_path ) ),
+				'mime_type' => $mime_original,
+			);
+		}
+
+		$editor->resize( $lado_maximo, $lado_maximo, false );
+
+		$temp  = wp_tempnam( 'atelie-ia-redimensionada' );
+		$salvo = $editor->save( $temp, $mime_original );
+
+		if ( is_wp_error( $salvo ) || ! isset( $salvo['path'] ) || ! is_readable( $salvo['path'] ) ) {
+			if ( file_exists( $temp ) ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink.unlink_unlink -- limpeza de arquivo temporario proprio (wp_tempnam), nao input externo.
+				unlink( $temp );
+			}
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			return array(
+				'data'      => base64_encode( (string) file_get_contents( $imagem_path ) ),
+				'mime_type' => $mime_original,
+			);
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- leitura de arquivo temporario proprio, nao URL remota.
+		$dados = base64_encode( (string) file_get_contents( $salvo['path'] ) );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink.unlink_unlink -- limpeza de arquivo temporario proprio.
+		unlink( $salvo['path'] );
+
+		return array(
+			'data'      => $dados,
+			'mime_type' => (string) ( $salvo['mime-type'] ?? $mime_original ),
+		);
 	}
 }
