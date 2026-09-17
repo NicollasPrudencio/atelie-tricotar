@@ -193,13 +193,11 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 		/**
 		 * Endpoint diferente do resto da classe (/v1beta/interactions, não
 		 * /generateContent) — é a "Interactions API" do Gemini pra geração e
-		 * edição de imagem, confirmada contra a documentação oficial (não
-		 * testada de verdade: a chave de dev deste projeto tem cota ZERO pra
-		 * modelos de imagem no nível gratuito — precisa de faturamento ativo
-		 * pra validar isso de fato). O corpo da requisição é o confirmado na
-		 * doc; o formato exato da IMAGEM DE VOLTA na resposta é inferido a
-		 * partir do SDK oficial (que expõe `interaction.output_image.data`) —
-		 * revisar contra uma chamada real assim que possível.
+		 * edição de imagem. Testada de verdade em 2026-09-17 (chave nova com
+		 * faturamento ativo): a resposta vem em
+		 * `steps[].content[].{type: "image", mime_type, data}` — não no
+		 * formato `output_image`/`outputImage`/`output[]` que a doc do SDK
+		 * dava a entender antes de testar. Ver parsing logo abaixo.
 		 */
 		$response = wp_remote_post(
 			'https://generativelanguage.googleapis.com/v1beta/interactions',
@@ -252,12 +250,21 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 			);
 		}
 
-		// Tenta os formatos mais prováveis pro campo de imagem de saída — ver aviso acima.
-		$imagem       = $body['output_image'] ?? $body['outputImage'] ?? ( $body['output'][0] ?? null ) ?? ( $body['outputs'][0] ?? null );
-		$dados_base64 = is_array( $imagem ) ? ( $imagem['data'] ?? null ) : null;
-		$mime_saida   = is_array( $imagem ) ? ( $imagem['mime_type'] ?? $imagem['mimeType'] ?? $mime_entrada ) : $mime_entrada;
+		// A resposta real vem em steps[].content[], podendo ter itens de texto
+		// misturados com o de imagem — procura o primeiro item type=image.
+		$dados_base64 = null;
+		$mime_saida   = $mime_entrada;
+		foreach ( (array) ( $body['steps'] ?? array() ) as $step ) {
+			foreach ( (array) ( $step['content'] ?? array() ) as $item ) {
+				if ( is_array( $item ) && ( $item['type'] ?? '' ) === 'image' && ! empty( $item['data'] ) ) {
+					$dados_base64 = (string) $item['data'];
+					$mime_saida   = (string) ( $item['mime_type'] ?? $mime_entrada );
+					break 2;
+				}
+			}
+		}
 
-		if ( ! is_string( $dados_base64 ) || $dados_base64 === '' ) {
+		if ( $dados_base64 === null || $dados_base64 === '' ) {
 			return array(
 				'ok'            => false,
 				'imagem_base64' => null,
