@@ -171,7 +171,7 @@ class Atelie_Admin_Page {
 								<button type="button" class="button" id="atelie-btn-escolher-pasta-drive">Escolher pasta ou fotos</button>
 								<button type="submit" class="button" id="atelie-btn-importar-drive" disabled>Importar</button>
 							</form>
-							<?php if ( current_user_can( 'manage_options' ) ) : ?>
+							<?php if ( current_user_can( 'edit_products' ) ) : ?>
 								(conectado como <?php echo esc_html( Atelie_Drive_Config::conta_email() ); ?> —
 								<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="atelie-lote-drive-desconectar-form" onsubmit="return confirm('Desconectar o Google Drive? Você vai precisar autorizar de novo pra importar depois.');">
 									<input type="hidden" name="action" value="atelie_drive_desconectar">

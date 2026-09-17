@@ -232,6 +232,33 @@ add_action(
 );
 
 /**
+ * O WooCommerce 10.x injeta o app React do WC Admin (Analytics) por cima de
+ * um conjunto fixo de telas classicas "conectadas" — Produtos, Pedidos,
+ * Cupons e telas relacionadas (ver includes/react-admin/connect-existing-pages.php
+ * do proprio WooCommerce; Cases e Pedidos de Orçamento, sendo CPTs nossos,
+ * nao entram nessa lista e nao sao afetados) — fazendo chamadas de API que
+ * exigem `manage_woocommerce`. A Artesã nao tem essa capacidade de proposito
+ * (nao deve acessar Configuracoes/Relatorios/Extensoes do WooCommerce) —
+ * quando a chamada falha, o app cobre a tela inteira com "Desculpe, você não
+ * tem permissão para acessar esta página", escondendo a lista classica que
+ * funcionaria normalmente por baixo. Achado em 2026-09-17 com uso real de
+ * "Todos os produtos" pela artesã. `woocommerce_admin_disabled` e o filtro
+ * que o proprio WooCommerce oferece pra desligar esse app — aplicado so pra
+ * quem nao tem manage_woocommerce, entao a experiencia do Administrador
+ * (que tem a capacidade) continua identica.
+ */
+add_filter(
+	'woocommerce_admin_disabled',
+	function ( bool $desabilitado ): bool {
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			return true;
+		}
+
+		return $desabilitado;
+	}
+);
+
+/**
  * Campos de disponibilidade e prazo de producao — a maioria dos produtos do
  * ateliê é feita sob encomenda. Ver plano, secao "Disponibilidade — pronta
  * entrega vs. sob encomenda". Fica no admin nativo do WooCommerce ate a

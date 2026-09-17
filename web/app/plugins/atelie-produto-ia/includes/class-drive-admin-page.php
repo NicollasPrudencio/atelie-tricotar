@@ -1,13 +1,17 @@
 <?php
 /**
- * Conexao com o Google Drive (uma vez, so administrador) e importacao de
- * fotos de uma pasta compartilhada. Sem tela propria — a IU fica embutida em
- * "Novo Produto" (class-admin-page.php), do lado do upload direto, como o
- * unico jeito de criar VARIOS produtos de uma vez (organizado em pastas —
- * decisao explicita do usuario: sem upload solto de fotos sem organizacao
- * nenhuma, isso vira caos). Convencao: cada subpasta dentro da pasta
- * compartilhada vira um produto candidato, entregue pro pipeline de lote
- * (Atelie_Lote_Controller::criar_lote_de_grupos).
+ * Conexao com o Google Drive (autorizacao OAuth em si e so administrador —
+ * conectar/reconectar exige manage_options) e importacao de fotos de uma
+ * pasta compartilhada. Desconectar e edit_products (2026-09-17, pedido
+ * explicito do usuario) — quem usa o painel no dia a dia tambem pode
+ * desconectar se precisar, sem depender do administrador pra isso; só
+ * reconectar (fluxo OAuth) continua admin-only. Sem tela propria — a IU fica
+ * embutida em "Novo Produto" (class-admin-page.php), do lado do upload
+ * direto, como o unico jeito de criar VARIOS produtos de uma vez (organizado
+ * em pastas — decisao explicita do usuario: sem upload solto de fotos sem
+ * organizacao nenhuma, isso vira caos). Convencao: cada subpasta dentro da
+ * pasta compartilhada vira um produto candidato, entregue pro pipeline de
+ * lote (Atelie_Lote_Controller::criar_lote_de_grupos).
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -102,7 +106,7 @@ class Atelie_Drive_Admin_Page {
 
 	public function desconectar(): void {
 		if (
-			! current_user_can( 'manage_options' )
+			! current_user_can( 'edit_products' )
 			|| ! isset( $_POST['atelie_drive_desconectar_nonce'] )
 			|| ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['atelie_drive_desconectar_nonce'] ) ), 'atelie_drive_desconectar' )
 		) {
