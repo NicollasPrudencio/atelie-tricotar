@@ -7,7 +7,7 @@
  * pessoa real trocar algo pelo painel (ex.: via wizard de configuracao ou tela nativa do
  * plugin), esse valor fica valendo pra sempre, sem risco do proximo deploy pisar em cima.
  * Ver memoria de projeto sobre esse comportamento (2026-08-25).
- * Version: 0.3.0
+ * Version: 0.4.0
  *
  * Nomes de option confirmados lendo o codigo dos proprios plugins:
  * - Mercado Pago: web/app/plugins/woocommerce-mercadopago/src/Hooks/Options.php (COMMON_CONFIGS)
@@ -48,6 +48,15 @@ add_action(
 				atelie_sync_semear_opcao( '_mp_public_key_prod', $mp_public_key );
 				atelie_sync_semear_opcao( '_mp_access_token_prod', $mp_access_token );
 			}
+
+			// Ter a credencial de PRODUCAO salva nao e suficiente — o plugin tem um
+			// toggle proprio e SEPARADO ("checkbox_checkout_test_mode") que decide
+			// qual das duas credenciais (test/prod) o checkout de verdade usa, e o
+			// padrao dele — quando a option nunca existiu — e 'yes' (modo TESTE).
+			// Achado em 2026-09-17: producao tinha a credencial certa mas rodava em
+			// modo teste porque essa option nunca tinha sido criada. Sincroniza com
+			// o mesmo MERCADOPAGO_SANDBOX que decide qual credencial usar acima.
+			atelie_sync_semear_opcao( 'checkbox_checkout_test_mode', $mp_sandbox ? 'yes' : 'no' );
 
 			// Ter credencial nao e suficiente — cada metodo de pagamento do Mercado
 			// Pago precisa ser habilitado individualmente, senao o checkout mostra
