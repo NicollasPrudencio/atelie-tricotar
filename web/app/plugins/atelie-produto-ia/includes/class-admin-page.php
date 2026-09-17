@@ -189,6 +189,10 @@ class Atelie_Admin_Page {
 								<button type="submit" class="button">Conectar Google Drive</button>
 							</form>
 						</span>
+					<?php else : ?>
+						<span class="atelie-lote-drive-import">
+							(a importação de várias fotos de uma vez por pasta está desconectada do Google Drive no momento — avise o administrador do site pra reconectar)
+						</span>
 					<?php endif; ?>
 				</p>
 
