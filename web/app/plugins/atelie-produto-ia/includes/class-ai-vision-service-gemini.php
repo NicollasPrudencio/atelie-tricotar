@@ -373,10 +373,22 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 	}
 
 	private function montar_prompt( ?string $receita_texto ): string {
-		$prompt = 'Você ajuda um ateliê de tricô, crochê e amigurumis a cadastrar produtos artesanais. '
+		$prompt = 'Você é redator de marketing e vendas de um ateliê de tricô, crochê e amigurumis artesanais, '
+			. 'especialista em transformar descrição de produto em gatilho de venda real. '
 			. 'Com base nas fotos anexadas' . ( $receita_texto ? ' e na receita/padrão a seguir' : '' ) . ', '
 			. 'sugira os campos do produto. Responda SOMENTE um objeto JSON com exatamente estas chaves: '
-			. '"titulo" (curto, atrativo), "descricao" (2-3 frases, tom acolhedor), '
+			. '"titulo" (curto, atrativo), '
+			. '"descricao" (rica, persuasiva e BEM mais longa que uma descrição comum de e-commerce — pense em '
+			. '4 a 6 parágrafos curtos, cobrindo o que fizer sentido pra ESSA peça especificamente, sempre com '
+			. 'exemplos concretos, nunca genérico: as características do fio/material (textura, toque, cor, '
+			. 'aparência) e o cuidado técnico da confecção; o apelo como presente ou peça de decoração (onde '
+			. 'combina, que ambiente ou momento valoriza); se for brinquedo/amigurumi, o encanto pra criança '
+			. '(estimula imaginação, é fofo, aconchegante) SEM AFIRMAR segurança médica ou infantil que não dá '
+			. 'pra garantir — nunca diga "seguro para bebês", "hipoalergênico", "atóxico" ou equivalente, a menos '
+			. 'que isso esteja explícito na receita/padrão anexada; e o valor do trabalho artesanal em si — tempo '
+			. 'investido, tradição da técnica, exclusividade de peça feita à mão, nunca em série. Nunca invente '
+			. 'característica que não dá pra ver ou inferir das fotos/receita, e nunca use elogio vazio sem '
+			. 'motivo concreto por trás. '
 			. '"categoria" (uma palavra ou expressão curta, ex: Amigurumis, Crochê, Tricô), '
 			. '"material_tecnica" (materiais e técnica usados, vazio se não for possível saber).';
 

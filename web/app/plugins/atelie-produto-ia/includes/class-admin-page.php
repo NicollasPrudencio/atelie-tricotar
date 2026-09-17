@@ -260,7 +260,7 @@ class Atelie_Admin_Page {
 
 					<p>
 						<label>Descrição <span class="atelie-badge-ia" id="atelie-badge-descricao" style="display:none;">✨ sugerido</span></label><br>
-						<textarea name="descricao" id="atelie-campo-descricao" rows="4" style="width:100%;max-width:480px;"><?php echo esc_textarea( $descricao_valor ); ?></textarea>
+						<textarea name="descricao" id="atelie-campo-descricao" rows="14" style="width:100%;max-width:480px;"><?php echo esc_textarea( $descricao_valor ); ?></textarea>
 					</p>
 
 					<p>
