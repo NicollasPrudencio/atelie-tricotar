@@ -61,6 +61,7 @@
             <property name="custom_capabilities" type="array">
                 <element value="edit_products"/>
                 <element value="edit_atelie_cases"/>
+                <element value="manage_woocommerce"/>
             </property>
         </properties>
     </rule>
