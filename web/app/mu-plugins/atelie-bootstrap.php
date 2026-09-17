@@ -274,7 +274,8 @@ add_filter(
  */
 add_filter(
 	'map_meta_cap',
-	function ( array $caps, string $cap, int $_usuario_id, array $_args ): array {
+	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- assinatura fixa do hook map_meta_cap, exige os 4 parametros mesmo sem usar os 2 ultimos.
+	function ( array $caps, string $cap, int $usuario_id, array $args ): array {
 		$mapa = array(
 			'edit_shop_order'   => 'edit_others_shop_orders',
 			'read_shop_order'   => 'read_private_shop_orders',
