@@ -7,7 +7,7 @@
  * pessoa real trocar algo pelo painel (ex.: via wizard de configuracao ou tela nativa do
  * plugin), esse valor fica valendo pra sempre, sem risco do proximo deploy pisar em cima.
  * Ver memoria de projeto sobre esse comportamento (2026-08-25).
- * Version: 0.4.0
+ * Version: 0.5.0
  *
  * Nomes de option confirmados lendo o codigo dos proprios plugins:
  * - Mercado Pago: web/app/plugins/woocommerce-mercadopago/src/Hooks/Options.php (COMMON_CONFIGS)
@@ -58,21 +58,22 @@ add_action(
 			// o mesmo MERCADOPAGO_SANDBOX que decide qual credencial usar acima.
 			atelie_sync_semear_opcao( 'checkbox_checkout_test_mode', $mp_sandbox ? 'yes' : 'no' );
 
-			// Ter credencial nao e suficiente — cada metodo de pagamento do Mercado
-			// Pago precisa ser habilitado individualmente, senao o checkout mostra
-			// "nenhum metodo de pagamento disponivel" mesmo com tudo configurado.
-			// So mexe se a option nunca existiu (settings genuinamente novo) — se
-			// uma pessoa desligou um metodo de proposito depois, isso fica valendo.
-			foreach ( array( 'woo-mercado-pago-basic', 'woo-mercado-pago-pix', 'woo-mercado-pago-custom', 'woo-mercado-pago-ticket' ) as $gateway_id ) {
-				$option_name = 'woocommerce_' . $gateway_id . '_settings';
-				$settings    = get_option( $option_name, array() );
-				if ( ! is_array( $settings ) ) {
-					$settings = array();
-				}
-				if ( ! isset( $settings['enabled'] ) ) {
-					$settings['enabled'] = 'yes';
-					update_option( $option_name, $settings );
-				}
+			// Ter credencial nao e suficiente — o metodo de pagamento do Mercado
+			// Pago precisa ser habilitado, senao o checkout mostra "nenhum metodo
+			// de pagamento disponivel" mesmo com tudo configurado. So o Checkout
+			// Pro fica ligado por decisao explicita do usuario (2026-09-17) — Pix,
+			// Custom e Ticket avulsos poluiam a tela de pagamento com opcoes
+			// redundantes (Checkout Pro ja oferece Pix, cartao e boleto dentro do
+			// proprio fluxo). So mexe se a option nunca existiu (settings
+			// genuinamente novo) — se uma pessoa ligar algum desses de proposito
+			// depois, isso fica valendo.
+			$checkout_pro_settings = get_option( 'woocommerce_woo-mercado-pago-basic_settings', array() );
+			if ( ! is_array( $checkout_pro_settings ) ) {
+				$checkout_pro_settings = array();
+			}
+			if ( ! isset( $checkout_pro_settings['enabled'] ) ) {
+				$checkout_pro_settings['enabled'] = 'yes';
+				update_option( 'woocommerce_woo-mercado-pago-basic_settings', $checkout_pro_settings );
 			}
 		}
 
