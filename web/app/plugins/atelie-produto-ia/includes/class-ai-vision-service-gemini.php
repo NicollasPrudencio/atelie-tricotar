@@ -179,7 +179,7 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 			foreach ( $grupo as $indice ) {
 				$indice = (int) $indice;
 				if ( isset( $validos[ $indice ] ) && ! isset( $ja_agrupados[ $indice ] ) ) {
-					$grupo_valido[]           = $indice;
+					$grupo_valido[]          = $indice;
 					$ja_agrupados[ $indice ] = true;
 				}
 			}

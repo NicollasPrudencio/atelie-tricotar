@@ -148,7 +148,8 @@ class Atelie_Massa_Admin_Page {
 			wp_die( 'Ação não permitida.' );
 		}
 
-		$grupos_json = isset( $_POST['grupos_json'] ) ? wp_unslash( $_POST['grupos_json'] ) : '';
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- json_decode() logo abaixo + absint() em cada valor no foreach mais adiante e a sanitizacao real; nao tem sanitize_text_field pra JSON estruturado.
+		$grupos_json   = isset( $_POST['grupos_json'] ) ? wp_unslash( $_POST['grupos_json'] ) : '';
 		$grupos_brutos = json_decode( is_string( $grupos_json ) ? $grupos_json : '', true );
 
 		if ( ! is_array( $grupos_brutos ) || empty( $grupos_brutos ) ) {
@@ -157,7 +158,7 @@ class Atelie_Massa_Admin_Page {
 		}
 
 		$lote_controller = new Atelie_Lote_Controller();
-		$limite           = $lote_controller->limite_por_lote();
+		$limite          = $lote_controller->limite_por_lote();
 
 		if ( count( $grupos_brutos ) > $limite ) {
 			wp_safe_redirect(
