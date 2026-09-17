@@ -3,7 +3,7 @@ Theme Name: Atelie Theme
 Description: Tema do site do Ateliê Tricotar — identidade baseada no logo (pêssego, rosa,
              marfim, tipografia serifada quente + sans arredondada), tricô/crochê/amigurumi.
 Author: Atelier Tricotar
-Version: 0.2.7
+Version: 0.2.8
 Requires PHP: 8.1
 Text Domain: atelie-theme
 */
@@ -604,6 +604,15 @@ p.no-comments {
 .wc-block-components-radio-control__input:checked {
     background-color: var(--cor-rosa) !important;
     border-color: var(--cor-rosa) !important;
+}
+
+/* Quando so existe UMA opcao de frete ou pagamento, nao tem nada pra
+   escolher — o circulo de radio fica so' atrapalhando (inclusive
+   sobrepondo o inicio do texto, bug visual real reportado 2026-09-17).
+   Some com ele nesse caso; o cartao inteiro ja mostra que aquela opcao
+   esta selecionada (borda + fundo rosa). */
+.wc-block-components-radio-control__option:only-child .wc-block-components-radio-control__input {
+    display: none;
 }
 
 .wc-block-components-radio-control__label-group .label {
