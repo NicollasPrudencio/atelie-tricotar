@@ -20,6 +20,9 @@
         var totalProdutosEl = document.getElementById("atelie-massa-total-produtos");
         var form = document.getElementById("atelie-massa-form");
         var inputGruposJson = document.getElementById("atelie-massa-grupos-json");
+        var btnEditarTodas = document.getElementById("atelie-massa-btn-editar-todas");
+        var custoEditarTodasEl = document.getElementById("atelie-massa-editar-todas-custo");
+        var statusEditarTodas = document.getElementById("atelie-massa-editar-todas-status");
 
         if (!btnEscolher) {
             return; // não é a tela "Criar em Massa"
@@ -131,9 +134,30 @@
             renderizarGrupos();
         }
 
+        function listaPlanaFotos() {
+            var lista = [];
+            grupos.forEach(function (grupo, indiceGrupo) {
+                grupo.forEach(function (foto, indiceFoto) {
+                    lista.push({ grupo: indiceGrupo, indice: indiceFoto, foto: foto });
+                });
+            });
+            return lista;
+        }
+
+        function atualizarCustoEditarTodas() {
+            if (!btnEditarTodas) {
+                return;
+            }
+            var total = listaPlanaFotos().length;
+            btnEditarTodas.disabled = total === 0 || !atelieMassaIA.iaDisponivel;
+            var custoPorFoto = Number(String(atelieMassaIA.custoEdicaoImagem).replace(",", "."));
+            custoEditarTodasEl.textContent = total === 0 ? "" : "até ~" + formatarReal(total * custoPorFoto) + " no total (avaliação + edição, só nas fotos em que valer a pena)";
+        }
+
         function renderizarGrupos() {
             gruposEl.innerHTML = "";
             totalProdutosEl.textContent = grupos.length;
+            atualizarCustoEditarTodas();
 
             grupos.forEach(function (grupo, indiceGrupo) {
                 var card = document.createElement("div");
@@ -171,6 +195,70 @@
 
                 card.appendChild(fotosWrap);
                 gruposEl.appendChild(card);
+            });
+        }
+
+        if (btnEditarTodas) {
+            btnEditarTodas.addEventListener("click", function () {
+                var itens = listaPlanaFotos();
+                if (itens.length === 0) {
+                    return;
+                }
+                if (!window.confirm("A IA vai avaliar " + itens.length + " foto(s), uma de cada vez, e editar só as que achar que vale a pena. Pode levar um tempo. Continuar?")) {
+                    return;
+                }
+
+                btnEditarTodas.disabled = true;
+                btnCriar.disabled = true;
+                statusEditarTodas.style.display = "block";
+
+                var custoAcumulado = 0;
+                var editadas = 0;
+                var indice = 0;
+
+                function processarProxima() {
+                    if (indice >= itens.length) {
+                        statusEditarTodas.textContent = "Concluído: " + editadas + " de " + itens.length + " foto(s) editada(s). Custo total: " + formatarReal(custoAcumulado);
+                        btnEditarTodas.disabled = !atelieMassaIA.iaDisponivel;
+                        btnCriar.disabled = false;
+                        renderizarGrupos();
+                        return;
+                    }
+
+                    var item = itens[indice];
+                    statusEditarTodas.textContent = "Avaliando foto " + (indice + 1) + " de " + itens.length + "…";
+
+                    fetch(atelieMassaIA.sugerirEdicaoImagemUrl, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-WP-Nonce": atelieMassaIA.nonce,
+                        },
+                        body: JSON.stringify({ foto_id: item.foto.id }),
+                    })
+                        .then(function (resposta) {
+                            return resposta.json().then(function (dados) {
+                                return { ok: resposta.ok, dados: dados };
+                            });
+                        })
+                        .then(function (resultado) {
+                            if (resultado.ok) {
+                                custoAcumulado += Number((resultado.dados && resultado.dados.custo) || 0);
+                                if (resultado.dados && resultado.dados.editado) {
+                                    editadas++;
+                                    grupos[item.grupo][item.indice] = { id: resultado.dados.imagem_id, url: resultado.dados.url };
+                                }
+                            }
+                            indice++;
+                            processarProxima();
+                        })
+                        .catch(function () {
+                            indice++;
+                            processarProxima();
+                        });
+                }
+
+                processarProxima();
             });
         }
 

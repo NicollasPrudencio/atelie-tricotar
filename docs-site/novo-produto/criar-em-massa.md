@@ -27,6 +27,11 @@ A tela fica em **"Produtos" → "Criar em Massa"**.
    A IA pode errar (juntar fotos de peças diferentes, ou separar fotos que eram da mesma peça):
    clique no **"×"** em cima de uma foto pra tirá-la de um grupo errado — ela vira um produto só
    dela.
+   - Se quiser, clique em **"✨ IA sugere edição em todas as fotos"** antes de criar os
+     produtos — a IA passa foto por foto (pode levar um tempo) e só edita as que achar que
+     valem a pena (fundo, iluminação, enquadramento), do mesmo jeito que o botão "IA sugere
+     edição" da tela de produto, só que em lote. O custo aproximado (por foto e no total)
+     aparece antes de confirmar.
 5. Clique em **"Criar N produtos"** pra confirmar. Você é levada pra tela
    [Pendências](/pendencias/), onde a IA preenche título, descrição e categoria de cada produto
    em segundo plano, do mesmo jeito que uma importação do Drive.

@@ -60,7 +60,7 @@ class Atelie_Massa_Admin_Page {
 			'atelie-produto-ia-massa',
 			plugins_url( 'assets/massa.js', dirname( __DIR__ ) . '/atelie-produto-ia.php' ),
 			array( 'jquery', 'wp-util' ),
-			'0.1.0',
+			'0.2.0',
 			true
 		);
 
@@ -68,12 +68,14 @@ class Atelie_Massa_Admin_Page {
 			'atelie-produto-ia-massa',
 			'atelieMassaIA',
 			array(
-				'agruparUrl'   => esc_url_raw( rest_url( 'atelie/v1/agrupar-fotos-massa' ) ),
-				'nonce'        => wp_create_nonce( 'wp_rest' ),
-				'criarUrl'     => esc_url_raw( admin_url( 'admin-post.php' ) ),
-				'criarNonce'   => wp_create_nonce( 'atelie_massa_criar' ),
-				'limiteFotos'  => self::LIMITE_FOTOS,
-				'iaDisponivel' => Atelie_Ai_Config::esta_disponivel(),
+				'agruparUrl'             => esc_url_raw( rest_url( 'atelie/v1/agrupar-fotos-massa' ) ),
+				'sugerirEdicaoImagemUrl' => esc_url_raw( rest_url( 'atelie/v1/sugerir-edicao-imagem' ) ),
+				'nonce'                  => wp_create_nonce( 'wp_rest' ),
+				'criarUrl'               => esc_url_raw( admin_url( 'admin-post.php' ) ),
+				'criarNonce'             => wp_create_nonce( 'atelie_massa_criar' ),
+				'limiteFotos'            => self::LIMITE_FOTOS,
+				'iaDisponivel'           => Atelie_Ai_Config::esta_disponivel(),
+				'custoEdicaoImagem'      => number_format( Atelie_Ai_Custo_Tracker::estimar( 'editar_imagem' ), 4, ',', '.' ),
 			)
 		);
 	}
@@ -124,6 +126,14 @@ class Atelie_Massa_Admin_Page {
 			<div class="atelie-card" id="atelie-massa-revisao" style="display:none;">
 				<h2>2. Conferir os grupos sugeridos</h2>
 				<p class="description">Cada quadro abaixo vira UM produto. Tire fotos de um grupo errado clicando no "×" — a foto removida vira um produto próprio.</p>
+
+				<p>
+					<button type="button" class="button" id="atelie-massa-btn-editar-todas" <?php echo $ia_disponivel ? '' : 'disabled'; ?>>✨ IA sugere edição em todas as fotos</button>
+					<span id="atelie-massa-editar-todas-custo" class="atelie-custo-estimado"></span>
+				</p>
+				<p class="description">A IA avalia foto por foto e só edita as que achar que vale a pena (fundo, iluminação, enquadramento) — como o botão "IA sugere edição" da tela de produto, mas passando por todas de uma vez.</p>
+				<div id="atelie-massa-editar-todas-status" style="display:none;"></div>
+
 				<div id="atelie-massa-grupos"></div>
 				<p>
 					<button type="button" class="button button-primary button-hero" id="atelie-massa-btn-criar">Criar <span id="atelie-massa-total-produtos">0</span> produtos</button>
