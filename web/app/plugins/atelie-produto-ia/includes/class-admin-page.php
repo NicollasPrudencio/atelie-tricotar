@@ -41,7 +41,7 @@ class Atelie_Admin_Page {
 			'atelie-produto-ia-admin',
 			plugins_url( 'assets/admin.css', dirname( __DIR__ ) . '/atelie-produto-ia.php' ),
 			array(),
-			'0.4.0'
+			'0.5.0'
 		);
 
 		wp_enqueue_script(
@@ -56,7 +56,7 @@ class Atelie_Admin_Page {
 			'atelie-produto-ia-admin',
 			plugins_url( 'assets/admin.js', dirname( __DIR__ ) . '/atelie-produto-ia.php' ),
 			array( 'jquery', 'jquery-ui-sortable', 'atelie-produto-ia-editar-imagem' ),
-			'0.4.0',
+			'0.5.0',
 			true
 		);
 
@@ -78,6 +78,7 @@ class Atelie_Admin_Page {
 				'driveListarUrl'         => esc_url_raw( rest_url( 'atelie/v1/drive-listar' ) ),
 				'driveBaixarFotosUrl'    => esc_url_raw( rest_url( 'atelie/v1/drive-baixar-fotos' ) ),
 				'driveConectado'         => Atelie_Drive_Config::conectado(),
+				'mediaUrl'               => esc_url_raw( rest_url( 'wp/v2/media/' ) ),
 				'nonce'                  => wp_create_nonce( 'wp_rest' ),
 				'iaDisponivel'           => Atelie_Ai_Config::esta_disponivel(),
 				'custoEdicaoImagem'      => number_format( Atelie_Ai_Custo_Tracker::estimar( 'editar_imagem' ), 4, ',', '.' ),

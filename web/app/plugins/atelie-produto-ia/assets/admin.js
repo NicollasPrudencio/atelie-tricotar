@@ -44,6 +44,58 @@
             atualizarBotaoSugerir();
         }
 
+        // Preview em tamanho original — busca a URL de verdade na hora (a miniatura na
+        // tela é sempre um recorte pequeno), sem precisar guardar a URL grande de toda
+        // foto anexada de antemão.
+        function abrirPreview(fotoId) {
+            var overlay = document.createElement("div");
+            overlay.className = "atelie-preview-overlay";
+            overlay.innerHTML =
+                '<div class="atelie-preview-conteudo">' +
+                '<button type="button" class="atelie-preview-fechar" aria-label="Fechar">&times;</button>' +
+                '<p class="atelie-preview-carregando">Carregando…</p>' +
+                '<img class="atelie-preview-imagem" style="display:none;" alt="Foto em tamanho original">' +
+                "</div>";
+            document.body.appendChild(overlay);
+
+            var imgEl = overlay.querySelector(".atelie-preview-imagem");
+            var carregandoEl = overlay.querySelector(".atelie-preview-carregando");
+
+            function fechar() {
+                overlay.remove();
+                document.removeEventListener("keydown", aoTeclar);
+            }
+            function aoTeclar(e) {
+                if (e.key === "Escape") {
+                    fechar();
+                }
+            }
+            document.addEventListener("keydown", aoTeclar);
+            overlay.addEventListener("click", function (e) {
+                if (e.target === overlay) {
+                    fechar();
+                }
+            });
+            overlay.querySelector(".atelie-preview-fechar").addEventListener("click", fechar);
+
+            fetch(atelieProdutoIA.mediaUrl + fotoId)
+                .then(function (resposta) {
+                    return resposta.json();
+                })
+                .then(function (dados) {
+                    if (!dados || !dados.source_url) {
+                        carregandoEl.textContent = "Não deu pra carregar a imagem.";
+                        return;
+                    }
+                    imgEl.src = dados.source_url;
+                    imgEl.style.display = "block";
+                    carregandoEl.style.display = "none";
+                })
+                .catch(function () {
+                    carregandoEl.textContent = "Não deu pra carregar a imagem.";
+                });
+        }
+
         function adicionarFoto(id, thumbnailUrl) {
             var wrapper = document.createElement("div");
             wrapper.className = "atelie-foto-item";
@@ -53,6 +105,16 @@
             img.src = thumbnailUrl;
             img.className = "atelie-foto-thumb";
             wrapper.appendChild(img);
+
+            var btnVerOriginal = document.createElement("button");
+            btnVerOriginal.type = "button";
+            btnVerOriginal.className = "atelie-btn-ver-original";
+            btnVerOriginal.textContent = "🔍 Ver tamanho original";
+            btnVerOriginal.addEventListener("click", function () {
+                abrirPreview(wrapper.dataset.fotoId);
+            });
+            wrapper.appendChild(btnVerOriginal);
+
             fotosPreview.appendChild(wrapper);
 
             AtelieEditarImagem.anexar(wrapper, img, id, atelieProdutoIA, function (novoId) {

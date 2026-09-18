@@ -157,7 +157,7 @@ class Atelie_Lote_Admin_Pages {
 			'atelie-produto-ia-admin',
 			plugins_url( 'assets/admin.css', dirname( __DIR__ ) . '/atelie-produto-ia.php' ),
 			array(),
-			'0.4.0'
+			'0.5.0'
 		);
 
 		wp_enqueue_script(
