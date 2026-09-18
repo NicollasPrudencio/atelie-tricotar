@@ -119,6 +119,35 @@ add_action(
 	}
 );
 
+/**
+ * Editar um produto já publicado (clicar em "Editar" na lista nativa de
+ * Produtos) também tem que cair na tela simplificada — sem isso, só dava pra
+ * chegar nela enquanto o produto ainda estivesse pendente em "Pendências";
+ * depois de revisado/publicado, não sobrava nenhum jeito de reabrir a tela
+ * simples pra, por exemplo, reordenar as fotos. Administrador fica de fora
+ * (mantém acesso à tela nativa, que tem campos avançados — variações,
+ * estoque, frete — que a tela simplificada não cobre).
+ */
+add_action(
+	'load-post.php',
+	function (): void {
+		if ( current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		if ( ! isset( $_GET['action'] ) || $_GET['action'] !== 'edit' || ! isset( $_GET['post'] ) ) {
+			return;
+		}
+
+		$post_id = absint( $_GET['post'] );
+
+		if ( get_post_type( $post_id ) === 'product' ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=atelie-novo-produto&produto=' . $post_id ) );
+			exit;
+		}
+	}
+);
+
 register_deactivation_hook(
 	__FILE__,
 	function (): void {
