@@ -157,6 +157,19 @@ class Atelie_Rest_Controller {
 						),
 					)
 				);
+
+				register_rest_route(
+					'atelie/v1',
+					'/verificar-fotos-duplicadas',
+					array(
+						'methods'             => 'POST',
+						'callback'            => array( $this, 'verificar_fotos_duplicadas' ),
+						'permission_callback' => array( $this, 'usuario_pode_criar_produto' ),
+						'args'                => array(
+							'ids' => array( 'required' => true ),
+						),
+					)
+				);
 			}
 		);
 	}
@@ -516,6 +529,30 @@ class Atelie_Rest_Controller {
 		}
 
 		return new WP_REST_Response( array( 'ok' => true ), 200 );
+	}
+
+	/**
+	 * Checa, pra cada foto recem-selecionada/enviada num picker do painel,
+	 * se ja existe OUTRA foto com o mesmo conteudo na Biblioteca de Midia —
+	 * ver Atelie_Duplicata_Service.
+	 */
+	public function verificar_fotos_duplicadas( WP_REST_Request $request ): WP_REST_Response {
+		$ids_brutos = $request->get_param( 'ids' );
+		if ( ! is_array( $ids_brutos ) ) {
+			return new WP_REST_Response( array( 'erro' => 'IDs inválidos.' ), 400 );
+		}
+
+		$ids        = array_values( array_filter( array_map( 'absint', $ids_brutos ) ) );
+		$duplicadas = array();
+
+		foreach ( $ids as $id ) {
+			$match = Atelie_Duplicata_Service::encontrar_duplicata( $id );
+			if ( $match !== null ) {
+				$duplicadas[ $id ] = $match;
+			}
+		}
+
+		return new WP_REST_Response( array( 'duplicadas' => $duplicadas ), 200 );
 	}
 
 	public function editar_imagem( WP_REST_Request $request ): WP_REST_Response {

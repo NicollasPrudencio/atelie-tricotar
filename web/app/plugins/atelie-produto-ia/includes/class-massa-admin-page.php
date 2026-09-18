@@ -57,10 +57,18 @@ class Atelie_Massa_Admin_Page {
 		);
 
 		wp_enqueue_script(
+			'atelie-produto-ia-duplicata-upload',
+			plugins_url( 'assets/duplicata-upload.js', dirname( __DIR__ ) . '/atelie-produto-ia.php' ),
+			array(),
+			'0.1.0',
+			true
+		);
+
+		wp_enqueue_script(
 			'atelie-produto-ia-massa',
 			plugins_url( 'assets/massa.js', dirname( __DIR__ ) . '/atelie-produto-ia.php' ),
-			array( 'jquery', 'wp-util' ),
-			'0.2.0',
+			array( 'jquery', 'wp-util', 'atelie-produto-ia-duplicata-upload' ),
+			'0.3.0',
 			true
 		);
 
@@ -70,6 +78,7 @@ class Atelie_Massa_Admin_Page {
 			array(
 				'agruparUrl'             => esc_url_raw( rest_url( 'atelie/v1/agrupar-fotos-massa' ) ),
 				'sugerirEdicaoImagemUrl' => esc_url_raw( rest_url( 'atelie/v1/sugerir-edicao-imagem' ) ),
+				'duplicataUrl'           => esc_url_raw( rest_url( 'atelie/v1/verificar-fotos-duplicadas' ) ),
 				'nonce'                  => wp_create_nonce( 'wp_rest' ),
 				'criarUrl'               => esc_url_raw( admin_url( 'admin-post.php' ) ),
 				'criarNonce'             => wp_create_nonce( 'atelie_massa_criar' ),

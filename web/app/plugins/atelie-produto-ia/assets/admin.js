@@ -171,16 +171,26 @@
             }
 
             abrirSeletorMidia(function (itens) {
-                var vagas = LIMITE_FOTOS - fotosIds.length;
-                if (itens.length > vagas) {
-                    alert("Máximo de " + LIMITE_FOTOS + " fotos por produto — só as primeiras " + vagas + " dessa seleção foram anexadas.");
-                    itens = itens.slice(0, vagas);
-                }
-
-                itens.forEach(function (item) {
-                    adicionarFoto(item.id, item.sizes && item.sizes.thumbnail ? item.sizes.thumbnail.url : item.url);
+                var ids = itens.map(function (item) {
+                    return item.id;
                 });
-                sincronizarFotosIds();
+
+                AtelieDuplicataUpload.confirmarSelecao(ids, atelieProdutoIA).then(function (idsAprovados) {
+                    var aprovados = itens.filter(function (item) {
+                        return idsAprovados.indexOf(item.id) !== -1;
+                    });
+
+                    var vagas = LIMITE_FOTOS - fotosIds.length;
+                    if (aprovados.length > vagas) {
+                        alert("Máximo de " + LIMITE_FOTOS + " fotos por produto — só as primeiras " + vagas + " dessa seleção foram anexadas.");
+                        aprovados = aprovados.slice(0, vagas);
+                    }
+
+                    aprovados.forEach(function (item) {
+                        adicionarFoto(item.id, item.sizes && item.sizes.thumbnail ? item.sizes.thumbnail.url : item.url);
+                    });
+                    sincronizarFotosIds();
+                });
             }, true);
         });
 

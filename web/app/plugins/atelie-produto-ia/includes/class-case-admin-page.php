@@ -55,10 +55,18 @@ class Atelie_Case_Admin_Page {
 		);
 
 		wp_enqueue_script(
+			'atelie-produto-ia-duplicata-upload',
+			plugins_url( 'assets/duplicata-upload.js', dirname( __DIR__ ) . '/atelie-produto-ia.php' ),
+			array(),
+			'0.1.0',
+			true
+		);
+
+		wp_enqueue_script(
 			'atelie-produto-ia-case',
 			plugins_url( 'assets/case.js', dirname( __DIR__ ) . '/atelie-produto-ia.php' ),
-			array( 'jquery', 'atelie-produto-ia-editar-imagem' ),
-			'0.1.0',
+			array( 'jquery', 'atelie-produto-ia-editar-imagem', 'atelie-produto-ia-duplicata-upload' ),
+			'0.2.0',
 			true
 		);
 
@@ -69,6 +77,7 @@ class Atelie_Case_Admin_Page {
 				'restUrl'                => esc_url_raw( rest_url( 'atelie/v1/sugerir-case' ) ),
 				'editarImagemUrl'        => esc_url_raw( rest_url( 'atelie/v1/editar-imagem' ) ),
 				'sugerirEdicaoImagemUrl' => esc_url_raw( rest_url( 'atelie/v1/sugerir-edicao-imagem' ) ),
+				'duplicataUrl'           => esc_url_raw( rest_url( 'atelie/v1/verificar-fotos-duplicadas' ) ),
 				'nonce'                  => wp_create_nonce( 'wp_rest' ),
 				'iaDisponivel'           => Atelie_Ai_Config::esta_disponivel(),
 				'custoEdicaoImagem'      => number_format( Atelie_Ai_Custo_Tracker::estimar( 'editar_imagem' ), 4, ',', '.' ),

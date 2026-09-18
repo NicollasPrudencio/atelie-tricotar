@@ -14,6 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once __DIR__ . '/includes/class-ai-custo-tracker.php';
+require_once __DIR__ . '/includes/class-duplicata-service.php';
 require_once __DIR__ . '/includes/class-ai-config.php';
 require_once __DIR__ . '/includes/interface-ai-vision-service.php';
 require_once __DIR__ . '/includes/class-ai-vision-service-mock.php';
@@ -47,6 +48,7 @@ add_action( 'plugins_loaded', array( 'Atelie_Ai_Custo_Tracker', 'garantir_tabela
 add_action(
 	'plugins_loaded',
 	function (): void {
+		Atelie_Duplicata_Service::registrar();
 		( new Atelie_Rest_Controller() )->registrar();
 		( new Atelie_Admin_Page() )->registrar();
 		( new Atelie_Case_Admin_Page() )->registrar();

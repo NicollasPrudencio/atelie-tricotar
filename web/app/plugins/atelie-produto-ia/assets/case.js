@@ -35,28 +35,38 @@
             });
             frame.on("select", function () {
                 var selecao = frame.state().get("selection").toJSON();
-                selecao.forEach(function (item) {
-                    fotosIds.push(item.id);
-                    var indice = fotosIds.length - 1;
-
-                    var wrapper = document.createElement("div");
-                    wrapper.className = "atelie-foto-item";
-
-                    var img = document.createElement("img");
-                    img.src = item.sizes && item.sizes.thumbnail ? item.sizes.thumbnail.url : item.url;
-                    img.className = "atelie-foto-thumb";
-                    wrapper.appendChild(img);
-                    fotosPreview.appendChild(wrapper);
-
-                    AtelieEditarImagem.anexar(wrapper, img, item.id, atelieCaseIA, function (novoId) {
-                        fotosIds[indice] = novoId;
-                    });
-                    AtelieEditarImagem.anexarSugestao(wrapper, img, item.id, atelieCaseIA, function (novoId) {
-                        fotosIds[indice] = novoId;
-                    });
+                var ids = selecao.map(function (item) {
+                    return item.id;
                 });
-                dropzoneTexto.textContent = fotosIds.length + " foto(s) anexada(s)";
-                atualizarBotaoSugerir();
+
+                AtelieDuplicataUpload.confirmarSelecao(ids, atelieCaseIA).then(function (idsAprovados) {
+                    var aprovados = selecao.filter(function (item) {
+                        return idsAprovados.indexOf(item.id) !== -1;
+                    });
+
+                    aprovados.forEach(function (item) {
+                        fotosIds.push(item.id);
+                        var indice = fotosIds.length - 1;
+
+                        var wrapper = document.createElement("div");
+                        wrapper.className = "atelie-foto-item";
+
+                        var img = document.createElement("img");
+                        img.src = item.sizes && item.sizes.thumbnail ? item.sizes.thumbnail.url : item.url;
+                        img.className = "atelie-foto-thumb";
+                        wrapper.appendChild(img);
+                        fotosPreview.appendChild(wrapper);
+
+                        AtelieEditarImagem.anexar(wrapper, img, item.id, atelieCaseIA, function (novoId) {
+                            fotosIds[indice] = novoId;
+                        });
+                        AtelieEditarImagem.anexarSugestao(wrapper, img, item.id, atelieCaseIA, function (novoId) {
+                            fotosIds[indice] = novoId;
+                        });
+                    });
+                    dropzoneTexto.textContent = fotosIds.length + " foto(s) anexada(s)";
+                    atualizarBotaoSugerir();
+                });
             });
             frame.open();
         });

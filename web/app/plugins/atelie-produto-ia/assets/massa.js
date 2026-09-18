@@ -69,16 +69,26 @@
 
                 frame.on("select", function () {
                     var selecao = frame.state().get("selection").toJSON();
-                    fotosSelecionadas = selecao.map(function (item) {
-                        return {
-                            id: item.id,
-                            url: (item.sizes && item.sizes.thumbnail) ? item.sizes.thumbnail.url : item.url,
-                        };
+                    var ids = selecao.map(function (item) {
+                        return item.id;
                     });
-                    renderizarPreview();
-                    atualizarContador();
-                    secaoRevisao.style.display = "none";
-                    statusEl.style.display = "none";
+
+                    AtelieDuplicataUpload.confirmarSelecao(ids, atelieMassaIA).then(function (idsAprovados) {
+                        var aprovados = selecao.filter(function (item) {
+                            return idsAprovados.indexOf(item.id) !== -1;
+                        });
+
+                        fotosSelecionadas = aprovados.map(function (item) {
+                            return {
+                                id: item.id,
+                                url: (item.sizes && item.sizes.thumbnail) ? item.sizes.thumbnail.url : item.url,
+                            };
+                        });
+                        renderizarPreview();
+                        atualizarContador();
+                        secaoRevisao.style.display = "none";
+                        statusEl.style.display = "none";
+                    });
                 });
             }
             frame.open();

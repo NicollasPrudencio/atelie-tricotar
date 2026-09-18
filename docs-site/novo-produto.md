@@ -25,6 +25,11 @@ qualquer outra coisa.
    11ª foto não é aceita — o painel avisa na hora.
 3. As fotos escolhidas aparecem em miniatura, uma ao lado da outra.
 
+> Se alguma foto escolhida (ou recém-enviada) já existir na Biblioteca de Mídia — mesma imagem,
+> exatamente — o painel avisa antes de anexar, mostrando de qual outra foto se trata e quando
+> foi enviada, e pergunta se quer anexar mesmo assim. Ajuda a evitar duplicar sem perceber, ex.:
+> selecionar a mesma pasta duas vezes sem querer.
+
 **A ordem das fotos importa** — a primeira miniatura (marcada **"Capa"**) é a imagem principal do
 produto, a que aparece na loja e no compartilhamento. Pra mudar, é só arrastar uma miniatura pra
 outra posição — solta, e a ordem já muda na hora.
