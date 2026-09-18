@@ -17,6 +17,7 @@
         var form = document.getElementById("atelie-form-produto");
         var inputFotosIds = document.getElementById("atelie-input-fotos-ids");
         var btnRecomecar = document.getElementById("atelie-btn-recomecar");
+        var fotosDicaOrdem = document.getElementById("atelie-fotos-dica-ordem");
 
         function atualizarBotaoSugerir() {
             btnSugerir.disabled = fotosIds.length === 0 || !atelieProdutoIA.iaDisponivel;
@@ -27,12 +28,26 @@
             mostrarFormulario();
         });
 
-        function adicionarFoto(id, thumbnailUrl) {
-            fotosIds.push(id);
-            var indice = fotosIds.length - 1;
+        // O DOM (ordem visual das .atelie-foto-item, cada uma guardando o proprio ID em
+        // data-foto-id) é a fonte da verdade — tanto o array fotosIds quanto o campo
+        // oculto do formulario são sempre RECALCULADOS a partir dele, nunca o contrário.
+        // Precisa ser assim porque arrastar pra reordenar muda a ordem sem passar por
+        // nenhum código que sabia, antes, em que índice cada foto estava.
+        function sincronizarFotosIds() {
+            var itens = fotosPreview.querySelectorAll(".atelie-foto-item");
+            fotosIds = Array.prototype.map.call(itens, function (el) {
+                return parseInt(el.dataset.fotoId, 10);
+            });
+            inputFotosIds.value = fotosIds.join(",");
+            dropzoneTexto.textContent = fotosIds.length + " foto(s) anexada(s)";
+            fotosDicaOrdem.style.display = fotosIds.length > 1 ? "block" : "none";
+            atualizarBotaoSugerir();
+        }
 
+        function adicionarFoto(id, thumbnailUrl) {
             var wrapper = document.createElement("div");
             wrapper.className = "atelie-foto-item";
+            wrapper.dataset.fotoId = id;
 
             var img = document.createElement("img");
             img.src = thumbnailUrl;
@@ -41,10 +56,21 @@
             fotosPreview.appendChild(wrapper);
 
             AtelieEditarImagem.anexar(wrapper, img, id, atelieProdutoIA, function (novoId) {
-                fotosIds[indice] = novoId;
+                wrapper.dataset.fotoId = novoId;
+                sincronizarFotosIds();
             });
             AtelieEditarImagem.anexarSugestao(wrapper, img, id, atelieProdutoIA, function (novoId) {
-                fotosIds[indice] = novoId;
+                wrapper.dataset.fotoId = novoId;
+                sincronizarFotosIds();
+            });
+        }
+
+        if (window.jQuery && jQuery.fn.sortable) {
+            jQuery(fotosPreview).sortable({
+                items: ".atelie-foto-item",
+                tolerance: "pointer",
+                distance: 5,
+                update: sincronizarFotosIds,
             });
         }
 
@@ -59,8 +85,7 @@
                 lista.forEach(function (item) {
                     adicionarFoto(item.id, item.url);
                 });
-                dropzoneTexto.textContent = fotosIds.length + " foto(s) anexada(s)";
-                atualizarBotaoSugerir();
+                sincronizarFotosIds();
             },
         };
 
@@ -93,8 +118,7 @@
                 itens.forEach(function (item) {
                     adicionarFoto(item.id, item.sizes && item.sizes.thumbnail ? item.sizes.thumbnail.url : item.url);
                 });
-                dropzoneTexto.textContent = fotosIds.length + " foto(s) anexada(s)";
-                atualizarBotaoSugerir();
+                sincronizarFotosIds();
             }, true);
         });
 
@@ -178,7 +202,6 @@
         }
 
         function mostrarFormulario() {
-            inputFotosIds.value = fotosIds.join(",");
             form.style.display = "block";
             form.scrollIntoView({ behavior: "smooth" });
         }
@@ -200,7 +223,6 @@
         // foto escolhida em "Escolher fotos" substituiria a lista em vez de completá-la.
         if (atelieProdutoIA.edicaoFotos && atelieProdutoIA.edicaoFotos.length) {
             window.AtelieNovoProduto.adicionarFotosExternas(atelieProdutoIA.edicaoFotos);
-            inputFotosIds.value = fotosIds.join(",");
         }
 
         atualizarBotaoSugerir();

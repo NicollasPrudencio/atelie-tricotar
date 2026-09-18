@@ -25,6 +25,10 @@ qualquer outra coisa.
    11ª foto não é aceita — o painel avisa na hora.
 3. As fotos escolhidas aparecem em miniatura, uma ao lado da outra.
 
+**A ordem das fotos importa** — a primeira miniatura (marcada **"Capa"**) é a imagem principal do
+produto, a que aparece na loja e no compartilhamento. Pra mudar, é só arrastar uma miniatura pra
+outra posição — solta, e a ordem já muda na hora.
+
 Embaixo de cada miniatura aparecem dois botões extras, opcionais:
 
 - **✏️ Editar com IA** — você descreve a edição que quer (ex.: "deixe o fundo branco") e a IA

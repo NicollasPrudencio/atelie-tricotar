@@ -144,6 +144,19 @@ class Atelie_Rest_Controller {
 						),
 					)
 				);
+
+				register_rest_route(
+					'atelie/v1',
+					'/reordenar-produtos',
+					array(
+						'methods'             => 'POST',
+						'callback'            => array( $this, 'reordenar_produtos' ),
+						'permission_callback' => array( $this, 'usuario_pode_criar_produto' ),
+						'args'                => array(
+							'ordem' => array( 'required' => true ),
+						),
+					)
+				);
 			}
 		);
 	}
@@ -476,6 +489,33 @@ class Atelie_Rest_Controller {
 		}
 
 		return new WP_REST_Response( array( 'itens' => $resposta ), 200 );
+	}
+
+	/**
+	 * Salva a ordem em que os produtos aparecem na loja (arrastar-e-soltar na
+	 * tela "Ordenar Produtos") — grava no menu_order nativo do WordPress, que
+	 * é a mesma coisa que o WooCommerce usa pra "Ordenação personalizada"
+	 * (já é a ordenação padrão configurada na loja).
+	 */
+	public function reordenar_produtos( WP_REST_Request $request ): WP_REST_Response {
+		$ordem_bruta = $request->get_param( 'ordem' );
+		if ( ! is_array( $ordem_bruta ) || empty( $ordem_bruta ) ) {
+			return new WP_REST_Response( array( 'erro' => 'Ordem inválida.' ), 400 );
+		}
+
+		$ordem = array_values( array_filter( array_map( 'absint', $ordem_bruta ) ) );
+
+		global $wpdb;
+		foreach ( $ordem as $posicao => $produto_id ) {
+			if ( get_post_type( $produto_id ) !== 'product' || ! current_user_can( 'edit_post', $produto_id ) ) {
+				continue;
+			}
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- wp_update_post() dispara hooks pesados (revisao, reindexacao) por item; sao so dezenas de produtos, mas ainda assim uma query direta de update simples e o padrao usado pro reordenamento nativo de posts do proprio WordPress core (wp-admin/includes/ajax-actions.php, save_menu_order).
+			$wpdb->update( $wpdb->posts, array( 'menu_order' => $posicao ), array( 'ID' => $produto_id ) );
+			clean_post_cache( $produto_id );
+		}
+
+		return new WP_REST_Response( array( 'ok' => true ), 200 );
 	}
 
 	public function editar_imagem( WP_REST_Request $request ): WP_REST_Response {

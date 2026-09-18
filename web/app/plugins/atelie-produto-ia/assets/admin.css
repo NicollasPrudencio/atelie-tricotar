@@ -60,6 +60,41 @@
     flex-direction: column;
     align-items: center;
     gap: 0.3rem;
+    position: relative;
+    cursor: grab;
+}
+
+.atelie-novo-produto .atelie-foto-item.ui-sortable-helper {
+    cursor: grabbing;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+    background: #fff;
+    border-radius: 4px;
+}
+
+.atelie-novo-produto .atelie-foto-item.ui-sortable-placeholder {
+    visibility: visible !important;
+    background: #f0e6ea;
+    border: 1px dashed #c98fae;
+    border-radius: 4px;
+    width: 64px;
+    height: 64px;
+}
+
+/* So a primeira foto vira a "capa" do produto (imagem destacada) — marca
+   visualmente qual e, ja que agora da pra arrastar e mudar a ordem. */
+.atelie-novo-produto .atelie-foto-item:first-child::before {
+    content: "Capa";
+    position: absolute;
+    top: -8px;
+    left: -6px;
+    background: #b5477a;
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 999px;
+    z-index: 1;
+    pointer-events: none;
 }
 
 .atelie-novo-produto .atelie-btn-editar-imagem {
@@ -499,4 +534,62 @@
     color: #6c6072;
     font-size: 0.85rem;
     margin-right: auto;
+}
+
+/* Tela "Ordenar Produtos" — lista arrastar-e-soltar. */
+.atelie-ordenar-lista {
+    list-style: none;
+    margin: 1rem 0 0;
+    padding: 0;
+    max-width: 640px;
+}
+
+.atelie-ordenar-item {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    background: #fff;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    padding: 0.5rem 0.85rem;
+    margin-bottom: 0.5rem;
+}
+
+.atelie-ordenar-alca {
+    cursor: grab;
+    color: #8c8f94;
+    font-size: 1.2rem;
+    line-height: 1;
+    user-select: none;
+}
+
+.atelie-ordenar-item.ui-sortable-helper {
+    cursor: grabbing;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+.atelie-ordenar-item.ui-sortable-placeholder {
+    visibility: visible !important;
+    background: #f0e6ea;
+    border: 1px dashed #c98fae;
+    border-radius: 6px;
+}
+
+.atelie-ordenar-thumb {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.atelie-ordenar-titulo {
+    flex-grow: 1;
+    font-weight: 600;
+}
+
+.atelie-ordenar-preco {
+    color: #6c6072;
+    font-size: 0.85rem;
+    white-space: nowrap;
 }

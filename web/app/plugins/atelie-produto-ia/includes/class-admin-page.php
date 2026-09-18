@@ -55,8 +55,8 @@ class Atelie_Admin_Page {
 		wp_enqueue_script(
 			'atelie-produto-ia-admin',
 			plugins_url( 'assets/admin.js', dirname( __DIR__ ) . '/atelie-produto-ia.php' ),
-			array( 'jquery', 'atelie-produto-ia-editar-imagem' ),
-			'0.3.0',
+			array( 'jquery', 'jquery-ui-sortable', 'atelie-produto-ia-editar-imagem' ),
+			'0.4.0',
 			true
 		);
 
@@ -225,6 +225,7 @@ class Atelie_Admin_Page {
 				<div id="atelie-dropzone" class="atelie-dropzone">
 					<p id="atelie-dropzone-texto">Toque para escolher as fotos do produto</p>
 					<div id="atelie-fotos-preview" class="atelie-fotos-preview"></div>
+					<p id="atelie-fotos-dica-ordem" class="description" style="display:none;">Arraste as fotos pra mudar a ordem — a primeira é a "Capa" do produto.</p>
 				</div>
 				<p class="atelie-lote-origem-fotos">
 					<button type="button" class="button" id="atelie-btn-escolher-fotos">Escolher fotos</button>
