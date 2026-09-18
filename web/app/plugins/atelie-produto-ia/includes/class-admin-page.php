@@ -142,9 +142,6 @@ class Atelie_Admin_Page {
 		if ( isset( $_GET['publicado'] ) ) {
 			echo '<div class="notice notice-success is-dismissible"><p>Produto publicado! Já está visível no site.</p></div>';
 		}
-		if ( isset( $_GET['atualizado'] ) ) {
-			echo '<div class="notice notice-success is-dismissible"><p>Produto atualizado! As mudanças já estão no ar.</p></div>';
-		}
 		if ( isset( $_GET['erro'] ) && $_GET['erro'] === 'limite-fotos' ) {
 			echo '<div class="notice notice-error is-dismissible"><p>Máximo de 10 fotos por produto — remova algumas e tente de novo.</p></div>';
 		} elseif ( isset( $_GET['erro'] ) ) {
@@ -512,6 +509,10 @@ class Atelie_Admin_Page {
 					'ID'           => $produto_id,
 					'post_title'   => $titulo,
 					'post_content' => $descricao,
+					// Produtos vindos de lote (Pendências) nascem 'draft' — sem isso aqui,
+					// "Salvar alterações" nunca publicava de verdade (wp_update_post() sozinho
+					// preserva o status atual em vez de mudar pra 'publish').
+					'post_status'  => 'publish',
 				),
 				true
 			);
@@ -519,6 +520,9 @@ class Atelie_Admin_Page {
 				wp_safe_redirect( add_query_arg( 'erro', '1', $pagina_volta ) );
 				exit;
 			}
+			// Some da lista de Pendências (mesma marcação que o botão "Marcar como revisado"
+			// já usa) — sem efeito em produtos que não vieram de um lote.
+			update_post_meta( $produto_id, '_atelie_lote_status', 'revisado' );
 		} else {
 			$produto_id = wp_insert_post(
 				array(
@@ -576,8 +580,14 @@ class Atelie_Admin_Page {
 			delete_post_meta( $produto_id, '_product_image_gallery' );
 		}
 
-		$parametro_sucesso = $modo_edicao ? 'atualizado' : 'publicado';
-		wp_safe_redirect( add_query_arg( $parametro_sucesso, '1', admin_url( 'edit.php?post_type=product&page=' . self::SLUG ) ) );
+		if ( $modo_edicao ) {
+			// Veio de "Revisar" nas Pendências — volta pra lá em vez de ficar na tela
+			// simplificada, que é o fluxo de CRIAR um produto novo, não de revisão em lote.
+			wp_safe_redirect( add_query_arg( 'atualizado', '1', admin_url( 'edit.php?post_type=product&page=atelie-revisar-lote' ) ) );
+			exit;
+		}
+
+		wp_safe_redirect( add_query_arg( 'publicado', '1', admin_url( 'edit.php?post_type=product&page=' . self::SLUG ) ) );
 		exit;
 	}
 }

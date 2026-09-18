@@ -250,6 +250,11 @@ class Atelie_Lote_Admin_Pages {
 			);
 			?>
 				</h1>
+
+			<?php if ( isset( $_GET['atualizado'] ) ) : ?>
+				<div class="notice notice-success is-dismissible"><p>Produto atualizado e publicado! Já está visível no site.</p></div>
+			<?php endif; ?>
+
 			<p><button type="button" class="button" onclick="location.reload();">Atualizar status</button> <span id="atelie-lote-polling-aviso" class="description"></span></p>
 
 			<?php if ( empty( $itens ) ) : ?>
