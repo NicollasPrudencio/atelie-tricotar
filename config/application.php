@@ -98,6 +98,16 @@ Config::define( 'DISABLE_WP_CRON', env( 'DISABLE_WP_CRON' ) ?: false );
 Config::define( 'DISALLOW_FILE_EDIT', true );
 
 /**
+ * Sem isso, o WordPress trava o proprio uso de memoria em telas de admin/
+ * upload no padrao dele (256M), mesmo o hospedeiro liberando bem mais
+ * (confirmado 512M no php.ini deste plano) — fotos de celular grandes (alta
+ * resolucao) estouravam esse teto interno ao gerar os tamanhos automaticos,
+ * com erro "o servidor nao consegue processar a imagem" no upload em massa.
+ */
+Config::define( 'WP_MEMORY_LIMIT', '512M' );
+Config::define( 'WP_MAX_MEMORY_LIMIT', '512M' );
+
+/**
  * Chaves de integracao proprias do ateliê (lidas via env, nunca hardcoded)
  * Uso documentado no plano do projeto, secao "Nota fiscal" e "Plugin custom Criar Produto com IA"
  */
