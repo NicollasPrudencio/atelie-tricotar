@@ -14,13 +14,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 <header class="site-header">
 	<div class="site-container site-header__bar">
-		<a class="site-header__brand" href="<?php echo esc_url( home_url( '/' ) ); ?>">
+		<div class="site-header__brand">
 			<?php if ( has_custom_logo() ) : ?>
+				<?php // the_custom_logo() ja gera seu proprio <a>; nao aninhar outro <a> em volta (HTML invalido quebra o CSS de tamanho da imagem). ?>
 				<?php the_custom_logo(); ?>
 			<?php else : ?>
-				<span class="site-header__brand-nome"><?php bloginfo( 'name' ); ?></span>
+				<a href="<?php echo esc_url( home_url( '/' ) ); ?>">
+					<span class="site-header__brand-nome"><?php bloginfo( 'name' ); ?></span>
+				</a>
 			<?php endif; ?>
-		</a>
+		</div>
 
 		<nav class="site-header__nav" aria-label="<?php esc_attr_e( 'Menu principal', 'atelie-theme' ); ?>">
 			<?php
