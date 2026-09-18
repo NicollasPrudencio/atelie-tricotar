@@ -144,9 +144,8 @@ p { margin: 0 0 1em; }
 }
 
 .site-header__brand img {
-    max-height: 56px;
+    max-height: 64px;
     width: auto;
-    border-radius: 50%;
 }
 
 .site-header__brand-nome {
