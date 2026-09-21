@@ -1078,15 +1078,15 @@
         },
         {
             "name": "wpackagist-plugin/melhor-envio-cotacao",
-            "version": "2.16.5",
+            "version": "2.16.6",
             "source": {
                 "type": "svn",
                 "url": "https://plugins.svn.wordpress.org/melhor-envio-cotacao/",
-                "reference": "tags/2.16.5"
+                "reference": "tags/2.16.6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://downloads.wordpress.org/plugin/melhor-envio-cotacao.2.16.5.zip"
+                "url": "https://downloads.wordpress.org/plugin/melhor-envio-cotacao.2.16.6.zip"
             },
             "require": {
                 "composer/installers": "^1.0 || ^2.0"
