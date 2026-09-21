@@ -68,6 +68,11 @@ class Atelie_Ads_Admin_Page {
 			}
 			?>
 			</h1>
+
+			<?php if ( isset( $_GET['teto_ia'] ) ) : ?>
+				<div class="notice notice-error"><p>Teto de gasto mensal de IA atingido — aumente o teto em "Gasto da IA" ou aguarde o próximo mês.</p></div>
+			<?php endif; ?>
+
 			<p>Selecione os produtos/cases já publicados pra gerar o texto de anúncio (Meta + TikTok).</p>
 
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
@@ -146,6 +151,11 @@ class Atelie_Ads_Admin_Page {
 
 		if ( empty( $ids ) ) {
 			wp_safe_redirect( admin_url( 'admin.php?page=' . self::SLUG ) );
+			exit;
+		}
+
+		if ( Atelie_Ai_Custo_Tracker::teto_excedido() ) {
+			wp_safe_redirect( add_query_arg( 'teto_ia', '1', admin_url( 'admin.php?page=' . self::SLUG ) ) );
 			exit;
 		}
 

@@ -208,6 +208,13 @@ class Atelie_Rest_Controller {
 			);
 		}
 
+		if ( Atelie_Ai_Custo_Tracker::teto_excedido() ) {
+			return new WP_REST_Response(
+				array( 'erro' => 'Teto de gasto mensal de IA atingido. Aumente o teto em "Gasto da IA" ou aguarde o próximo mês.' ),
+				429
+			);
+		}
+
 		$caminhos = array();
 		foreach ( $fotos_ids as $id ) {
 			$caminho = $this->caminho_para_ia( $id );
@@ -263,6 +270,13 @@ class Atelie_Rest_Controller {
 		if ( ! $this->dentro_do_limite_diario() ) {
 			return new WP_REST_Response(
 				array( 'erro' => 'Limite diário de análises por IA atingido. Tente de novo amanhã ou preencha manualmente.' ),
+				429
+			);
+		}
+
+		if ( Atelie_Ai_Custo_Tracker::teto_excedido() ) {
+			return new WP_REST_Response(
+				array( 'erro' => 'Teto de gasto mensal de IA atingido. Aumente o teto em "Gasto da IA" ou aguarde o próximo mês.' ),
 				429
 			);
 		}
@@ -379,6 +393,10 @@ class Atelie_Rest_Controller {
 
 		if ( ! $this->dentro_do_limite_diario() ) {
 			return new WP_REST_Response( array( 'erro' => 'Limite diário de chamadas de IA atingido. Tente de novo amanhã.' ), 429 );
+		}
+
+		if ( Atelie_Ai_Custo_Tracker::teto_excedido() ) {
+			return new WP_REST_Response( array( 'erro' => 'Teto de gasto mensal de IA atingido. Aumente o teto em "Gasto da IA" ou aguarde o próximo mês.' ), 429 );
 		}
 
 		// Mantem fotos_ids_validos alinhado 1:1 com os caminhos que realmente
@@ -567,6 +585,10 @@ class Atelie_Rest_Controller {
 			return new WP_REST_Response( array( 'erro' => 'Limite diário de chamadas de IA atingido. Tente de novo amanhã.' ), 429 );
 		}
 
+		if ( Atelie_Ai_Custo_Tracker::teto_excedido() ) {
+			return new WP_REST_Response( array( 'erro' => 'Teto de gasto mensal de IA atingido. Aumente o teto em "Gasto da IA" ou aguarde o próximo mês.' ), 429 );
+		}
+
 		$caminho = get_attached_file( $foto_id );
 		if ( ! $caminho ) {
 			return new WP_REST_Response( array( 'erro' => 'Foto não encontrada.' ), 404 );
@@ -616,6 +638,10 @@ class Atelie_Rest_Controller {
 			return new WP_REST_Response( array( 'erro' => 'Limite diário de chamadas de IA atingido. Tente de novo amanhã.' ), 429 );
 		}
 
+		if ( Atelie_Ai_Custo_Tracker::teto_excedido() ) {
+			return new WP_REST_Response( array( 'erro' => 'Teto de gasto mensal de IA atingido. Aumente o teto em "Gasto da IA" ou aguarde o próximo mês.' ), 429 );
+		}
+
 		try {
 			$servico   = Atelie_Ai_Vision_Service_Factory::criar();
 			$resultado = $servico->sugerirPrecoVenda( $titulo, $descricao, $custo );
@@ -651,6 +677,10 @@ class Atelie_Rest_Controller {
 
 		if ( ! $this->dentro_do_limite_diario() ) {
 			return new WP_REST_Response( array( 'erro' => 'Limite diário de chamadas de IA atingido. Tente de novo amanhã.' ), 429 );
+		}
+
+		if ( Atelie_Ai_Custo_Tracker::teto_excedido() ) {
+			return new WP_REST_Response( array( 'erro' => 'Teto de gasto mensal de IA atingido. Aumente o teto em "Gasto da IA" ou aguarde o próximo mês.' ), 429 );
 		}
 
 		$caminho = get_attached_file( $foto_id );

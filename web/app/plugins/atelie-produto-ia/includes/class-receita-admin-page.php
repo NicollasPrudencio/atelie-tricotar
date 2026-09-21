@@ -135,14 +135,23 @@ class Atelie_Receita_Admin_Page {
 		}
 
 		$descricao = isset( $_POST['descricao'] ) ? sanitize_text_field( wp_unslash( $_POST['descricao'] ) ) : '';
-		$servico   = Atelie_Ai_Vision_Service_Factory::criar();
-		$resultado = $descricao !== ''
-			? $servico->buscarReceita( $descricao )
-			: array(
+
+		if ( Atelie_Ai_Custo_Tracker::teto_excedido() ) {
+			$resultado = array(
 				'ok'         => false,
 				'resultados' => array(),
-				'mensagem'   => 'Descreva o que você procura antes de buscar.',
+				'mensagem'   => 'Teto de gasto mensal de IA atingido — aumente o teto em "Gasto da IA" ou aguarde o próximo mês.',
 			);
+		} else {
+			$servico   = Atelie_Ai_Vision_Service_Factory::criar();
+			$resultado = $descricao !== ''
+				? $servico->buscarReceita( $descricao )
+				: array(
+					'ok'         => false,
+					'resultados' => array(),
+					'mensagem'   => 'Descreva o que você procura antes de buscar.',
+				);
+		}
 
 		set_transient( self::TRANSIENT_BUSCA . get_current_user_id(), $resultado, 5 * MINUTE_IN_SECONDS );
 
@@ -160,8 +169,17 @@ class Atelie_Receita_Admin_Page {
 		}
 
 		$texto_original = isset( $_POST['texto_original'] ) ? sanitize_textarea_field( wp_unslash( $_POST['texto_original'] ) ) : '';
-		$servico        = Atelie_Ai_Vision_Service_Factory::criar();
-		$resultado      = $servico->traduzirReceita( $texto_original );
+
+		if ( Atelie_Ai_Custo_Tracker::teto_excedido() ) {
+			$resultado = array(
+				'ok'              => false,
+				'texto_traduzido' => '',
+				'mensagem'        => 'Teto de gasto mensal de IA atingido — aumente o teto em "Gasto da IA" ou aguarde o próximo mês.',
+			);
+		} else {
+			$servico   = Atelie_Ai_Vision_Service_Factory::criar();
+			$resultado = $servico->traduzirReceita( $texto_original );
+		}
 
 		set_transient( self::TRANSIENT_TRADUCAO . get_current_user_id(), $resultado, 5 * MINUTE_IN_SECONDS );
 

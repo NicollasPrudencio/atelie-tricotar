@@ -18,6 +18,7 @@ class Atelie_Ai_Custo_Tracker {
 	private const OPCAO_TABELA_PRECOS        = 'atelie_ai_tabela_precos';
 	private const OPCAO_TABELA_PRECOS_IMAGEM = 'atelie_ai_tabela_precos_imagem';
 	private const OPCAO_LIMITE_AVISO         = 'atelie_ai_limite_aviso_mensal';
+	private const OPCAO_TETO_MENSAL          = 'atelie_ai_teto_mensal';
 
 	/**
 	 * Estimativas de token usadas quando ainda nao ha historico real pra
@@ -339,6 +340,38 @@ class Atelie_Ai_Custo_Tracker {
 		$limite = self::limite_aviso();
 
 		return $limite > 0 && self::gasto_mes_atual() >= $limite;
+	}
+
+	/**
+	 * Teto de gasto mensal — diferente de limite_aviso() (só um aviso visual
+	 * pro Administrador, não impede nada): atingir o teto BLOQUEIA de verdade
+	 * toda ação de IA que custa dinheiro em todo o painel (ver os pontos que
+	 * chamam teto_excedido() em class-rest-controller.php e nas telas de SEO/
+	 * Anúncios/Receita), até o mês virar ou alguém aumentar o teto. Acessível
+	 * pra Artesã (não só Administrador) — ver Atelie_Gasto_Ia_Admin_Page.
+	 */
+	public static function obter_teto_mensal(): ?float {
+		$valor = get_option( self::OPCAO_TETO_MENSAL, '' );
+		if ( $valor === '' || $valor === false ) {
+			return null;
+		}
+
+		return (float) $valor;
+	}
+
+	public static function salvar_teto_mensal( ?float $valor ): void {
+		if ( $valor === null || $valor <= 0 ) {
+			delete_option( self::OPCAO_TETO_MENSAL );
+			return;
+		}
+
+		update_option( self::OPCAO_TETO_MENSAL, $valor, false );
+	}
+
+	public static function teto_excedido(): bool {
+		$teto = self::obter_teto_mensal();
+
+		return $teto !== null && self::gasto_mes_atual() >= $teto;
 	}
 
 	/**

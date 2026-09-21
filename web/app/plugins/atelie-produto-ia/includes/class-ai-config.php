@@ -68,15 +68,29 @@ class Atelie_Ai_Config {
 	 */
 	public static function obter_status(): array {
 		$status = get_option( self::OPCAO_STATUS, null );
-		if ( is_array( $status ) && isset( $status['ok'], $status['mensagem'], $status['verificado_em'] ) ) {
-			return $status;
+		if ( ! is_array( $status ) || ! isset( $status['ok'], $status['mensagem'], $status['verificado_em'] ) ) {
+			$status = array(
+				'ok'            => false,
+				'mensagem'      => 'Ainda não testado.',
+				'verificado_em' => 0,
+			);
 		}
 
-		return array(
-			'ok'            => false,
-			'mensagem'      => 'Ainda não testado.',
-			'verificado_em' => 0,
-		);
+		// Teto de gasto mensal atingido também conta como "indisponível" pra
+		// qualquer botão de IA do painel — reaproveita o mesmo aviso/tooltip
+		// já usado em toda tela, sem precisar duplicar essa checagem em cada
+		// uma (o bloqueio de verdade continua sendo feito no servidor, ver
+		// Atelie_Ai_Custo_Tracker::teto_excedido() em class-rest-controller.php
+		// e nas telas de SEO/Anúncios/Receita — isso aqui é só a parte visual).
+		if ( $status['ok'] === true && Atelie_Ai_Custo_Tracker::teto_excedido() ) {
+			return array(
+				'ok'            => false,
+				'mensagem'      => 'Teto de gasto mensal de IA atingido.',
+				'verificado_em' => $status['verificado_em'],
+			);
+		}
+
+		return $status;
 	}
 
 	public static function esta_disponivel(): bool {
@@ -120,9 +134,16 @@ class Atelie_Ai_Config {
 	 * @param array{ok: bool, mensagem: string, verificado_em: int} $status
 	 */
 	public static function atributo_tooltip_indisponivel( array $status ): string {
-		$mensagem = current_user_can( 'manage_options' )
-			? sprintf( 'IA indisponível: %s Vá em "Configurar IA" pra corrigir.', $status['mensagem'] )
-			: 'IA indisponível no momento. Avise o administrador do site — ou use "Preencher manualmente".';
+		if ( Atelie_Ai_Custo_Tracker::teto_excedido() ) {
+			// Diferente das outras causas de indisponibilidade, essa quem usa
+			// o painel resolve sozinha (não precisa do Administrador) — tela
+			// "Gasto da IA" é acessível pra Artesã.
+			$mensagem = 'Teto de gasto mensal de IA atingido. Aumente o teto em "Gasto da IA" ou aguarde o próximo mês.';
+		} elseif ( current_user_can( 'manage_options' ) ) {
+			$mensagem = sprintf( 'IA indisponível: %s Vá em "Configurar IA" pra corrigir.', $status['mensagem'] );
+		} else {
+			$mensagem = 'IA indisponível no momento. Avise o administrador do site — ou use "Preencher manualmente".';
+		}
 
 		return 'data-tooltip="' . esc_attr( $mensagem ) . '"';
 	}
