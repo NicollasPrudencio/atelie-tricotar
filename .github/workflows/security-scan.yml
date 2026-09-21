@@ -7,7 +7,7 @@ name: Security Scan (WPScan)
 # Precisa do secret WPSCAN_API_TOKEN (conta gratuita em https://wpscan.com/register,
 # ~25 requisicoes/dia no free tier — mesmo token tambem usado pelo mu-plugin
 # atelie-seguranca-cve.php, que faz verificacao diaria direto no WordPress de cada
-# ambiente; esse workflow aqui e um scan semanal mais completo (--enumerate vc,vp,vt),
+# ambiente; esse workflow aqui e um scan semanal mais completo (--enumerate vp,vt),
 # complementar, nao substitui o outro). Sem o secret configurado, o job falha na
 # autenticacao — configurar em Settings > Secrets and variables > Actions.
 
@@ -30,7 +30,7 @@ jobs:
           docker run --rm wpscanteam/wpscan \
             --url "${{ matrix.ambiente.url }}" \
             --api-token "${{ secrets.WPSCAN_API_TOKEN }}" \
-            --enumerate vc,vp,vt \
+            --enumerate vp,vt \
             --format json \
             --no-banner \
             --random-user-agent > wpscan-resultado.json
