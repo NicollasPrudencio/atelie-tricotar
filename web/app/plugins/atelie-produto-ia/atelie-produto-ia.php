@@ -29,6 +29,7 @@ require_once __DIR__ . '/includes/class-lote-admin-pages.php';
 require_once __DIR__ . '/includes/class-massa-admin-page.php';
 require_once __DIR__ . '/includes/class-ordenar-produtos-admin-page.php';
 require_once __DIR__ . '/includes/class-gasto-ia-admin-page.php';
+require_once __DIR__ . '/includes/class-relatorio-produtos-admin-page.php';
 require_once __DIR__ . '/includes/class-settings-page.php';
 require_once __DIR__ . '/includes/class-drive-config.php';
 require_once __DIR__ . '/includes/class-google-drive-service.php';
@@ -58,6 +59,7 @@ add_action(
 		( new Atelie_Massa_Admin_Page() )->registrar();
 		( new Atelie_Ordenar_Produtos_Admin_Page() )->registrar();
 		( new Atelie_Gasto_Ia_Admin_Page() )->registrar();
+		( new Atelie_Relatorio_Produtos_Admin_Page() )->registrar();
 		( new Atelie_Settings_Page() )->registrar();
 		( new Atelie_Drive_Admin_Page() )->registrar();
 		( new Atelie_Ads_Admin_Page() )->registrar();

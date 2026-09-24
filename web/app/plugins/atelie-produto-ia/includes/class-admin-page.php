@@ -154,6 +154,8 @@ class Atelie_Admin_Page {
 		}
 		if ( isset( $_GET['erro'] ) && $_GET['erro'] === 'limite-fotos' ) {
 			echo '<div class="notice notice-error is-dismissible"><p>Máximo de 10 fotos por produto — remova algumas e tente de novo.</p></div>';
+		} elseif ( isset( $_GET['erro'] ) && $_GET['erro'] === 'referencia-duplicada' ) {
+			echo '<div class="notice notice-error is-dismissible"><p>Essa referência já é de outro produto — use um código diferente (a referência identifica UM produto só) e tente de novo.</p></div>';
 		} elseif ( isset( $_GET['erro'] ) ) {
 			echo '<div class="notice notice-error is-dismissible"><p>Não deu pra publicar — confira os campos obrigatórios (fotos, título e preço) e tente de novo.</p></div>';
 		}
@@ -392,6 +394,18 @@ class Atelie_Admin_Page {
 					</p>
 
 					<p>
+						<label for="atelie-campo-referencia">Referência (código do produto)</label><br>
+						<input type="text" name="referencia" id="atelie-campo-referencia" maxlength="100" placeholder="ex.: AMI-0012" style="width:200px;" value="<?php echo esc_attr( $dados['referencia'] ?? '' ); ?>">
+						<span class="description">Opcional. Seu código pra achar a peça (fica no relatório). Não pode repetir em outro produto.</span>
+					</p>
+
+					<p>
+						<label for="atelie-campo-estoque">Quantidade em estoque</label><br>
+						<input type="number" name="estoque" id="atelie-campo-estoque" min="0" step="1" placeholder="sem controle" style="width:140px;" value="<?php echo esc_attr( (string) ( $dados['estoque'] ?? '' ) ); ?>">
+						<span class="description">Deixe em branco se não controla estoque (ex.: sob encomenda). Com um número, o site baixa o estoque a cada venda e mostra "esgotado" em zero.</span>
+					</p>
+
+					<p>
 						<label>Peso (kg)</label><br>
 						<input type="text" name="peso" placeholder="0,15" style="width:100px;" value="<?php echo esc_attr( $dados['peso'] ?? '' ); ?>">
 						&nbsp;&nbsp;
@@ -435,6 +449,8 @@ class Atelie_Admin_Page {
 			'preco'           => get_post_meta( $produto_id, '_regular_price', true ),
 			'disponibilidade' => get_post_meta( $produto_id, '_atelie_disponibilidade', true ) ?: 'sob_encomenda',
 			'prazo_producao'  => get_post_meta( $produto_id, '_atelie_prazo_producao', true ),
+			'referencia'      => get_post_meta( $produto_id, '_sku', true ),
+			'estoque'         => get_post_meta( $produto_id, '_manage_stock', true ) === 'yes' ? get_post_meta( $produto_id, '_stock', true ) : '',
 			'peso'            => get_post_meta( $produto_id, '_weight', true ),
 			'comprimento'     => get_post_meta( $produto_id, '_length', true ),
 			'largura'         => get_post_meta( $produto_id, '_width', true ),
@@ -481,6 +497,9 @@ class Atelie_Admin_Page {
 		$categoria_nome        = isset( $_POST['categoria'] ) ? sanitize_text_field( wp_unslash( $_POST['categoria'] ) ) : '';
 		$disponibilidade       = isset( $_POST['disponibilidade'] ) && $_POST['disponibilidade'] === 'pronta_entrega' ? 'pronta_entrega' : 'sob_encomenda';
 		$prazo_producao        = absint( $_POST['prazo_producao'] ?? 0 );
+		$referencia            = isset( $_POST['referencia'] ) ? mb_substr( sanitize_text_field( wp_unslash( $_POST['referencia'] ) ), 0, 100 ) : '';
+		$estoque_bruto         = isset( $_POST['estoque'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['estoque'] ) ) ) : '';
+		$estoque               = ( $estoque_bruto !== '' && ctype_digit( $estoque_bruto ) ) ? (int) $estoque_bruto : null;
 		$peso                  = isset( $_POST['peso'] ) ? str_replace( ',', '.', sanitize_text_field( wp_unslash( $_POST['peso'] ) ) ) : '';
 		$comprimento           = isset( $_POST['comprimento'] ) ? sanitize_text_field( wp_unslash( $_POST['comprimento'] ) ) : '';
 		$largura               = isset( $_POST['largura'] ) ? sanitize_text_field( wp_unslash( $_POST['largura'] ) ) : '';
@@ -495,6 +514,8 @@ class Atelie_Admin_Page {
 			'preco'           => $preco,
 			'disponibilidade' => $disponibilidade,
 			'prazo_producao'  => $prazo_producao,
+			'referencia'      => $referencia,
+			'estoque'         => $estoque === null ? '' : $estoque,
 			'peso'            => $peso,
 			'comprimento'     => $comprimento,
 			'largura'         => $largura,
@@ -502,6 +523,12 @@ class Atelie_Admin_Page {
 			'fotos_ids'       => implode( ',', $fotos_ids ),
 			'produto_id'      => $modo_edicao ? $produto_id_edicao : 0,
 		);
+
+		// A referencia (SKU) identifica UM produto — o WooCommerce nao deixa repetir.
+		if ( $referencia !== '' && WC_Data_Store::load( 'product' )->is_existing_sku( $modo_edicao ? $produto_id_edicao : 0, $referencia ) ) {
+			wp_safe_redirect( add_query_arg( 'erro', 'referencia-duplicada', $pagina_volta ) );
+			exit;
+		}
 
 		/**
 		 * IA como responsável pela qualidade do texto: se não usou sugestão da IA
@@ -589,6 +616,27 @@ class Atelie_Admin_Page {
 		}
 		if ( $altura !== '' ) {
 			update_post_meta( $produto_id, '_height', $altura );
+		}
+
+		// Referencia (SKU) e estoque via objeto do WooCommerce — mantem a tabela de lookup
+		// (busca/ordenacao/filtro de esgotado) em dia e deriva instock/outofstock do numero.
+		$produto_wc = wc_get_product( $produto_id );
+		if ( $produto_wc ) {
+			try {
+				$produto_wc->set_sku( $referencia );
+				if ( $estoque !== null ) {
+					$produto_wc->set_manage_stock( true );
+					$produto_wc->set_stock_quantity( $estoque );
+					$produto_wc->set_stock_status( $estoque > 0 ? 'instock' : 'outofstock' );
+				} else {
+					$produto_wc->set_manage_stock( false );
+					$produto_wc->set_stock_status( 'instock' );
+				}
+				$produto_wc->save();
+			} catch ( Throwable $e ) {
+				wp_safe_redirect( add_query_arg( 'erro', 'referencia-duplicada', $pagina_volta ) );
+				exit;
+			}
 		}
 
 		set_post_thumbnail( $produto_id, $fotos_ids[0] );

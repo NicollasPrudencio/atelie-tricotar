@@ -97,6 +97,10 @@ campos:
     despachar) ou **"Sob encomenda"** (você ainda vai fazer depois da venda, valor padrão). Se
     escolher "sob encomenda", um campo extra aparece para você informar o **prazo de produção
     em dias**.
+  - **Referência** (código seu pra achar a peça, opcional — não pode repetir em outro produto) e
+    **Quantidade em estoque** (deixe em branco se não controla estoque; com um número, o site
+    baixa a cada venda e mostra "esgotado" em zero). Veja o
+    [Relatório de Produtos](/relatorio-de-produtos/) pra imprimir essas informações.
   - **Peso** e **Dimensões** (comprimento × largura × altura, em centímetros) — usados para
     calcular o valor do frete automaticamente na loja.
 
