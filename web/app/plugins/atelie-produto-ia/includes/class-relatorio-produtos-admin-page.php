@@ -128,8 +128,8 @@ class Atelie_Relatorio_Produtos_Admin_Page {
 		$situacao        = isset( $_GET['situacao'] ) && $_GET['situacao'] === 'todos' ? 'todos' : 'publicados';
 		$ordem           = isset( $_GET['ordem'] ) && $_GET['ordem'] === 'produto' ? 'produto' : 'referencia';
 
-		$linhas     = $this->montar_linhas( $categoria, $disponibilidade, $situacao, $ordem );
-		$categorias = get_terms(
+		$linhas      = $this->montar_linhas( $categoria, $disponibilidade, $situacao, $ordem );
+		$categorias  = get_terms(
 			array(
 				'taxonomy'   => 'product_cat',
 				'hide_empty' => false,
