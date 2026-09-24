@@ -15,6 +15,32 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * As 3 telas (Orçamentos, Matérias-primas, Artesãs) são da Gestora e do Administrador
+ * (capacidade atelie_gestao) — antes usavam as capacidades padrão de "post", que só o
+ * Administrador tinha. A Artesã comum continua sem acesso.
+ */
+function atelie_precificacao_capabilities(): array {
+	$cap = 'atelie_gestao';
+
+	return array(
+		'edit_post'              => $cap,
+		'read_post'              => $cap,
+		'delete_post'            => $cap,
+		'edit_posts'             => $cap,
+		'edit_others_posts'      => $cap,
+		'delete_posts'           => $cap,
+		'publish_posts'          => $cap,
+		'read_private_posts'     => $cap,
+		'delete_private_posts'   => $cap,
+		'delete_published_posts' => $cap,
+		'delete_others_posts'    => $cap,
+		'edit_private_posts'     => $cap,
+		'edit_published_posts'   => $cap,
+		'create_posts'           => $cap,
+	);
+}
+
+/**
  * CPTs
  */
 add_action(
@@ -23,16 +49,18 @@ add_action(
 		register_post_type(
 			'atelie_orcamento',
 			array(
-				'label'     => __( 'Orçamentos', 'atelie-theme' ),
-				'labels'    => array(
+				'label'        => __( 'Orçamentos', 'atelie-theme' ),
+				'labels'       => array(
 					'name'          => __( 'Orçamentos', 'atelie-theme' ),
 					'singular_name' => __( 'Orçamento', 'atelie-theme' ),
 					'add_new_item'  => __( 'Novo orçamento', 'atelie-theme' ),
 				),
-				'public'    => false,
-				'show_ui'   => true,
-				'menu_icon' => 'dashicons-calculator',
-				'supports'  => array( 'title' ),
+				'public'       => false,
+				'show_ui'      => true,
+				'menu_icon'    => 'dashicons-calculator',
+				'supports'     => array( 'title' ),
+				'capabilities' => atelie_precificacao_capabilities(),
+				'map_meta_cap' => true,
 			)
 		);
 
@@ -49,6 +77,8 @@ add_action(
 				'show_ui'      => true,
 				'show_in_menu' => 'edit.php?post_type=atelie_orcamento',
 				'supports'     => array( 'title' ),
+				'capabilities' => atelie_precificacao_capabilities(),
+				'map_meta_cap' => true,
 			)
 		);
 
@@ -65,6 +95,8 @@ add_action(
 				'show_ui'      => true,
 				'show_in_menu' => 'edit.php?post_type=atelie_orcamento',
 				'supports'     => array( 'title' ),
+				'capabilities' => atelie_precificacao_capabilities(),
+				'map_meta_cap' => true,
 			)
 		);
 	},
@@ -337,11 +369,17 @@ function atelie_orcamento_render_meta_box( WP_Post $post ): void {
 					<td id="atelie-orc-total-mao-obra"><?php echo esc_html( number_format( (float) $custo_mao_obra, 2, ',', '.' ) ); ?></td>
 				</tr>
 				<tr>
-					<td><strong><?php esc_html_e( 'Custo total (sem margem — ajuste o preço de venda manualmente)', 'atelie-theme' ); ?></strong></td>
+					<td><strong><?php esc_html_e( 'Valor da artesã (custo de produção: matéria-prima + mão de obra)', 'atelie-theme' ); ?></strong></td>
 					<td id="atelie-orc-total-custo"><strong><?php echo esc_html( number_format( (float) $custo_total, 2, ',', '.' ) ); ?></strong></td>
 				</tr>
 			</tbody>
 		</table>
+
+		<hr>
+		<p><strong><?php esc_html_e( 'Preço final por canal de venda', 'atelie-theme' ); ?></strong>
+			<span class="description"><?php esc_html_e( '— valor da artesã + custos do ateliê em cada canal. Configure em Gestão → Custos e rateio.', 'atelie-theme' ); ?></span></p>
+		<div id="atelie-orc-canais"></div>
+		<script type="application/json" id="atelie-orc-canais-config"><?php echo wp_json_encode( class_exists( 'Atelie_Canais_Config' ) ? Atelie_Canais_Config::obter() : array() ); ?></script>
 
 		<hr>
 		<p>
@@ -423,6 +461,11 @@ add_action(
 		$custo_mao_obra = $horas_estimada * $valor_hora;
 		update_post_meta( $post_id, '_atelie_orc_custo_mao_obra', $custo_mao_obra );
 		update_post_meta( $post_id, '_atelie_orc_custo_total', $custo_materiais + $custo_mao_obra );
+
+		// Foto do preço final por canal no momento em que o orçamento foi salvo (o que as vendas vão usar).
+		if ( class_exists( 'Atelie_Canais_Config' ) ) {
+			update_post_meta( $post_id, '_atelie_orc_canais', Atelie_Canais_Config::calcular( $custo_materiais + $custo_mao_obra ) );
+		}
 	}
 );
 
@@ -436,7 +479,7 @@ add_action(
 	function (): void {
 		check_ajax_referer( 'atelie_sugerir_horas', 'nonce' );
 
-		if ( ! current_user_can( 'edit_posts' ) ) {
+		if ( ! current_user_can( 'atelie_gestao' ) ) {
 			wp_send_json_error( array( 'message' => 'Sem permissão' ), 403 );
 		}
 
@@ -652,6 +695,44 @@ function atelie_orcamento_admin_js(): void {
 			return "R$ " + Number(v || 0).toFixed(2).replace(".", ",");
 		}
 
+		var canaisConfig = JSON.parse((document.getElementById("atelie-orc-canais-config") || {}).textContent || "{}");
+
+		function arredondar(v) { return Math.round(v * 100) / 100; }
+
+		function esc(t) {
+			var d = document.createElement("div");
+			d.textContent = t;
+			return d.innerHTML;
+		}
+
+		// Mesma conta de Atelie_Canais_Config::calcular() (PHP): preco = (artesa + fixos) / (1 - soma dos percentuais).
+		function renderizarCanais(valorArtesa) {
+			var alvo = document.getElementById("atelie-orc-canais");
+			if (!alvo || !canaisConfig.canais) { return; }
+			var rateios = canaisConfig.rateios || [];
+			var pctRateio = rateios.reduce(function (soma, r) { return soma + r.percentual; }, 0);
+			var html = "<table class=\"widefat striped\"><thead><tr><th>Canal</th><th>Preço final</th><th>Artesã recebe</th><th>Custos do ateliê</th><th>Detalhe</th></tr></thead><tbody>";
+			Object.keys(canaisConfig.canais).forEach(function (slug) {
+				var canal = canaisConfig.canais[slug];
+				var fixos = 0, pct = pctRateio, detalhes = [], percentuais = [];
+				canal.itens.forEach(function (it) {
+					if (it.tipo === "percentual") { pct += it.valor; percentuais.push(it); return; }
+					var v = it.tipo === "evento" ? it.valor / Math.max(1, it.pecas) : it.valor;
+					fixos += v;
+					detalhes.push(it.nome + ": " + formatarReal(v));
+				});
+				if (pct >= 90) {
+					html += "<tr><td>" + esc(canal.nome) + "</td><td colspan=\"4\">percentuais altos demais — revise em Gestão → Custos e rateio</td></tr>";
+					return;
+				}
+				var preco = arredondar((valorArtesa + fixos) / (1 - pct / 100));
+				percentuais.forEach(function (it) { detalhes.push(it.nome + " (" + it.valor + "%): " + formatarReal(preco * it.valor / 100)); });
+				rateios.forEach(function (r) { detalhes.push(r.nome + " (" + r.percentual + "%): " + formatarReal(preco * r.percentual / 100)); });
+				html += "<tr><td><strong>" + esc(canal.nome) + "</strong></td><td><strong>" + formatarReal(preco) + "</strong></td><td>" + formatarReal(valorArtesa) + "</td><td>" + formatarReal(preco - valorArtesa) + "</td><td>" + esc(detalhes.join(" · ") || "—") + "</td></tr>";
+			});
+			alvo.innerHTML = html + "</tbody></table>";
+		}
+
 		function recalcular() {
 			var totalMateriais = 0;
 			corpo.querySelectorAll(".atelie-orc-item-linha").forEach(function (linha) {
@@ -670,6 +751,7 @@ function atelie_orcamento_admin_js(): void {
 			document.getElementById("atelie-orc-total-materiais").textContent = formatarReal(totalMateriais);
 			document.getElementById("atelie-orc-total-mao-obra").textContent = formatarReal(totalMaoObra);
 			document.getElementById("atelie-orc-total-custo").innerHTML = "<strong>" + formatarReal(totalMateriais + totalMaoObra) + "</strong>";
+			renderizarCanais(totalMateriais + totalMaoObra);
 		}
 
 		function novaLinha(mpId, qtd) {

@@ -17,5 +17,9 @@ Hoje tem:
 - [Fundo de reposição](/gestao/fundo-de-reposicao/) — o "cofrinho" que guarda parte do lucro das
   vendas pra repor patrimônio que estraga.
 
-Em construção (próximas etapas): orçamento com custos por canal de venda (feira, site,
-individual), quanto a artesã recebe em cada um, e as vendas que alimentam o fundo.
+- [Custos e rateio](/gestao/custos-e-rateio/) — custos do ateliê em cada canal de venda (feira,
+  site, individual) e o rateio pro fundo; alimenta o **preço final por canal** e **quanto a artesã
+  recebe** no orçamento.
+
+Em construção (próxima etapa): registro das vendas, que faz o rateio virar saldo de verdade no
+fundo.

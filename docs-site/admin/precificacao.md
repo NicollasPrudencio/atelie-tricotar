@@ -9,7 +9,12 @@ permalink: /admin/precificacao/
 
 Menu **"Orçamentos"** (ícone de calculadora 🧮), com duas sub-telas: **"Matérias-primas"** e
 **"Artesãs"**. Ferramenta interna de cálculo de custo — a cliente nunca vê nem interage com
-nada disso, e a Vendedora também não vê essas telas no menu (é normal, não é erro).
+nada disso. Só o Administrador e a **Gestora** enxergam essas telas; a Artesã comum não vê (é
+normal, não é erro).
+
+> **Novo:** abaixo do custo, o orçamento agora mostra o **preço final por canal de venda** (feira,
+> site, venda individual) e **quanto a artesã recebe** em cada um — veja
+> [Custos e rateio](/gestao/custos-e-rateio/).
 
 ## Como as três telas se conectam
 

@@ -31,6 +31,8 @@ R$ 20 restantes são custo do ateliê pra vender naquele canal.
 ## Fases
 
 1. **Patrimônio + fundo de reposição** (entrada, dano, conserto, baixa, reposição; livro do fundo
-   com aporte/retirada manual). ← esta entrega
-2. Orçamento por canal (custos do ateliê, preço final por canal, valor da artesã, rateio %).
+   com aporte/retirada manual). ✔ entregue
+2. **Orçamento por canal** (custos do ateliê por canal em Gestão › Custos e rateio, preço final
+   por canal e valor da artesã no orçamento; snapshot em `_atelie_orc_canais`; as 3 telas de
+   precificação passaram a exigir `atelie_gestao`, abrindo pra Gestora). ← esta entrega
 3. Vendas (registro por canal) alimentando o rateio → fundo, com relatório.
