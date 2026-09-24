@@ -41,7 +41,7 @@ class Atelie_Admin_Page {
 			'atelie-produto-ia-admin',
 			plugins_url( 'assets/admin.css', dirname( __DIR__ ) . '/atelie-produto-ia.php' ),
 			array(),
-			'0.5.0'
+			'0.6.0'
 		);
 
 		wp_enqueue_script(
@@ -64,7 +64,7 @@ class Atelie_Admin_Page {
 			'atelie-produto-ia-admin',
 			plugins_url( 'assets/admin.js', dirname( __DIR__ ) . '/atelie-produto-ia.php' ),
 			array( 'jquery', 'jquery-ui-sortable', 'atelie-produto-ia-editar-imagem', 'atelie-produto-ia-duplicata-upload' ),
-			'0.6.0',
+			'0.7.0',
 			true
 		);
 
@@ -113,7 +113,7 @@ class Atelie_Admin_Page {
 
 		$fotos = array();
 		foreach ( $this->ids_fotos_do_produto( $produto_id ) as $foto_id ) {
-			$imagem = wp_get_attachment_image_src( $foto_id, 'thumbnail' );
+			$imagem = wp_get_attachment_image_src( $foto_id, 'medium' );
 			if ( $imagem ) {
 				$fotos[] = array(
 					'id'  => $foto_id,
@@ -236,6 +236,15 @@ class Atelie_Admin_Page {
 					<p id="atelie-dropzone-texto">Toque para escolher as fotos do produto</p>
 					<div id="atelie-fotos-preview" class="atelie-fotos-preview"></div>
 					<p id="atelie-fotos-dica-ordem" class="description" style="display:none;">Arraste as fotos pra mudar a ordem — a primeira é a "Capa" do produto.</p>
+				</div>
+
+				<?php // Edição com IA em lote — mesma instrução pra várias fotos (só as marcadas, ou todas se nenhuma estiver marcada). Sempre renderizado, JS mostra/esconde. ?>
+				<div id="atelie-fotos-lote" class="atelie-fotos-lote" style="display:none;">
+					<label class="atelie-fotos-lote-todas"><input type="checkbox" id="atelie-fotos-sel-todas"> Selecionar todas</label>
+					<input type="text" id="atelie-fotos-lote-instrucao" class="atelie-fotos-lote-instrucao" placeholder='Instrução pra IA (ex.: "deixe o fundo branco")'>
+					<button type="button" class="button" id="atelie-fotos-lote-btn" disabled>✏️ Editar com IA</button>
+					<span id="atelie-fotos-lote-custo" class="atelie-custo-estimado"></span>
+					<p id="atelie-fotos-lote-status" style="display:none;"></p>
 				</div>
 				<p class="atelie-lote-origem-fotos">
 					<button type="button" class="button" id="atelie-btn-escolher-fotos">Escolher fotos</button>

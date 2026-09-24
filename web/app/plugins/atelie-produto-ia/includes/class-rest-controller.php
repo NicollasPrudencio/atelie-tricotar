@@ -355,7 +355,7 @@ class Atelie_Rest_Controller {
 			if ( $anexo_id !== null ) {
 				$resultado[] = array(
 					'id'  => $anexo_id,
-					'url' => wp_get_attachment_image_url( $anexo_id, 'thumbnail' ),
+					'url' => wp_get_attachment_image_url( $anexo_id, 'medium' ),
 				);
 			}
 		}
@@ -618,7 +618,7 @@ class Atelie_Rest_Controller {
 		return new WP_REST_Response(
 			array(
 				'imagem_id' => $novo_id,
-				'url'       => wp_get_attachment_image_url( $novo_id, 'thumbnail' ),
+				'url'       => wp_get_attachment_image_url( $novo_id, 'medium' ),
 				'custo'     => $resultado['custo'],
 			),
 			200
@@ -733,7 +733,7 @@ class Atelie_Rest_Controller {
 			array(
 				'editado'     => true,
 				'imagem_id'   => $novo_id,
-				'url'         => wp_get_attachment_image_url( $novo_id, 'thumbnail' ),
+				'url'         => wp_get_attachment_image_url( $novo_id, 'medium' ),
 				'diagnostico' => $resultado['diagnostico'],
 				'custo'       => $resultado['custo'],
 			),

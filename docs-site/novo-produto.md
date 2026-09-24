@@ -34,6 +34,16 @@ qualquer outra coisa.
 produto, a que aparece na loja e no compartilhamento. Pra mudar, é só arrastar uma miniatura pra
 outra posição — solta, e a ordem já muda na hora.
 
+**Ver a foto maior** — cada miniatura tem **🔍 Ampliar** (abre a foto grande ali mesmo, sem sair da
+tela) e **↗ Abrir em nova guia** (abre a foto no tamanho real numa aba nova do navegador).
+
+**Editar várias fotos de uma vez com a mesma instrução** — no canto de cada foto tem uma caixinha
+de seleção. Marque as fotos que quer (ou **"Selecionar todas"**; se não marcar nenhuma, vale pra
+todas), escreva a instrução na barra logo abaixo (ex.: "deixe o fundo branco") e clique em **"Editar
+com IA"**. O painel mostra o custo aproximado e pede confirmação antes; a IA edita uma foto de cada
+vez e **para na primeira falha** (teto de gasto atingido, erro etc.) pra não gastar à toa. As fotos
+originais nunca são apagadas. O teto mensal de [Gasto da IA](/gasto-da-ia/) vale aqui também.
+
 Embaixo de cada miniatura aparecem dois botões extras, opcionais:
 
 - **✏️ Editar com IA** — você descreve a edição que quer (ex.: "deixe o fundo branco") e a IA

@@ -48,8 +48,8 @@
 }
 
 .atelie-novo-produto .atelie-foto-thumb {
-    width: 140px;
-    height: 140px;
+    width: 220px;
+    height: 220px;
     object-fit: cover;
     border-radius: 4px;
     border: 1px solid #dcdcde;
@@ -76,8 +76,8 @@
     background: #f0e6ea;
     border: 1px dashed #c98fae;
     border-radius: 4px;
-    width: 140px;
-    height: 140px;
+    width: 220px;
+    height: 220px;
 }
 
 /* So a primeira foto vira a "capa" do produto (imagem destacada) — marca
@@ -95,6 +95,53 @@
     border-radius: 999px;
     z-index: 1;
     pointer-events: none;
+}
+
+.atelie-novo-produto #atelie-passo-anexar {
+    max-width: 1000px;
+}
+
+/* Marcar a foto pra edicao em lote com IA — canto da foto, sem atrapalhar o arrastar. */
+.atelie-novo-produto .atelie-foto-check {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 2;
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    cursor: pointer;
+    background: #fff;
+}
+
+.atelie-novo-produto .atelie-foto-ver {
+    display: flex;
+    gap: 0.6rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* Barra de edicao com IA em lote (mesma instrucao pra varias fotos). */
+.atelie-novo-produto .atelie-fotos-lote {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 0.9rem;
+    margin: 0.5rem 0 1rem;
+    padding: 0.75rem 1rem;
+    background: #faf3f5;
+    border: 1px solid #ecd9e0;
+    border-radius: 6px;
+}
+
+.atelie-novo-produto .atelie-fotos-lote-instrucao {
+    flex: 1 1 260px;
+    min-width: 220px;
+}
+
+.atelie-novo-produto .atelie-fotos-lote > p {
+    flex-basis: 100%;
+    margin: 0;
 }
 
 .atelie-novo-produto .atelie-btn-ver-original {
@@ -162,7 +209,7 @@
     padding: 0;
     cursor: pointer;
     text-decoration: underline;
-    max-width: 64px;
+    max-width: 220px;
 }
 
 .atelie-novo-produto .atelie-btn-editar-imagem:disabled {
@@ -178,7 +225,7 @@
     display: block;
     margin-left: 0;
     font-size: 0.62rem;
-    max-width: 64px;
+    max-width: 220px;
     text-align: center;
     line-height: 1.2;
 }

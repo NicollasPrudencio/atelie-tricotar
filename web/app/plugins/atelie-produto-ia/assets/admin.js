@@ -42,6 +42,7 @@
             dropzoneTexto.textContent = fotosIds.length + " foto(s) anexada(s)";
             fotosDicaOrdem.style.display = fotosIds.length > 1 ? "block" : "none";
             atualizarBotaoSugerir();
+            atualizarBarraLote();
         }
 
         // Preview em tamanho original — busca a URL de verdade na hora (a miniatura na
@@ -96,24 +97,202 @@
                 });
         }
 
+        // Abre a foto no tamanho real numa NOVA GUIA. A aba é aberta na hora do clique
+        // (senão o bloqueador de pop-up barra, já que a URL só chega depois do fetch)
+        // e só então recebe o endereço.
+        function abrirNovaGuia(fotoId) {
+            var aba = window.open("", "_blank");
+            fetch(atelieProdutoIA.mediaUrl + fotoId)
+                .then(function (resposta) {
+                    return resposta.json();
+                })
+                .then(function (dados) {
+                    if (aba && dados && dados.source_url) {
+                        aba.opener = null;
+                        aba.location.href = dados.source_url;
+                    } else if (aba) {
+                        aba.close();
+                        alert("Não deu pra abrir a imagem.");
+                    }
+                })
+                .catch(function () {
+                    if (aba) {
+                        aba.close();
+                    }
+                    alert("Não deu pra abrir a imagem.");
+                });
+        }
+
+        // ---- Edição com IA em lote (mesma instrução, fotos selecionadas ou todas) ----
+        // Custo: cada foto é UMA chamada de edição de imagem, que é a operação mais cara da
+        // IA — por isso sequencial, com estimativa e confirmação antes, parando na PRIMEIRA
+        // falha (teto de gasto, limite diário, erro) em vez de insistir nas demais. A
+        // foto já é reduzida (lado máx. 1536px) no servidor antes de ir pra IA, e o teto
+        // mensal de gasto também vale aqui (checado no servidor a cada chamada).
+        var barraLote = document.getElementById("atelie-fotos-lote");
+        var checkTodas = document.getElementById("atelie-fotos-sel-todas");
+        var campoInstrucao = document.getElementById("atelie-fotos-lote-instrucao");
+        var btnLote = document.getElementById("atelie-fotos-lote-btn");
+        var custoLote = document.getElementById("atelie-fotos-lote-custo");
+        var statusLote = document.getElementById("atelie-fotos-lote-status");
+        var loteRodando = false;
+
+        function formatarReal(valor) {
+            return "R$ " + Number(valor || 0).toFixed(4).replace(".", ",");
+        }
+
+        function itensAlvoDoLote() {
+            var todos = Array.prototype.slice.call(fotosPreview.querySelectorAll(".atelie-foto-item"));
+            var marcados = todos.filter(function (el) {
+                var c = el.querySelector(".atelie-foto-check");
+                return c && c.checked;
+            });
+            return marcados.length > 0 ? marcados : todos;
+        }
+
+        function atualizarBarraLote() {
+            if (!barraLote) {
+                return;
+            }
+            var total = fotosPreview.querySelectorAll(".atelie-foto-item").length;
+            barraLote.style.display = total > 0 ? "flex" : "none";
+
+            var marcadas = fotosPreview.querySelectorAll(".atelie-foto-check:checked").length;
+            var n = marcadas > 0 ? marcadas : total;
+            var custoPorFoto = Number(String(atelieProdutoIA.custoEdicaoImagem).replace(",", "."));
+
+            checkTodas.checked = total > 0 && marcadas === total;
+            btnLote.textContent = "✏️ Editar com IA em " + n + " foto" + (n === 1 ? "" : "s") + (marcadas > 0 ? " selecionada" + (n === 1 ? "" : "s") : "");
+            custoLote.textContent = "até ~" + formatarReal(n * custoPorFoto) + " no total";
+            btnLote.disabled = loteRodando || !atelieProdutoIA.iaDisponivel || campoInstrucao.value.trim() === "";
+        }
+
+        function editarEmLote() {
+            var alvos = itensAlvoDoLote();
+            var instrucao = campoInstrucao.value.trim();
+            if (!alvos.length || instrucao === "") {
+                return;
+            }
+            var custoPorFoto = Number(String(atelieProdutoIA.custoEdicaoImagem).replace(",", "."));
+            if (
+                !window.confirm(
+                    "A IA vai editar " + alvos.length + " foto(s), uma de cada vez, com esta instrução:\n\n\"" + instrucao +
+                        "\"\n\nCusto aproximado: até " + formatarReal(alvos.length * custoPorFoto) + ". As originais não são apagadas. Continuar?"
+                )
+            ) {
+                return;
+            }
+
+            loteRodando = true;
+            atualizarBarraLote();
+            statusLote.style.display = "block";
+            statusLote.className = "atelie-status atelie-status-inline";
+
+            var indice = 0;
+            var editadas = 0;
+            var custoTotal = 0;
+
+            function concluir(mensagemErro) {
+                loteRodando = false;
+                sincronizarFotosIds();
+                var resumo = editadas + " de " + alvos.length + " foto(s) editada(s). Custo: " + formatarReal(custoTotal) + ".";
+                statusLote.textContent = mensagemErro ? mensagemErro + " Parei aqui pra não gastar à toa. " + resumo : "Concluído: " + resumo;
+                statusLote.className = "atelie-status atelie-status-inline" + (mensagemErro ? " atelie-status-erro" : " atelie-status-ok");
+                atualizarBarraLote();
+            }
+
+            function proxima() {
+                if (indice >= alvos.length) {
+                    concluir("");
+                    return;
+                }
+                var item = alvos[indice];
+                statusLote.textContent = "Editando foto " + (indice + 1) + " de " + alvos.length + "…";
+
+                fetch(atelieProdutoIA.editarImagemUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "X-WP-Nonce": atelieProdutoIA.nonce },
+                    body: JSON.stringify({ foto_id: item.dataset.fotoId, prompt: instrucao }),
+                })
+                    .then(function (resposta) {
+                        return resposta.json().then(function (dados) {
+                            return { ok: resposta.ok, dados: dados };
+                        });
+                    })
+                    .then(function (resultado) {
+                        custoTotal += Number((resultado.dados && resultado.dados.custo) || 0);
+                        if (!resultado.ok) {
+                            concluir((resultado.dados && resultado.dados.erro) || "Não deu pra editar a foto " + (indice + 1) + ".");
+                            return;
+                        }
+                        item.dataset.fotoId = resultado.dados.imagem_id;
+                        item.querySelector(".atelie-foto-thumb").src = resultado.dados.url;
+                        editadas++;
+                        indice++;
+                        proxima();
+                    })
+                    .catch(function () {
+                        concluir("Erro de conexão.");
+                    });
+            }
+
+            proxima();
+        }
+
+        if (barraLote) {
+            checkTodas.addEventListener("change", function () {
+                Array.prototype.forEach.call(fotosPreview.querySelectorAll(".atelie-foto-check"), function (c) {
+                    c.checked = checkTodas.checked;
+                });
+                atualizarBarraLote();
+            });
+            campoInstrucao.addEventListener("input", atualizarBarraLote);
+            btnLote.addEventListener("click", editarEmLote);
+            fotosPreview.addEventListener("change", function (e) {
+                if (e.target.classList && e.target.classList.contains("atelie-foto-check")) {
+                    atualizarBarraLote();
+                }
+            });
+        }
+
         function adicionarFoto(id, thumbnailUrl) {
             var wrapper = document.createElement("div");
             wrapper.className = "atelie-foto-item";
             wrapper.dataset.fotoId = id;
+
+            var check = document.createElement("input");
+            check.type = "checkbox";
+            check.className = "atelie-foto-check";
+            check.title = "Selecionar essa foto pra editar com IA em lote";
+            wrapper.appendChild(check);
 
             var img = document.createElement("img");
             img.src = thumbnailUrl;
             img.className = "atelie-foto-thumb";
             wrapper.appendChild(img);
 
+            var linhaVer = document.createElement("div");
+            linhaVer.className = "atelie-foto-ver";
+
             var btnVerOriginal = document.createElement("button");
             btnVerOriginal.type = "button";
             btnVerOriginal.className = "atelie-btn-ver-original";
-            btnVerOriginal.textContent = "🔍 Ver tamanho original";
+            btnVerOriginal.textContent = "🔍 Ampliar";
             btnVerOriginal.addEventListener("click", function () {
                 abrirPreview(wrapper.dataset.fotoId);
             });
-            wrapper.appendChild(btnVerOriginal);
+            linhaVer.appendChild(btnVerOriginal);
+
+            var btnNovaGuia = document.createElement("button");
+            btnNovaGuia.type = "button";
+            btnNovaGuia.className = "atelie-btn-ver-original";
+            btnNovaGuia.textContent = "↗ Abrir em nova guia";
+            btnNovaGuia.addEventListener("click", function () {
+                abrirNovaGuia(wrapper.dataset.fotoId);
+            });
+            linhaVer.appendChild(btnNovaGuia);
+
+            wrapper.appendChild(linhaVer);
 
             fotosPreview.appendChild(wrapper);
 
@@ -187,7 +366,8 @@
                     }
 
                     aprovados.forEach(function (item) {
-                        adicionarFoto(item.id, item.sizes && item.sizes.thumbnail ? item.sizes.thumbnail.url : item.url);
+                        // "medium" (300px) em vez de "thumbnail" (150px): a miniatura agora é maior na tela.
+                        adicionarFoto(item.id, item.sizes && item.sizes.medium ? item.sizes.medium.url : item.sizes && item.sizes.thumbnail ? item.sizes.thumbnail.url : item.url);
                     });
                     sincronizarFotosIds();
                 });
