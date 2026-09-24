@@ -147,48 +147,52 @@ add_action(
 add_action(
 	'init',
 	function (): void {
-		$capabilities_version = '5';
+		$capabilities_version = '6';
 
 		if ( get_option( 'atelie_vendedora_caps_version' ) === $capabilities_version ) {
 			return;
 		}
 
-		remove_role( 'atelie_vendedora' );
-		add_role(
-			'atelie_vendedora',
-			'Artesã',
-			array(
-				'read'                              => true,
-				'upload_files'                      => true,
-				// Sem isso o WooCommerce redireciona QUALQUER acesso ao wp-admin de volta pra
-				// "Minha conta" (WC_Admin::prevent_admin_access() so libera com edit_posts,
-				// manage_woocommerce ou view_admin_dashboard — nenhuma das capacidades acima
-				// conta, sao especificas de produto/pedido). Achado em 2026-09-14 com o primeiro
-				// login real de uma artesa: nenhuma das 4 conseguia abrir tela nenhuma do painel.
-				// view_admin_dashboard e a capacidade nativa do WP pra "pode ver o wp-admin" sem
-				// destravar menus nativos tipo Posts/Paginas (que continuam presos a edit_posts).
-				'view_admin_dashboard'              => true,
-				// Produtos
-				'edit_products'                     => true,
-				'edit_published_products'           => true,
-				'publish_products'                  => true,
-				'read_private_products'             => true,
-				// Pedidos (inclui gerar etiqueta de frete via Melhor Envio na tela do pedido)
-				'edit_shop_orders'                  => true,
-				'edit_others_shop_orders'           => true,
-				'read_private_shop_orders'          => true,
-				// Portfolio/cases
-				'edit_atelie_cases'                 => true,
-				'edit_published_atelie_cases'       => true,
-				'publish_atelie_cases'              => true,
-				'read_private_atelie_cases'         => true,
-				// Pedidos de orcamento personalizado (acompanhar/responder e trabalho dela)
-				'edit_atelie_pedidos_orc'           => true,
-				'edit_published_atelie_pedidos_orc' => true,
-				'publish_atelie_pedidos_orc'        => true,
-				'read_private_atelie_pedidos_orc'   => true,
-			)
+		$caps_artesa = array(
+			'read'                              => true,
+			'upload_files'                      => true,
+			// Sem isso o WooCommerce redireciona QUALQUER acesso ao wp-admin de volta pra
+			// "Minha conta" (WC_Admin::prevent_admin_access() so libera com edit_posts,
+			// manage_woocommerce ou view_admin_dashboard — nenhuma das capacidades acima
+			// conta, sao especificas de produto/pedido). Achado em 2026-09-14 com o primeiro
+			// login real de uma artesa: nenhuma das 4 conseguia abrir tela nenhuma do painel.
+			// view_admin_dashboard e a capacidade nativa do WP pra "pode ver o wp-admin" sem
+			// destravar menus nativos tipo Posts/Paginas (que continuam presos a edit_posts).
+			'view_admin_dashboard'              => true,
+			// Produtos
+			'edit_products'                     => true,
+			'edit_published_products'           => true,
+			'publish_products'                  => true,
+			'read_private_products'             => true,
+			// Pedidos (inclui gerar etiqueta de frete via Melhor Envio na tela do pedido)
+			'edit_shop_orders'                  => true,
+			'edit_others_shop_orders'           => true,
+			'read_private_shop_orders'          => true,
+			// Portfolio/cases
+			'edit_atelie_cases'                 => true,
+			'edit_published_atelie_cases'       => true,
+			'publish_atelie_cases'              => true,
+			'read_private_atelie_cases'         => true,
+			// Pedidos de orcamento personalizado (acompanhar/responder e trabalho dela)
+			'edit_atelie_pedidos_orc'           => true,
+			'edit_published_atelie_pedidos_orc' => true,
+			'publish_atelie_pedidos_orc'        => true,
+			'read_private_atelie_pedidos_orc'   => true,
 		);
+
+		remove_role( 'atelie_vendedora' );
+		add_role( 'atelie_vendedora', 'Artesã', $caps_artesa );
+
+		// Gestora = a artesã "especial" (dona/gestora administrativa do ateliê): tudo que a Artesã
+		// faz + gestão do ateliê (patrimônio, fundo de reposição, orçamento com canais e rateio).
+		// A capacidade atelie_gestao também vai pro Administrador (bloco mais abaixo).
+		remove_role( 'atelie_gestora' );
+		add_role( 'atelie_gestora', 'Gestora', array_merge( $caps_artesa, array( 'atelie_gestao' => true ) ) );
 
 		update_option( 'atelie_vendedora_caps_version', $capabilities_version );
 
@@ -223,6 +227,7 @@ add_action(
 				'delete_others_atelie_pedidos_orc',
 				'edit_private_atelie_pedidos_orc',
 				'edit_published_atelie_pedidos_orc',
+				'atelie_gestao',
 			);
 			foreach ( $caps_customizadas as $cap ) {
 				$administrator->add_cap( $cap );

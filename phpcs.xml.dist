@@ -62,6 +62,7 @@
                 <element value="edit_products"/>
                 <element value="edit_atelie_cases"/>
                 <element value="manage_woocommerce"/>
+                <element value="atelie_gestao"/>
             </property>
         </properties>
     </rule>
