@@ -1080,26 +1080,50 @@ class Atelie_Ai_Vision_Service_Gemini implements Atelie_Ai_Vision_Service_Interf
 			);
 		}
 
-		$editor->resize( $lado_maximo, $lado_maximo, false );
-
-		$temp  = wp_tempnam( 'atelie-ia-redimensionada' );
-		$salvo = $editor->save( $temp, $mime_original );
-
-		if ( is_wp_error( $salvo ) || ! isset( $salvo['path'] ) || ! is_readable( $salvo['path'] ) ) {
-			$this->apagar_arquivo_local( $temp );
-			return array(
-				'data'      => $this->ler_arquivo_local_base64( $imagem_path ),
-				'mime_type' => $mime_original,
-			);
-		}
-
-		$dados = $this->ler_arquivo_local_base64( $salvo['path'] );
-		$this->apagar_arquivo_local( $salvo['path'] );
-
-		return array(
-			'data'      => $dados,
-			'mime_type' => (string) ( $salvo['mime-type'] ?? $mime_original ),
+		// Lazy de proposito: foto grande em base64 pesa na memoria, so le se precisar cair no fallback.
+		$original = fn (): array => array(
+			'data'      => $this->ler_arquivo_local_base64( $imagem_path ),
+			'mime_type' => $mime_original,
 		);
+
+		try {
+			if ( is_wp_error( $editor->resize( $lado_maximo, $lado_maximo, false ) ) ) {
+				return $original();
+			}
+
+			// wp_tempnam() vive em wp-admin/includes/file.php, que NAO e carregado em
+			// requisicao REST (onde rodam os botoes de IA) — sem isso, foto grande de
+			// celular estourava "Call to undefined function wp_tempnam()" (2026-09-24).
+			if ( ! function_exists( 'wp_tempnam' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+			}
+
+			$temp  = wp_tempnam( 'atelie-ia-redimensionada' );
+			$salvo = $editor->save( $temp, $mime_original );
+
+			// save() pode ajustar a extensao e gravar noutro caminho que nao o de
+			// wp_tempnam() — apaga os dois, senao o temporario original vaza em /tmp.
+			$caminho_salvo = ( ! is_wp_error( $salvo ) && isset( $salvo['path'] ) ) ? (string) $salvo['path'] : '';
+			$dados         = ( $caminho_salvo !== '' && is_readable( $caminho_salvo ) ) ? $this->ler_arquivo_local_base64( $caminho_salvo ) : '';
+			$mime_salvo    = is_array( $salvo ) ? (string) ( $salvo['mime-type'] ?? $mime_original ) : $mime_original;
+
+			$this->apagar_arquivo_local( $temp );
+			if ( $caminho_salvo !== '' && $caminho_salvo !== $temp ) {
+				$this->apagar_arquivo_local( $caminho_salvo );
+			}
+
+			if ( $dados === '' ) {
+				return $original();
+			}
+
+			return array(
+				'data'      => $dados,
+				'mime_type' => $mime_salvo,
+			);
+		} catch ( Throwable $e ) {
+			// Redimensionar e so otimizacao de custo — nunca pode derrubar o botao.
+			return $original();
+		}
 	}
 
 	/**
