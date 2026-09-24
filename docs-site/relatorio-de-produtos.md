@@ -30,4 +30,8 @@ Na tela do produto (**"Novo Produto"**, ou editando um produto já publicado), l
 3. Clique em **🖨️ Imprimir**. Na janela de impressão dá pra escolher **"Salvar como PDF"** também.
    O cabeçalho com o nome do ateliê, a data e o total de produtos só aparece no papel.
 
+Os produtos que **já existiam** ganharam uma referência automática, no formato `ATL-0001`,
+`ATL-0002`… (na ordem em que foram criados). Dá pra trocar por um código seu a qualquer momento,
+editando o produto — o código antigo simplesmente deixa de existir.
+
 Produtos sem referência aparecem com "—" e ficam no fim quando a ordem é por referência.
