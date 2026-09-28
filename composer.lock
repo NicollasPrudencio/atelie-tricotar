@@ -421,7 +421,7 @@
         },
         {
             "name": "roots/wordpress",
-            "version": "6.9.7",
+            "version": "6.9.9",
             "source": {
                 "type": "git",
                 "url": "https://github.com/roots/wordpress.git",
@@ -452,7 +452,7 @@
             ],
             "support": {
                 "issues": "https://github.com/roots/wordpress/issues",
-                "source": "https://github.com/roots/wordpress/tree/7.0.4"
+                "source": "https://github.com/roots/wordpress/tree/7.1.2"
             },
             "funding": [
                 {
@@ -531,23 +531,23 @@
         },
         {
             "name": "roots/wordpress-no-content",
-            "version": "6.9.7",
+            "version": "6.9.9",
             "source": {
                 "type": "git",
                 "url": "https://github.com/WordPress/WordPress.git",
-                "reference": "6.9.7"
+                "reference": "6.9.9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://downloads.w.org/release/wordpress-6.9.7-no-content.zip",
-                "reference": "6.9.7",
-                "shasum": "32c7a1121934995d9399d78d6d7f848468a6318a"
+                "url": "https://downloads.w.org/release/wordpress-6.9.9-no-content.zip",
+                "reference": "6.9.9",
+                "shasum": "37aa034b83d8064f627fb6661decdbd7b6993d49"
             },
             "require": {
                 "php": ">= 7.2.24"
             },
             "provide": {
-                "wordpress/core-implementation": "6.9.7"
+                "wordpress/core-implementation": "6.9.9"
             },
             "suggest": {
                 "ext-curl": "Performs remote request operations.",
@@ -598,7 +598,7 @@
                     "type": "other"
                 }
             ],
-            "time": "2026-08-12T14:47:32+00:00"
+            "time": "2026-09-22T14:07:20+00:00"
         },
         {
             "name": "roots/wp-config",
@@ -1114,15 +1114,15 @@
         },
         {
             "name": "wpackagist-plugin/woocommerce",
-            "version": "11.1.1",
+            "version": "11.1.2",
             "source": {
                 "type": "svn",
                 "url": "https://plugins.svn.wordpress.org/woocommerce/",
-                "reference": "tags/11.1.1"
+                "reference": "tags/11.1.2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://downloads.wordpress.org/plugin/woocommerce.11.1.1.zip"
+                "url": "https://downloads.wordpress.org/plugin/woocommerce.11.1.2.zip"
             },
             "require": {
                 "composer/installers": "^1.0 || ^2.0"
