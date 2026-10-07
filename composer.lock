@@ -1186,15 +1186,15 @@
         },
         {
             "name": "wpackagist-plugin/wp-2fa",
-            "version": "4.1.0",
+            "version": "4.2.0",
             "source": {
                 "type": "svn",
                 "url": "https://plugins.svn.wordpress.org/wp-2fa/",
-                "reference": "tags/4.1.0"
+                "reference": "tags/4.2.0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://downloads.wordpress.org/plugin/wp-2fa.4.1.0.zip"
+                "url": "https://downloads.wordpress.org/plugin/wp-2fa.4.2.0.zip"
             },
             "require": {
                 "composer/installers": "^1.0 || ^2.0"
