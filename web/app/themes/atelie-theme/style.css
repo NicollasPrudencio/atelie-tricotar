@@ -3,7 +3,7 @@ Theme Name: Atelie Theme
 Description: Tema do site do Ateliê Tricotar — identidade baseada no logo (pêssego, rosa,
              marfim, tipografia serifada quente + sans arredondada), tricô/crochê/amigurumi.
 Author: Atelier Tricotar
-Version: 0.2.8
+Version: 0.2.9
 Requires PHP: 8.1
 Text Domain: atelie-theme
 */
@@ -678,6 +678,24 @@ p.no-comments {
     background: transparent;
     color: var(--cor-rosa-escuro) !important;
     box-shadow: none;
+}
+
+/* Bug real reportado por artesã 2026-10-07: ao abrir o checkout no celular, um cartão
+   branco em branco cobria a tela inteira por cima do formulário. Causa: o próprio
+   WooCommerce Blocks usa "container-type: inline-size" no bloco de checkout (pras
+   consultas de contêiner responsivas dele) — isso faz esse bloco virar o "containing
+   block" dos elementos position:fixed dentro dele (regra do CSS Containment), em vez
+   da tela. O aviso flutuante de notificações do checkout (.wc-block-components-
+   notices__snackbar, normalmente vazio e invisível) é position:fixed com
+   top:10px;bottom:24px — sem "bottom" ele estica preenchendo o bloco de checkout
+   inteiro (até ~2400px de altura) em vez de ficar do tamanho do conteúdo (vazio).
+   Reproduzido e confirmado com Playwright (iPhone 13, WebKit) contra produção antes
+   de corrigir. Não dá pra tirar o container-type (quebraria o layout responsivo do
+   checkout) — devolver a altura pra "auto" resolve sem tocar no código do WooCommerce. */
+.wc-block-components-notices__snackbar {
+    bottom: auto !important;
+    height: auto !important;
+    max-height: 50vh !important;
 }
 
 /* ---------------------------------------------------------------------------
